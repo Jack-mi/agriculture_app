@@ -23,15 +23,19 @@ utils/store.js                   本地离线数据仓库（先写本地 = 弱�
 utils/weather.js                 Open-Meteo：近30天用 forecast，更早用 archive；手工修正永不覆盖
 utils/stats.js                   成本分摊汇总、积温（逐日均温累计）、降雨累计、全周期日历
 utils/sync.js                    可选云端备份，联网自动同步，openid 天然隔离
-pages/index                      今天：在种各季卡片 + 两个大按钮直达记账/记事
+pages/index                      今天：本月全部地块花费 + 常用账横滑（点一下就记）+ 在种各季卡片
 pages/plots                      地块列表 + 往季
 pages/plot-edit                  地块：名称 / 亩数 / 地图选点
 pages/season-new                 开季：地块 / 作物 / 播种日 / 播种量(斤/亩) / 整地
-pages/season                     季详情：账本 / 农事日志(连续日历) / 天气(逐日+风力+累计，可修正) / 信息
-pages/cost-edit                  记账：5 类 + 细分；金额按种植季逐行分摊，自动合计；雇工 = 人数×日工价
+pages/season                     季详情：账本（列表按日分组 + 当天合计 / 流水日历：格内花费、下雨、未记，点某天弹出当天明细并可补记）/ 农事日志(连续日历) / 天气 / 信息
+pages/cost-edit                  记一笔（随手记式一屏）：金额头 + 5 大类分段 + 细分图标宫格 + 自绘键盘（可连加）；直接填 / 按亩计(单价×亩) / 按人天；分摊弹层（按亩均摊 / 平均分 / 手动，合计强校验）；常用账带出 / 存为常用账；「再记」连续录入
+components/keypad                自绘数字键盘（⌫ 长按清空、＋ －、有算式时完成键变 ＝）
+utils/keypad.js                  键盘纯逻辑（press / evalExpr），可单测
+assets/icons/                    细分类型线性图标（{icon}_{色}.svg，映射见 const.SUB_ICONS）
 pages/log-edit                   农事日志：多选农事 + 生长/病虫害/机械/作业面积 + 农资明细 + 墒情；"保存并记花费"一键关联
 pages/harvest                    收获：产量、亩产、全周期积温/降雨/成本、每斤成本
 pages/mine                       统计、导出为文字、分享
+pages/tags                       类型管理：记账类型 / 记事类型 / 常用账
 ```
 
 ## 口径
@@ -42,7 +46,11 @@ pages/mine                       统计、导出为文字、分享
 - 农事日志日历：播种日 → 收获日/今天逐日连续，无记录日期显示「本日未记录」可补记；旧施肥记录自动映射为化肥使用明细。
 - 风力 = Open-Meteo 当日最大风速（m/s），逐日展示 + 全周期最大值，不累计；旧天气记录无风力显示「—」。
 
+- 记账计算来源：`costs.calc = {mode:'perMu'|'perDay', unitPrice, mu|people}`、`costs.expr`（连加算式）、`costs.split`（多季分摊方式）仅用于展示/回填，**落账永远以 allocations 为准**；按亩均摊按分计算，最后一季吸收尾差。
+- 作物二级类目 = 品种（`seasons.variety`，选填，≤20 字）：开季时可点选「用过的 / 常见品种」或自由输入，季详情「信息」页可随时补填/修改/清空；展示为「玉米 · 登海605」。常见品种建议见 `const.VARIETIES`。
+- 常用账存于 `tags.templates`（随 tags 单文档同步，不新增集合）；「恢复默认类型」不清除常用账。
+
 ## 测试
 ```
-node --test miniprogram/tests/farm-log.test.js   # 成本分摊 / 日历 / 旧数据迁移 / 风力 最小用例
+node --test miniprogram/tests/*.test.js   # 16 例：成本分摊 / 日历 / 旧数据迁移 / 风力 / 键盘 / 按亩均摊尾差 / 按日分组 / 月历 / 常用账
 ```

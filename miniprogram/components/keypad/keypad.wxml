@@ -1,0 +1,19 @@
+<view class="kp">
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="1">1</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="2">2</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="3">3</view>
+  <view class="k fn" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="del" bindlongpress="longDel">⌫</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="4">4</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="5">5</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="6">6</view>
+  <view class="k fn" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="+">＋</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="7">7</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="8">8</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="9">9</view>
+  <view class="k fn" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="-">－</view>
+  <view wx:if="{{showAgain}}" class="k fn sm {{disabled ? 'dis' : ''}}" hover-class="k-on" hover-stay-time="60" bindtap="again">再记</view>
+  <view wx:else class="k fn" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="clear">C</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="0">0</view>
+  <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k=".">.</view>
+  <view class="k ok {{disabled && !hasOp ? 'dis' : ''}}" hover-class="k-on" hover-stay-time="60" bindtap="ok">{{hasOp ? '＝' : okText}}</view>
+</view>

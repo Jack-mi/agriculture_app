@@ -5,7 +5,7 @@ const weather = require('../../utils/weather.js');
 
 Page({
   data: {
-    plots: [], plotId: '', crops: C.CROPS, crop: 'wheat',
+    plots: [], plotId: '', crops: C.CROPS, crop: 'wheat', variety: '', varUsed: [], varPreset: [],
     sowDate: '', today: '', seedRate: '', tillage: '',
     tillageQuick: ['旋耕', '深翻', '深松', '免耕', '秸秆还田'],
     busyPlots: {}
@@ -24,6 +24,7 @@ Page({
       crop: (m >= 5 && m <= 7) ? 'corn' : 'wheat',
       sowDate: U.today(), today: U.today()
     });
+    this.loadVarieties();
     if (!plots.length) {
       wx.showModal({ title: '还没有地块', content: '先添加一块地再开季', showCancel: false, success: () => wx.redirectTo({ url: '/pages/plot-edit/plot-edit' }) });
     }
@@ -33,7 +34,19 @@ Page({
   pickCrop(e) {
     const c = C.cropOf(e.currentTarget.dataset.key);
     if (!c.enabled) return U.toast(c.name + '后续开放');
-    this.setData({ crop: c.key });
+    if (c.key === this.data.crop) return;
+    this.setData({ crop: c.key, variety: '' });
+    this.loadVarieties();
+  },
+  // 品种（二级类目）：选填；快捷选项 = 自己用过的 + 常见品种
+  loadVarieties() {
+    const v = store.seasons.varieties(this.data.crop);
+    this.setData({ varUsed: v.used.slice(0, 6), varPreset: v.preset.slice(0, 8 - Math.min(v.used.length, 6)) });
+  },
+  onVariety(e) { this.setData({ variety: e.detail.value }); },
+  pickVariety(e) {
+    const v = e.currentTarget.dataset.v;
+    this.setData({ variety: this.data.variety === v ? '' : v });
   },
   onDate(e) { this.setData({ sowDate: e.detail.value }); },
   onSeed(e) { this.setData({ seedRate: e.detail.value }); },
@@ -51,7 +64,7 @@ Page({
       return wx.showModal({ title: '这块地还有一季没收', content: '请先在那一季里登记收获，再开新一季。', showCancel: false });
     }
     const s = store.seasons.save({
-      plotId: d.plotId, crop: d.crop, sowDate: d.sowDate,
+      plotId: d.plotId, crop: d.crop, variety: d.variety.trim().slice(0, 20), sowDate: d.sowDate,
       seedRate: d.seedRate ? parseFloat(d.seedRate) : '', tillage: d.tillage.trim(), status: 'growing'
     });
     weather.fillSeason(s).catch(() => null);

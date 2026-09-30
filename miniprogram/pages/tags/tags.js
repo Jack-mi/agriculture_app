@@ -2,11 +2,12 @@
 const store = require('../../utils/store.js');
 const C = require('../../utils/const.js');
 const U = require('../../utils/util.js');
+const stats = require('../../utils/stats.js');
 
 Page({
   data: {
     tab: 'cost', cats: C.COST_CATS, cat: 'agri', costList: [], logList: [],
-    colors: C.TAG_COLORS, edit: null, costCatOpts: []
+    colors: C.TAG_COLORS, edit: null, costCatOpts: [], tplList: [], tpl: null, modes: C.CALC_MODES, tplSplits: [{ key: 'current', name: '只记当前季' }, { key: 'area', name: '按亩均摊' }, { key: 'even', name: '平均分' }]
   },
 
   onLoad(q) {
@@ -22,7 +23,8 @@ Page({
       name: t.name, color: t.color, count: d.logs.filter(l => (l.ops || []).indexOf(t.name) >= 0).length,
       costText: t.costCat ? C.catOf(t.costCat).name + (t.costSub ? ' · ' + t.costSub : '') : '不关联'
     }));
-    this.setData({ costList, logList });
+    const tplList = store.tags.templates().map(t => ({ id: t.id, name: t.name, icon: C.iconOf(t.sub, t.cat), color: C.catOf(t.cat).color, catName: C.catOf(t.cat).name, sub: t.sub, desc: stats.tplDesc(t) }));
+    this.setData({ costList, logList, tplList });
   },
 
   setTab(e) { this.setData({ tab: e.currentTarget.dataset.t }); },
@@ -106,6 +108,32 @@ Page({
       confirmText: '删除', confirmColor: '#B3372B',
       success: m => { if (m.confirm) { store.tags.removeLog(name); this.setData({ edit: null }); this.render(); } }
     });
+  },
+
+  // ---- 常用账 ----
+  addTpl() { this.openTpl({ name: '', cat: 'mach', sub: store.tags.cost('mach')[0] || '', mode: 'perMu', unitPrice: '', amount: '', people: '', split: 'current', note: '' }); },
+  editTpl(e) { const t = store.tags.template(e.currentTarget.dataset.id); if (t) this.openTpl(Object.assign({}, t, { unitPrice: t.unitPrice ? String(t.unitPrice) : '', amount: t.amount ? String(t.amount) : '', people: t.people ? String(t.people) : '' })); },
+  openTpl(t) { t.subs = store.tags.cost(t.cat); this.setData({ tpl: t }); },
+  onTplName(e) { this.setData({ 'tpl.name': e.detail.value }); },
+  onTplNum(e) { this.setData({ ['tpl.' + e.currentTarget.dataset.k]: e.detail.value }); },
+  onTplNote(e) { this.setData({ 'tpl.note': e.detail.value }); },
+  pickTplCat(e) { const cat = e.currentTarget.dataset.k; const subs = store.tags.cost(cat); this.setData({ 'tpl.cat': cat, 'tpl.subs': subs, 'tpl.sub': subs[0] || '', 'tpl.mode': cat === 'labor' ? 'perDay' : this.data.tpl.mode }); },
+  pickTplSub(e) { this.setData({ 'tpl.sub': e.currentTarget.dataset.s }); },
+  pickTplMode(e) { this.setData({ 'tpl.mode': e.currentTarget.dataset.m }); },
+  pickTplSplit(e) { this.setData({ 'tpl.split': e.currentTarget.dataset.k }); },
+  closeTpl() { this.setData({ tpl: null }); },
+  saveTpl() {
+    const t = this.data.tpl;
+    if (t.mode === 'fixed' ? !(parseFloat(t.amount) > 0) : !(parseFloat(t.unitPrice) > 0)) return U.toast(t.mode === 'fixed' ? '请填写金额' : '请填写单价');
+    const rec = store.tags.saveTemplate(t);
+    if (!rec) return U.toast('请填写名称');
+    this.setData({ tpl: null }); this.render(); U.toast('已保存');
+  },
+  moveTpl(e) { store.tags.moveTemplate(this.data.tpl.id, +e.currentTarget.dataset.d); this.render(); },
+  delTpl() {
+    const id = this.data.tpl.id;
+    wx.showModal({ title: '删除常用账', content: '已记的账不受影响。', confirmText: '删除', confirmColor: '#B3372B',
+      success: m => { if (m.confirm) { store.tags.removeTemplate(id); this.setData({ tpl: null }); this.render(); } } });
   },
 
   reset() {

@@ -8,7 +8,7 @@ Page({
   data: {
     id: '', tab: 'cost', brief: {}, season: {}, plot: {},
     cost: { cats: [], total: 0 }, costList: [], openCat: '',
-    logGroups: [], costFilter: '', logFilter: '', costSubs: [], logTags: [], met: {}, bars: [], seasonInfo: {}, wxRows: [], wxLoading: false, wxMsg: '',
+    logGroups: [], costView: 'list', costDays: [], calYm: '', cal: null, daySheet: null, costFilter: '', logFilter: '', costSubs: [], logTags: [], met: {}, bars: [], seasonInfo: {}, wxRows: [], wxLoading: false, wxMsg: '',
     edit: null
   },
 
@@ -27,12 +27,23 @@ Page({
     const allCosts = store.costs.bySeason(s.id);
     // 筛选胶囊：本季出现过的细分类型
     const costSubs = []; allCosts.forEach(c => { const k = c.cat + '|' + c.sub; if (c.sub && !costSubs.some(x => x.k === k)) costSubs.push({ k, name: c.sub, color: C.catOf(c.cat).color }); });
-    const costList = allCosts.filter(c => !cf || (c.cat + '|' + c.sub) === cf).map(c => ({
+    const costRow = c => ({
       id: c.id, date: c.date, dateText: U.cnDate(c.date), cat: c.cat, catName: C.catOf(c.cat).name,
-      color: C.catOf(c.cat).color, sub: c.sub, note: c.note,
-      people: c.people, amount: U.money(store.costs.amountFor(c, s.id)),
+      color: C.catOf(c.cat).color, sub: c.sub, icon: C.iconOf(c.sub, c.cat), note: c.note,
+      calc: stats.calcText(c), people: c.people, amount: U.money(store.costs.amountFor(c, s.id)),
       shared: store.costs.allocOf(c).length > 1, linked: !!c.logId
+    });
+    const costList = allCosts.filter(c => !cf || (c.cat + '|' + c.sub) === cf).map(costRow);
+    // 按日分组（随手记式）：组头 = 日期 · 第几天 · 当天合计（本季分摊口径）
+    const costDays = stats.costDays(s, c => !cf || (c.cat + '|' + c.sub) === cf).map(g => ({
+      date: g.date, dateText: U.cnDate(g.date), week: U.weekday(g.date), dayN: g.dayN,
+      totalText: U.money(g.total), items: g.items.map(costRow)
     }));
+    // 流水日历：默认到季末所在月（在种 = 本月）
+    let calYm = this.data.calYm;
+    if (!calYm) { const e = store.seasons.endDate(s); calYm = (e > U.today() ? U.today() : e).slice(0, 7); }
+    const cal = stats.costMonth(s, calYm);
+    this._costRow = costRow;
 
     // 全生育周期连续日历：播种日 → 收获日/今天，倒序；无记录日期显示「本日未记录」
     const allLogs = store.logs.bySeason(s.id);
@@ -69,7 +80,7 @@ Page({
     const bars = last.map(r => ({ d: r.date.slice(5), h: r.p ? Math.max(4, Math.round(r.p / maxP * 100)) : 0, p: r.p }));
 
     this.setData({
-      season: s, plot, brief, cost, costList, logGroups, costSubs, logTags, costTotalCount: allCosts.length,
+      season: s, plot, brief, cost, costList, costDays, calYm, cal, logGroups, costSubs, logTags, costTotalCount: allCosts.length,
       costFilterSum: cf ? U.money(allCosts.filter(c => (c.cat + '|' + c.sub) === cf).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0)) : '',
       met: { gdd: ws.gdd, gdd0: ws.gdd0, rain: ws.rain, days: ws.days, known: ws.known, missing: ws.missing, manual: ws.manual, maxWind: ws.maxWind, hasLoc: plot.lat !== undefined && plot.lat !== '' },
       wxRows, bars,
@@ -97,6 +108,30 @@ Page({
     }).catch(() => this.setData({ wxLoading: false }));
   },
 
+  setCostView(e) { this.setData({ costView: e.currentTarget.dataset.v }); },
+  calPrev() { if (this.data.cal.canPrev) { this.setData({ calYm: stats.shiftYm(this.data.calYm, -1) }); this.render(); } },
+  calNext() { if (this.data.cal.canNext) { this.setData({ calYm: stats.shiftYm(this.data.calYm, 1) }); this.render(); } },
+  // 点日历某天：弹出当天记事 + 账目，可按该日期补记
+  openDay(e) {
+    const cell = this.data.cal.cells[e.currentTarget.dataset.i];
+    if (!cell || !cell.inSeason || cell.future) return;
+    const s = this.data.season;
+    const w = store.weather.get(s.plotId, cell.date);
+    const costs = store.costs.bySeason(s.id).filter(c => c.date === cell.date).map(this._costRow);
+    const logs = store.logs.bySeason(s.id).filter(l => l.date === cell.date).map(l => ({
+      id: l.id, text: l.text || '', opTags: (l.ops || []).map(o => ({ name: o, color: store.tags.colorOf(o) }))
+    }));
+    const total = store.costs.bySeason(s.id).filter(c => c.date === cell.date).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0);
+    this.setData({ daySheet: {
+      date: cell.date, title: U.cnDate(cell.date) + ' ' + U.weekday(cell.date), dayN: U.diffDays(s.sowDate, cell.date) + 1,
+      w: w ? w.t + '℃ · ' + w.p + 'mm' : '天气待补', costs, logs, totalText: U.money(total)
+    } });
+  },
+  closeDay() { this.setData({ daySheet: null }); },
+  addCostAt(e) { const d = e.currentTarget.dataset.date; this.setData({ daySheet: null }); wx.navigateTo({ url: '/pages/cost-edit/cost-edit?seasonId=' + this.data.id + '&date=' + d }); },
+  addLogAtDay(e) { const d = e.currentTarget.dataset.date; this.setData({ daySheet: null }); wx.navigateTo({ url: '/pages/log-edit/log-edit?seasonId=' + this.data.id + '&date=' + d }); },
+  editCostFromDay(e) { this.setData({ daySheet: null }); this.editCost(e); },
+  editLogFromDay(e) { this.setData({ daySheet: null }); this.editLog(e); },
   setCostFilter(e) { const k = e.currentTarget.dataset.k || ''; this.setData({ costFilter: this.data.costFilter === k ? '' : k }); this.render(); },
   setLogFilter(e) { const k = e.currentTarget.dataset.k || ''; this.setData({ logFilter: this.data.logFilter === k ? '' : k }); this.render(); },
   goTags() { wx.navigateTo({ url: '/pages/tags/tags?tab=' + (this.data.tab === 'log' ? 'log' : 'cost') }); },
@@ -135,6 +170,32 @@ Page({
     store.weather.resetToApi(this.data.season.plotId, this.data.edit.date);
     this.setData({ edit: null });
     this.loadWeather();
+  },
+
+  // 品种（选填）：随时补填 / 修改；快捷选项 = 用过的 + 常见品种
+  editVariety() {
+    const s = this.data.season;
+    const opts = store.seasons.varieties(s.crop).all.filter(v => v !== s.variety).slice(0, 5);
+    const items = ['手动输入…'].concat(opts);
+    if (s.variety) items.push('清空品种');
+    wx.showActionSheet({
+      itemList: items,
+      success: r => {
+        const pick = items[r.tapIndex];
+        if (r.tapIndex === 0) {
+          wx.showModal({
+            title: C.cropOf(s.crop).name + '品种', editable: true, content: s.variety || '', placeholderText: s.crop === 'corn' ? '如：登海605' : '如：济麦22',
+            success: m => { if (m.confirm) this.setVariety((m.content || '').trim()); }
+          });
+        } else if (pick === '清空品种') this.setVariety('');
+        else this.setVariety(pick);
+      }
+    });
+  },
+  setVariety(v) {
+    store.seasons.save({ id: this.data.id, variety: v.slice(0, 20) });
+    this.render();
+    U.toast(v ? '已记录品种' : '已清空');
   },
 
   delSeason() {

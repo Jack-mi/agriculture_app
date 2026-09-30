@@ -1,6 +1,7 @@
 <view class="tabs">
   <view class="tab {{tab === 'cost' ? 'on' : ''}}" bindtap="setTab" data-t="cost">记账类型</view>
   <view class="tab {{tab === 'log' ? 'on' : ''}}" bindtap="setTab" data-t="log">记事类型</view>
+  <view class="tab {{tab === 'tpl' ? 'on' : ''}}" bindtap="setTab" data-t="tpl">常用账</view>
 </view>
 
 <view class="wrap">
@@ -40,7 +41,60 @@
     <view class="btn ghost" hover-class="btn-hover" bindtap="addLog">＋ 新增记事类型</view>
   </block>
 
-  <view class="reset" bindtap="reset">恢复默认类型</view>
+  <!-- 常用账 -->
+  <block wx:if="{{tab === 'tpl'}}">
+    <view class="muted" style="margin:0 8rpx 16rpx">重复的账存成常用账，首页和记一笔页都能一键带出</view>
+    <view class="card" style="padding:0 32rpx">
+      <view wx:if="{{!tplList.length}}" class="empty muted">还没有常用账</view>
+      <view wx:for="{{tplList}}" wx:key="id" class="trow" bindtap="editTpl" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="tic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="tic-img" /></view>
+        <view class="flex1" style="min-width:0">
+          <view class="tname">{{item.name}}</view>
+          <view class="muted" style="font-size:26rpx">{{item.catName}} · {{item.sub}} · {{item.desc}}</view>
+        </view>
+        <text class="more">›</text>
+      </view>
+    </view>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="addTpl">＋ 新建常用账</view>
+  </block>
+
+  <view wx:if="{{tab !== 'tpl'}}" class="reset" bindtap="reset">恢复默认类型</view>
+</view>
+
+<!-- 常用账编辑弹层 -->
+<view wx:if="{{tpl}}" class="mask" bindtap="closeTpl">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">{{tpl.id ? '编辑常用账' : '新建常用账'}}</view>
+    <scroll-view scroll-y style="max-height:880rpx">
+      <view class="field"><view class="label">名称</view><input class="input" value="{{tpl.name}}" bindinput="onTplName" placeholder="如：无人机飞防" placeholder-class="ph" maxlength="10" /></view>
+      <view class="field"><view class="label">类别</view>
+        <view class="chips"><view wx:for="{{cats}}" wx:key="key" class="chip {{tpl.cat === item.key ? 'on' : ''}}" bindtap="pickTplCat" data-k="{{item.key}}">{{item.name}}</view></view>
+        <view class="chips" style="margin-top:12rpx"><view wx:for="{{tpl.subs}}" wx:key="*this" class="chip small-chip {{tpl.sub === item ? 'on' : ''}}" bindtap="pickTplSub" data-s="{{item}}">{{item}}</view></view>
+      </view>
+      <view class="field"><view class="label">怎么算</view>
+        <view class="chips"><view wx:for="{{modes}}" wx:key="key" class="chip {{tpl.mode === item.key ? 'on' : ''}}" bindtap="pickTplMode" data-m="{{item.key}}">{{item.name}}</view></view>
+      </view>
+      <view class="field" wx:if="{{tpl.mode === 'fixed'}}"><view class="label">金额</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.amount}}" bindinput="onTplNum" data-k="amount" /><text class="unit">元</text></view></view>
+      <view class="field" wx:if="{{tpl.mode === 'perMu'}}"><view class="label">单价</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.unitPrice}}" bindinput="onTplNum" data-k="unitPrice" /><text class="unit">元/亩</text></view></view>
+      <view class="row" wx:if="{{tpl.mode === 'perDay'}}">
+        <view class="field flex1" style="margin-right:20rpx"><view class="label">日工价</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.unitPrice}}" bindinput="onTplNum" data-k="unitPrice" /><text class="unit">元</text></view></view>
+        <view class="field flex1"><view class="label">常用人数</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.people}}" bindinput="onTplNum" data-k="people" /><text class="unit">人</text></view></view>
+      </view>
+      <view class="field"><view class="label">分摊</view>
+        <view class="chips"><view wx:for="{{tplSplits}}" wx:key="key" class="chip {{tpl.split === item.key ? 'on' : ''}}" bindtap="pickTplSplit" data-k="{{item.key}}">{{item.name}}</view></view>
+        <view class="muted" style="font-size:24rpx;margin-top:10rpx">「按亩均摊 / 平均分」会自动选中全部在种的季</view>
+      </view>
+      <view class="field"><view class="label">默认备注</view><input class="input" value="{{tpl.note}}" bindinput="onTplNote" placeholder="选填，如：老张家无人机" placeholder-class="ph" maxlength="30" /></view>
+    </scroll-view>
+    <view class="row" style="margin-top:12rpx">
+      <block wx:if="{{tpl.id}}">
+        <view class="btn ghost small" style="margin-right:12rpx" bindtap="moveTpl" data-d="-1">上移</view>
+        <view class="btn ghost small" style="margin-right:12rpx" bindtap="moveTpl" data-d="1">下移</view>
+        <view class="btn danger small" style="margin-right:12rpx" bindtap="delTpl">删除</view>
+      </block>
+      <view class="btn flex1" bindtap="saveTpl">保存</view>
+    </view>
+  </view>
 </view>
 
 <!-- 记事类型编辑弹层 -->

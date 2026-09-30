@@ -1,0 +1,14 @@
+.kp {
+  background: #E9E3D3; padding: 12rpx 12rpx calc(12rpx + env(safe-area-inset-bottom));
+  display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 108rpx; gap: 12rpx;
+}
+.k {
+  background: #fff; border-radius: 16rpx; display: flex; align-items: center; justify-content: center;
+  font-size: 48rpx; font-weight: 600; color: #1E241C; box-shadow: 0 2rpx 0 rgba(0,0,0,.12);
+  font-family: "DIN Alternate", "Helvetica Neue", Arial, sans-serif;
+}
+.k.fn { background: #D8D0BC; font-size: 44rpx; }
+.k.sm { font-size: 30rpx; font-family: inherit; font-weight: 700; }
+.k.ok { background: #C98B1E; color: #fff; font-size: 38rpx; font-weight: 700; letter-spacing: 4rpx; font-family: inherit; }
+.k.dis { opacity: .45; }
+.k-on { filter: brightness(.9); transform: translateY(2rpx); }

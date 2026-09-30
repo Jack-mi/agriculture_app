@@ -1,66 +1,131 @@
-<view class="wrap">
-  <view class="muted" style="margin:0 8rpx 16rpx">{{seasonLabel}}{{logId ? ' · 关联今日记事' : ''}}</view>
-
-  <!-- 1. 选类别 -->
-  <view class="card">
-    <view class="label">花在哪一类</view>
-    <view class="tiles">
-      <view wx:for="{{cats}}" wx:key="key" class="tile {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
-        <view class="dot" style="background:{{item.color}}"></view>{{item.name}}
+<view class="page">
+  <!-- ① 金额头 -->
+  <view class="head">
+    <view class="row between">
+      <view class="hcat">
+        <view class="hic" style="background:{{catColor}}"><image src="{{subIcon}}" class="hic-img" /></view>
+        <text class="hsub">{{sub || catName}}</text><text class="muted"> · {{catName}}</text>
       </view>
+      <view class="muted hseason">{{headLabel}}</view>
     </view>
-    <view class="chips" style="margin-top:24rpx">
-      <view wx:for="{{subs}}" wx:key="*this" class="chip {{sub === item ? 'on' : ''}}" bindtap="pickSub" data-s="{{item}}">{{item}}</view>
-      <view class="chip add" bindtap="addSub">＋ 自定义</view>
+
+    <!-- 计算方式 -->
+    <view class="modes">
+      <view wx:for="{{modes}}" wx:key="key" class="mode {{mode === item.key ? 'on' : ''}}" bindtap="pickMode" data-m="{{item.key}}">{{item.name}}</view>
     </view>
-    <view class="manage" bindtap="manageTags">管理类型 ›</view>
+
+    <view wx:if="{{mode === 'perMu'}}" class="formula">
+      <view class="fx {{field === 'price' ? 'on' : ''}}" bindtap="pickField" data-f="price">单价 <text class="num b">¥{{priceText}}</text>/亩</view>
+      <text class="muted x">×</text>
+      <view class="fx {{field === 'mu' ? 'on' : ''}}" bindtap="pickField" data-f="mu"><text class="num b">{{muText}}</text> 亩</view>
+    </view>
+    <view wx:elif="{{mode === 'perDay'}}" class="formula">
+      <view class="fx {{field === 'price' ? 'on' : ''}}" bindtap="pickField" data-f="price">日工价 <text class="num b">¥{{priceText}}</text></view>
+      <text class="muted x">×</text>
+      <view class="fx {{field === 'people' ? 'on' : ''}}" bindtap="pickField" data-f="people"><text class="num b">{{peopleText}}</text> 人·天</view>
+    </view>
+    <view wx:else class="expr num">{{exprShow}}</view>
+
+    <view class="big num {{total > 0 ? '' : 'zero'}}"><text class="yen">¥</text>{{totalText}}</view>
   </view>
 
-  <!-- 2. 填金额 -->
-  <view class="card">
-    <block wx:if="{{cat === 'labor'}}">
-      <view class="row">
-        <view class="field flex1" style="margin-right:20rpx">
-          <view class="label">雇了几个人</view>
-          <view class="input-unit"><input class="input" type="digit" placeholder="0" placeholder-class="ph" value="{{people}}" bindinput="onPeople" /><text class="unit">人</text></view>
-        </view>
-        <view class="field flex1">
-          <view class="label">每人每天</view>
-          <view class="input-unit"><input class="input" type="digit" placeholder="0" placeholder-class="ph" value="{{unitPrice}}" bindinput="onUnit" /><text class="unit">元</text></view>
-        </view>
-      </view>
-    </block>
-    <view class="field">
-      <view class="label">金额分摊<text class="req">*</text> <text class="muted" style="font-weight:400">· 一笔开销可按种植季分到多个地块</text></view>
-      <view wx:for="{{allocs}}" wx:key="index" class="alloc-row">
-        <picker class="alloc-season" range="{{seasonOpts}}" range-key="label" bindchange="pickAllocSeason" data-i="{{index}}">
-          <view class="picker">{{item.seasonLabel}} ▾</view>
-        </picker>
-        <view class="input-unit alloc-amt">
-          <input class="input num" type="digit" placeholder="0" placeholder-class="ph" value="{{item.amount}}" bindinput="onAllocAmount" data-i="{{index}}" focus="{{!isEdit && index === 0 && cat !== 'labor'}}" />
-          <text class="unit">元</text>
-        </view>
-        <view wx:if="{{allocs.length > 1}}" class="alloc-del" bindtap="delAlloc" data-i="{{index}}">×</view>
-      </view>
-      <view class="row between" style="margin-top:8rpx">
-        <view class="chip add" bindtap="addAlloc">＋ 分摊到其他种植季</view>
-        <view class="muted">合计 <text class="num" style="font-weight:800;color:var(--ink)">¥{{total}}</text></view>
+  <!-- ② 分类 -->
+  <scroll-view scroll-y class="mid">
+    <view class="seg">
+      <view wx:for="{{cats}}" wx:key="key" class="sg {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
+        <text class="sdot" style="background:{{item.color}}"></text>{{item.name}}
       </view>
     </view>
-    <view class="field">
-      <view class="label">日期</view>
-      <picker mode="date" value="{{date}}" end="{{today}}" bindchange="onDate"><view class="picker num">{{date}}</view></picker>
+    <view class="grid">
+      <view wx:for="{{subs}}" wx:key="name" class="gi {{sub === item.name ? 'on' : ''}}" bindtap="pickSub" data-s="{{item.name}}">
+        <view class="gic" style="{{sub === item.name ? 'background:' + catColor + ';border-color:' + catColor : ''}}">
+          <image src="{{sub === item.name ? item.iconOn : item.icon}}" class="gic-img" />
+        </view>
+        <text class="gname">{{item.name}}</text>
+      </view>
+      <view class="gi" bindtap="addSub">
+        <view class="gic dash"><image src="/assets/icons/plus_mach.svg" class="gic-img" style="opacity:.8" /></view>
+        <text class="gname" style="color:var(--green)">自定义</text>
+      </view>
     </view>
-    <view class="field" style="margin-bottom:0">
-      <view class="label">备注</view>
-      <input class="input" placeholder="{{cat === 'agri' ? '如：复合肥 20 袋' : cat === 'mach' ? '如：老王家的收割机' : '选填'}}" placeholder-class="ph" value="{{note}}" bindinput="onNote" maxlength="60" />
-    </view>
-  </view>
+    <view class="mng"><text bindtap="manageTags">管理类型 ›</text></view>
+    <view wx:if="{{isEdit}}" class="delbox"><view class="btn danger" hover-class="btn-hover" bindtap="del">删除这笔账</view></view>
+  </scroll-view>
 
-  <view wx:if="{{isEdit}}" class="btn danger" hover-class="btn-hover" bindtap="del">删除这笔账</view>
+  <!-- ③ 附加信息 chip 行 -->
+  <scroll-view scroll-x class="meta-row" enable-flex>
+    <picker mode="date" value="{{date}}" end="{{today}}" bindchange="onDate">
+      <view class="meta">{{dateText}} ▾</view>
+    </picker>
+    <view class="meta {{picked.length > 1 ? 'hl' : ''}} {{allocErr ? 'err' : ''}}" bindtap="openAlloc">⇆ {{allocText}}{{allocErr ? ' · ' + allocErr : ''}}</view>
+    <view class="meta" bindtap="openNote">✎ {{note || '备注'}}</view>
+    <view wx:if="{{logId}}" class="meta hl">已关联记事</view>
+    <view class="meta" bindtap="openTpl">★ 常用账</view>
+  </scroll-view>
+
+  <!-- ④ 键盘 -->
+  <keypad expr="{{kpExpr}}" okText="{{isEdit ? '保存' : '完成'}}" showAgain="{{!isEdit}}" disabled="{{!(total > 0)}}"
+    bind:input="onKey" bind:done="onKeyDone" bind:again="onKeyAgain" />
 </view>
 
-<view class="fixed-bar">
-  <view wx:if="{{!isEdit}}" class="btn ghost" hover-class="btn-hover" bindtap="save" data-again="1">保存，再记一笔</view>
-  <view class="btn wheat" hover-class="btn-hover" bindtap="save">保存</view>
+<!-- 分摊弹层 -->
+<view wx:if="{{sheet === 'alloc'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="row between" style="margin-bottom:20rpx">
+      <view class="sheet-title" style="margin:0">分摊到哪几季</view>
+      <view class="muted">总额 <text class="num" style="font-weight:800;color:var(--ink)">¥{{totalText}}</text></view>
+    </view>
+    <view wx:if="{{picked.length > 1}}" class="seg2">
+      <view wx:for="{{splitModes}}" wx:key="key" class="{{split === item.key ? 'on' : ''}}" bindtap="pickSplit" data-k="{{item.key}}">{{item.name}}</view>
+    </view>
+    <scroll-view scroll-y style="max-height:640rpx">
+      <view wx:for="{{allocView}}" wx:key="id" class="arow {{item.on ? '' : 'off'}}" bindtap="toggleSeason" data-id="{{item.id}}">
+        <view class="ck {{item.on ? 'on' : ''}}">{{item.on ? '✓' : ''}}</view>
+        <view class="crop sm {{item.cls}}"><image class="crop-img" src="{{item.icon}}" mode="aspectFit" /></view>
+        <view class="flex1" style="margin-left:16rpx;min-width:0">
+          <view class="aname">{{item.name}}</view>
+          <view class="muted" style="font-size:24rpx">{{item.area}} 亩 · {{item.sub}}</view>
+        </view>
+        <view wx:if="{{item.on && split === 'manual' && picked.length > 1}}" class="input-unit" style="width:220rpx" catchtap="noop">
+          <input class="input num" style="min-height:84rpx;font-size:34rpx" type="digit" value="{{item.manual}}" bindinput="onManual" data-id="{{item.id}}" />
+          <text class="unit" style="height:84rpx;line-height:84rpx">元</text>
+        </view>
+        <view wx:elif="{{item.on}}" class="num aamt">¥{{item.amountText}}</view>
+      </view>
+    </scroll-view>
+    <view wx:if="{{allocErr}}" class="aerr">手动分摊合计与总额不符：{{allocErr}}</view>
+    <view class="muted" style="font-size:24rpx;margin:16rpx 0 24rpx">按亩均摊按地块面积比例拆分，最后一季吸收分位尾差，合计恒等于总额。未开季的地块需先开季。</view>
+    <view class="btn" hover-class="btn-hover" bindtap="closeSheet">确定</view>
+  </view>
+</view>
+
+<!-- 备注弹层 -->
+<view wx:if="{{sheet === 'note'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">备注</view>
+    <input class="input" focus value="{{noteDraft}}" bindinput="onNoteDraft" maxlength="60" placeholder="{{cat === 'agri' ? '如：复合肥 20 袋' : cat === 'mach' ? '如：老王家的收割机' : '选填'}}" placeholder-class="ph" confirm-type="done" bindconfirm="saveNote" />
+    <view class="btn" style="margin-top:32rpx" hover-class="btn-hover" bindtap="saveNote">好了</view>
+  </view>
+</view>
+
+<!-- 常用账弹层 -->
+<view wx:if="{{sheet === 'tpl'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="row between" style="margin-bottom:16rpx">
+      <view class="sheet-title" style="margin:0">常用账</view>
+      <text class="muted" bindtap="goTplManage">管理 ›</text>
+    </view>
+    <view wx:if="{{!templates.length}}" class="muted" style="padding:40rpx 0;text-align:center">还没有常用账。把重复的账（如飞防 15 元/亩）存起来，下次一键带出</view>
+    <scroll-view scroll-y style="max-height:600rpx">
+      <view wx:for="{{templates}}" wx:key="id" class="arow" bindtap="useTpl" data-id="{{item.id}}">
+        <view class="gic" style="width:72rpx;height:72rpx"><image src="{{item.icon}}" class="gic-img" /></view>
+        <view class="flex1" style="margin-left:20rpx">
+          <view class="aname">{{item.name}}</view>
+          <view class="muted" style="font-size:24rpx">{{item.catName}} · {{item.sub}} · {{item.desc}}</view>
+        </view>
+        <text class="muted" style="font-size:40rpx">›</text>
+      </view>
+    </scroll-view>
+    <view class="btn ghost" style="margin-top:24rpx" hover-class="btn-hover" bindtap="saveAsTpl">把当前这笔存为常用账</view>
+  </view>
 </view>

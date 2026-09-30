@@ -35,7 +35,7 @@ Page({
     store.seasons.all().forEach(s => {
       const b = stats.seasonBrief(s);
       const cs = stats.costSummary(s.id);
-      lines.push('', '■ ' + b.plotName + ' ' + b.yearLabel + b.crop + '（' + (s.status === 'done' ? '已收获' : '在种') + '）');
+      lines.push('', '■ ' + b.plotName + ' ' + b.yearLabel + b.cropFull + '（' + (s.status === 'done' ? '已收获' : '在种') + '）');
       lines.push('播种 ' + s.sowDate + (s.seedRate ? ' · ' + s.seedRate + '斤/亩' : '') + (s.harvestDate ? ' → 收获 ' + s.harvestDate : ''));
       lines.push('积温 ' + b.gdd + '℃·天 · 降雨 ' + b.rain + 'mm' + (s.yieldJin ? ' · 产量 ' + s.yieldJin + '斤' : ''));
       cs.cats.forEach(c => { if (c.total) lines.push('  ' + c.name + '：¥' + c.totalText); });

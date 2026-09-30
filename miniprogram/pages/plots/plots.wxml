@@ -21,7 +21,7 @@
     <view wx:if="{{item.cur}}" class="cur" bindtap="goSeason" data-id="{{item.cur.id}}" hover-class="btn-hover">
       <view class="crop sm {{item.cur.cropCls}}"><image class="crop-img" src="{{item.cur.cropIcon}}" mode="aspectFit" /></view>
       <view class="flex1" style="margin-left:20rpx">
-        <view style="font-weight:700">{{item.cur.yearLabel}} {{item.cur.crop}}<text class="tag">在种 · 第{{item.cur.dayN}}天</text></view>
+        <view style="font-weight:700">{{item.cur.yearLabel}} {{item.cur.cropFull}}<text class="tag">在种 · 第{{item.cur.dayN}}天</text></view>
         <view class="muted">投入 ¥{{item.cur.costText}} · 积温 {{item.cur.gdd}} · 降雨 {{item.cur.rain}}mm</view>
       </view>
       <view class="muted" style="font-size:44rpx">›</view>

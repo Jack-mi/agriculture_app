@@ -3,7 +3,7 @@
   <view class="row">
     <view class="crop {{brief.cropCls}}"><image class="crop-img" src="{{brief.cropIcon}}" mode="aspectFit" /></view>
     <view class="flex1" style="margin-left:24rpx">
-      <view class="t-name">{{brief.yearLabel}} {{brief.crop}}
+      <view class="t-name">{{brief.yearLabel}} {{brief.crop}}<text wx:if="{{brief.variety}}" class="t-var">{{brief.variety}}</text>
         <text class="tag {{brief.status === 'done' ? 'done' : ''}}">{{brief.status === 'done' ? '已收获' : '在种'}}</text>
       </view>
       <view class="t-sub">{{brief.plotName}} · {{brief.area}} 亩 · {{brief.status === 'done' ? '全周期' : '第'}} {{brief.dayN}} 天</view>
@@ -63,20 +63,57 @@
       </view>
     </view>
 
-    <view class="row between"><view class="sec-title">流水（{{costList.length}}{{costFilter ? ' / ' + costTotalCount : ''}}）{{costFilter ? ' · 小计 ¥' + costFilterSum : ''}}</view><view class="muted mg" bindtap="goTags">管理类型 ›</view></view>
-    <scroll-view wx:if="{{costSubs.length > 1}}" scroll-x class="fscroll">
+    <view class="row between flow-head">
+      <view class="sec-title" style="margin:0">流水（{{costList.length}}{{costFilter ? ' / ' + costTotalCount : ''}}）{{costFilter ? ' · 小计 ¥' + costFilterSum : ''}}</view>
+      <view class="vsw">
+        <view class="{{costView === 'list' ? 'on' : ''}}" bindtap="setCostView" data-v="list">列表</view>
+        <view class="{{costView === 'cal' ? 'on' : ''}}" bindtap="setCostView" data-v="cal">日历</view>
+      </view>
+    </view>
+    <scroll-view wx:if="{{costView === 'list' && costSubs.length > 1}}" scroll-x class="fscroll">
       <view class="fchip {{!costFilter ? 'on' : ''}}" bindtap="setCostFilter" data-k="">全部</view>
       <view wx:for="{{costSubs}}" wx:key="k" class="fchip {{costFilter === item.k ? 'on' : ''}}" bindtap="setCostFilter" data-k="{{item.k}}"><text class="fdot" style="background:{{item.color}}"></text>{{item.name}}</view>
     </scroll-view>
-    <view wx:if="{{!costList.length}}" class="card empty"><view class="muted">还没有记账，点下面「记一笔账」</view></view>
-    <view wx:else class="card" style="padding:0 32rpx">
-      <view wx:for="{{costList}}" wx:key="id" class="flow" bindtap="editCost" data-id="{{item.id}}" hover-class="btn-hover">
-        <view class="flow-date num">{{item.dateText}}</view>
-        <view class="flex1" style="min-width:0">
-          <view><text class="cat-pill" style="color:{{item.color}};border-color:{{item.color}}">{{item.catName}}</text>{{item.sub}}<text wx:if="{{item.people}}" class="muted"> · {{item.people}}人</text><text wx:if="{{item.shared}}" class="tag share">共用</text></view>
-          <view wx:if="{{item.note}}" class="muted ellipsis">{{item.note}}</view>
+    <!-- 列表：按日分组 -->
+    <block wx:if="{{costView === 'list'}}">
+      <view wx:if="{{!costDays.length}}" class="card empty"><view class="muted">还没有记账，点下面「记一笔账」</view></view>
+      <view wx:for="{{costDays}}" wx:for-item="g" wx:key="date" class="cday">
+        <view class="cday-h">
+          <text class="cday-d">{{g.dateText}}</text><text class="muted"> {{g.week}} · 第{{g.dayN}}天</text>
+          <text class="cday-s num">¥{{g.totalText}}</text>
         </view>
-        <view class="num flow-amt">¥{{item.amount}}</view>
+        <view class="card" style="padding:0 28rpx">
+          <view wx:for="{{g.items}}" wx:key="id" class="cf" bindtap="editCost" data-id="{{item.id}}" hover-class="btn-hover">
+            <view class="cf-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="cf-img" /></view>
+            <view class="flex1" style="min-width:0">
+              <view class="cf-t">{{item.sub || item.catName}}<text wx:if="{{item.shared}}" class="tag share">共用</text><text wx:if="{{item.linked}}" class="tag">记事</text></view>
+              <view wx:if="{{item.calc || item.note}}" class="muted ellipsis">{{item.calc}}{{item.calc && item.note ? ' · ' : ''}}{{item.note}}</view>
+            </view>
+            <view class="num cf-a">¥{{item.amount}}</view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 日历：补账 -->
+    <view wx:else class="card cal">
+      <view class="cal-h">
+        <view class="cal-nav {{cal.canPrev ? '' : 'dis'}}" bindtap="calPrev">‹</view>
+        <view class="cal-t">{{cal.title}} · 本月 <text class="num" style="color:var(--wheat)">¥{{cal.monthTotalText}}</text></view>
+        <view class="cal-nav {{cal.canNext ? '' : 'dis'}}" bindtap="calNext">›</view>
+      </view>
+      <view class="cal-w"><text>日</text><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text></view>
+      <view class="cal-g">
+        <view wx:for="{{cal.cells}}" wx:key="date" class="cc {{item.inMonth ? '' : 'om'}} {{!item.inSeason || item.future ? 'out' : ''}} {{item.spend ? (item.big ? 'big' : 'sp') : ''}} {{item.isToday ? 'today' : ''}}" bindtap="openDay" data-i="{{index}}">
+          <text class="cc-d">{{item.isToday ? '今' : item.day}}</text>
+          <text wx:if="{{item.spendText && item.inMonth}}" class="cc-m num">{{item.spendText}}</text>
+          <text wx:elif="{{item.unrecorded}}" class="cc-u">未记</text>
+          <view wx:if="{{item.rain && item.inMonth && item.inSeason}}" class="cc-r"></view>
+          <view wx:if="{{item.hasLog && item.inMonth}}" class="cc-l"></view>
+        </view>
+      </view>
+      <view class="cal-lg">
+        <text><text class="lg sp"></text>有花费</text><text><text class="lg big"></text>≥ ¥2,000</text><text><text class="lg rd"></text>下雨</text><text><text class="lg lgl"></text>有记事</text><text class="muted">未记 = 当天没记事也没记账</text>
       </view>
     </view>
   </block>
@@ -156,6 +193,7 @@
   <!-- ===== 信息 ===== -->
   <block wx:if="{{tab === 'info'}}">
     <view class="card">
+      <view class="kv" bindtap="editVariety" hover-class="btn-hover"><text class="muted">品种</text><text class="{{season.variety ? '' : 'muted'}}">{{season.variety || '未填 · 点此补填'}} ›</text></view>
       <view class="kv"><text class="muted">播种时间</text><text>{{seasonInfo.sow}}</text></view>
       <view class="kv"><text class="muted">播种量</text><text>{{seasonInfo.seed}}</text></view>
       <view class="kv col"><text class="muted">整地情况</text><text style="margin-top:8rpx">{{seasonInfo.tillage}}</text></view>
@@ -185,6 +223,35 @@
     <view class="btn wheat" hover-class="btn-hover" bindtap="addCost">补记一笔账</view>
     <view class="btn ghost" hover-class="btn-hover" bindtap="addLog">补记事</view>
   </block>
+</view>
+
+<!-- 日历 · 当天弹层 -->
+<view wx:if="{{daySheet}}" class="mask" bindtap="closeDay">
+  <view class="sheet" catchtap="noop">
+    <view class="row" style="margin-bottom:16rpx;align-items:baseline">
+      <text class="sheet-title" style="margin:0">{{daySheet.title}}</text>
+      <text class="muted" style="margin-left:16rpx">第 {{daySheet.dayN}} 天 · {{daySheet.w}}</text>
+    </view>
+    <scroll-view scroll-y style="max-height:620rpx">
+      <view class="muted ds-t">当天记事</view>
+      <view wx:if="{{!daySheet.logs.length}}" class="muted ds-e">没有记事</view>
+      <view wx:for="{{daySheet.logs}}" wx:key="id" class="ds-log" bindtap="editLogFromDay" data-id="{{item.id}}">
+        <text wx:for="{{item.opTags}}" wx:for-item="o" wx:key="name" class="otag" style="color:{{o.color}};border-color:{{o.color}}">{{o.name}}</text>
+        <text>{{item.text}}</text>
+      </view>
+      <view class="row between ds-t"><text class="muted">当天账目</text><text wx:if="{{daySheet.costs.length}}" class="num" style="font-weight:800">¥{{daySheet.totalText}}</text></view>
+      <view wx:if="{{!daySheet.costs.length}}" class="muted ds-e">没有账目</view>
+      <view wx:for="{{daySheet.costs}}" wx:key="id" class="cf" bindtap="editCostFromDay" data-id="{{item.id}}">
+        <view class="cf-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="cf-img" /></view>
+        <view class="flex1" style="min-width:0"><view class="cf-t">{{item.sub || item.catName}}<text wx:if="{{item.shared}}" class="tag share">共用</text></view><view wx:if="{{item.calc}}" class="muted ellipsis">{{item.calc}}</view></view>
+        <view class="num cf-a">¥{{item.amount}}</view>
+      </view>
+    </scroll-view>
+    <view class="row" style="margin-top:28rpx">
+      <view class="btn ghost flex1" style="margin-right:20rpx" hover-class="btn-hover" bindtap="addLogAtDay" data-date="{{daySheet.date}}">补记事</view>
+      <view class="btn wheat flex1" hover-class="btn-hover" bindtap="addCostAt" data-date="{{daySheet.date}}">补记一笔账</view>
+    </view>
+  </view>
 </view>
 
 <!-- 天气修正弹层 -->

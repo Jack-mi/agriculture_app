@@ -160,7 +160,7 @@ Page({
     const note = encodeURIComponent([l.ops.join('、'), matText].filter(Boolean).join(' · '));
     wx.redirectTo({
       url: '/pages/cost-edit/cost-edit?seasonId=' + l.seasonId + '&logId=' + saved.id + '&date=' + l.date +
-        '&cat=' + cat + '&sub=' + encodeURIComponent(sub) + '&note=' + note
+        '&cat=' + cat + '&sub=' + encodeURIComponent(sub) + '&note=' + note + (l.areaMu ? '&mu=' + l.areaMu : '')
     });
   },
 

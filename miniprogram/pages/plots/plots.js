@@ -17,7 +17,7 @@ Page({
         cur: cur ? stats.seasonBrief(cur) : null,
         history: ss.filter(s => s.status === 'done').map(s => {
           const b = stats.seasonBrief(s);
-          return { id: s.id, icon: b.cropIcon, label: b.yearLabel + ' ' + b.crop, cost: b.costText, gdd: b.gdd, rain: b.rain, yieldJin: s.yieldJin };
+          return { id: s.id, icon: b.cropIcon, label: b.yearLabel + ' ' + b.cropFull, cost: b.costText, gdd: b.gdd, rain: b.rain, yieldJin: s.yieldJin };
         })
       };
     });

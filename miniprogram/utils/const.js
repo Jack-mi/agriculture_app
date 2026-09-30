@@ -6,6 +6,13 @@ const CROPS = [
   { key: 'peanut', name: '花生', short: '花', cls: 'other', enabled: false, hint: '后续开放', icon: '/assets/crops/peanut.svg' }
 ];
 
+// 作物二级类目：品种（选填）。以下仅为快捷选项（胶东常见），用户可自由输入任意品种名
+const VARIETIES = {
+  wheat: ['济麦22', '济麦44', '烟农1212', '山农29', '鲁原502', '青农2号'],
+  corn: ['登海605', '郑单958', '先玉335', '京科968', '裕丰303', '迪卡517'],
+  peanut: ['花育25', '山花9号']
+};
+
 // 记账 5 类（PRD 5.1）
 const COST_CATS = [
   { key: 'agri', name: '农资投入', color: '#2E5B34', subs: ['种子', '农药', '化肥', '其他'] },
@@ -40,7 +47,33 @@ const MOISTURE = ['干旱', '偏干', '适宜', '偏湿', '积水'];
 const MATERIAL_TYPES = ['种子', '农药', '化肥', '其他'];
 const MATERIAL_UNITS = ['斤/亩', '公斤/亩', '株/亩', 'ml/亩', 'g/亩'];
 
+// 细分类型 → 图标（assets/icons/{icon}_{color}.svg；color = 大类 key / w(白) / sub(灰)）
+// 用户自定义的类型未命中时用大类默认图标
+const SUB_ICONS = {
+  种子: 'seed', 农药: 'spray', 化肥: 'flask', 有机肥: 'leaf', 叶面肥: 'leaf',
+  播种: 'tractor', 飞防: 'drone', 收获: 'wheat', 运输: 'truck', 拉粮: 'truck',
+  按天用工: 'users', 土地流转: 'land', 购买机械: 'gear', 其他: 'dots'
+};
+const CAT_ICONS = { agri: 'seed', mach: 'tractor', trans: 'truck', labor: 'users', asset: 'land' };
+function iconOf(sub, cat, tone) {
+  const k = SUB_ICONS[sub] || CAT_ICONS[cat] || 'dots';
+  return '/assets/icons/' + k + '_' + (tone || cat || 'sub') + '.svg';
+}
+
+// 记账计算方式：固定金额 / 按亩（单价×亩数）/ 按人天（人数×日工价）
+const CALC_MODES = [
+  { key: 'fixed', name: '直接填' },
+  { key: 'perMu', name: '按亩计' },
+  { key: 'perDay', name: '按人天' }
+];
+// 分摊方式
+const SPLIT_MODES = [
+  { key: 'area', name: '按亩均摊' },
+  { key: 'even', name: '平均分' },
+  { key: 'manual', name: '手动填' }
+];
+
 function cropOf(key) { return CROPS.find(c => c.key === key) || CROPS[0]; }
 function catOf(key) { return COST_CATS.find(c => c.key === key) || COST_CATS[0]; }
 
-module.exports = { CROPS, COST_CATS, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };
+module.exports = { VARIETIES, SUB_ICONS, CAT_ICONS, iconOf, CALC_MODES, SPLIT_MODES, CROPS, COST_CATS, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };

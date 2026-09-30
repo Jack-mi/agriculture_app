@@ -1,1 +1,4 @@
 .tile { height: 168rpx; }
+.vchip { height: 72rpx; line-height: 68rpx; font-size: 28rpx; padding: 0 24rpx; }
+.vused { font-size: 20rpx; margin-left: 8rpx; padding: 0 8rpx; border-radius: 6rpx; background: var(--wheat-l); color: #7A5210; vertical-align: 4rpx; }
+.chip.on .vused { background: rgba(255,255,255,.25); color: #fff; }

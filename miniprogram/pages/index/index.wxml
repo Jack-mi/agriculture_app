@@ -5,6 +5,31 @@
 </view>
 
 <view class="wrap lift" style="padding-top:0">
+  <!-- 本月花费汇总（全部地块） -->
+  <view wx:if="{{hasPlots && cards.length}}" class="monthbar">
+    <view class="flex1">
+      <view class="muted">{{month.label}}</view>
+      <view class="num mb-v">¥{{month.total}}</view>
+    </view>
+    <view wx:if="{{month.hasToday}}" style="text-align:right">
+      <view class="muted">今天</view>
+      <view class="num mb-t">¥{{month.today}}</view>
+    </view>
+  </view>
+
+  <!-- 常用账 -->
+  <view wx:if="{{cards.length}}" class="row between qh">
+    <text class="qh-t">常用账 · 点一下就记</text>
+    <text class="muted" bindtap="goTpl">{{tpls.length ? '管理 ›' : '添加 ›'}}</text>
+  </view>
+  <scroll-view wx:if="{{cards.length && tpls.length}}" scroll-x class="quick" enable-flex>
+    <view wx:for="{{tpls}}" wx:key="id" class="qc" bindtap="useTpl" data-id="{{item.id}}" hover-class="btn-hover">
+      <view class="row"><view class="qc-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="qc-img" /></view><text class="qc-n">{{item.name}}</text></view>
+      <view class="qc-p num">{{item.desc}}</view>
+    </view>
+  </scroll-view>
+  <view wx:elif="{{cards.length}}" class="qempty muted" bindtap="goTpl">把飞防 15 元/亩、雇工 200 元/天这类重复的账存成常用账，点一下就记</view>
+
   <!-- 空状态：还没地块 -->
   <view wx:if="{{!hasPlots}}" class="card empty">
     <view class="big">先添加第一块地</view>
@@ -24,7 +49,7 @@
       <view class="scard-top" bindtap="goSeason" data-id="{{item.id}}" hover-class="btn-hover">
         <view class="crop {{item.cropCls}}"><image class="crop-img" src="{{item.cropIcon}}" mode="aspectFit" /></view>
         <view class="flex1" style="margin-left:24rpx">
-          <view class="scard-name">{{item.plotName}}<text class="tag">{{item.crop}}</text></view>
+          <view class="scard-name">{{item.plotName}}<text class="tag">{{item.cropFull}}</text></view>
           <view class="muted">{{item.area ? item.area + ' 亩 · ' : ''}}播种第 <text class="num strong">{{item.dayN}}</text> 天</view>
         </view>
         <view class="arrow">›</view>

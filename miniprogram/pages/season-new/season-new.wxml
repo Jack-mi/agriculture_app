@@ -18,6 +18,14 @@
       </view>
     </view>
     <view class="field">
+      <view class="label">品种 <text class="muted" style="font-weight:400">· 选填，知道就记上</text></view>
+      <view wx:if="{{varUsed.length || varPreset.length}}" class="chips" style="margin-bottom:16rpx">
+        <view wx:for="{{varUsed}}" wx:key="*this" class="chip vchip {{variety === item ? 'on' : ''}}" bindtap="pickVariety" data-v="{{item}}">{{item}}<text class="vused">用过</text></view>
+        <view wx:for="{{varPreset}}" wx:key="*this" class="chip vchip {{variety === item ? 'on' : ''}}" bindtap="pickVariety" data-v="{{item}}">{{item}}</view>
+      </view>
+      <input class="input" placeholder="{{crop === 'corn' ? '如：登海605，不知道可不填' : '如：济麦22，不知道可不填'}}" placeholder-class="ph" value="{{variety}}" bindinput="onVariety" maxlength="20" />
+    </view>
+    <view class="field">
       <view class="label">播种日期<text class="req">*</text> <text class="muted" style="font-weight:400">· 这一季从这天算起</text></view>
       <picker mode="date" value="{{sowDate}}" end="{{today}}" bindchange="onDate">
         <view class="picker num">{{sowDate}}</view>

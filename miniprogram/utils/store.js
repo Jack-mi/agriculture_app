@@ -5,11 +5,14 @@
 // db = {
 //   ver, updatedAt,
 //   plots:   [{ id, name, area, lat, lng, address, createdAt }],
-//   seasons: [{ id, plotId, crop, sowDate, seedRate, tillage, status:'growing'|'done', harvestDate, yieldJin, harvestNote, createdAt }],
+//   seasons: [{ id, plotId, crop, variety(品种，选填), sowDate, seedRate, tillage, status:'growing'|'done', harvestDate, yieldJin, harvestNote, createdAt }],
 //   costs:   [{ id, seasonId(兼容), allocations:[{seasonId, amount}], date, cat, sub, amount(=分摊合计), people, unitPrice, note, logId, createdAt }],
 //   logs:    [{ id, seasonId, date, ops:[], text, growth, pest, machine, areaMu, materials:[{type,name,rate,unit}], moisture, fertName/fertRate(旧字段兼容), createdAt }],
 //   weather: { [plotId]: { [date]: { t, p, wind, src:'api'|'manual' } } },
-//   tags:    { cost: { [catKey]: ['种子', ...] }, log: [{ name, color, costCat, costSub }] }   // 用户自定义类型
+//   tags:    { cost: { [catKey]: ['种子', ...] }, log: [{ name, color, costCat, costSub }],
+//              templates: [{ id, name, cat, sub, mode:'fixed'|'perMu'|'perDay', unitPrice, amount, people, split:'current'|'area'|'even', note }] }   // 用户自定义类型 + 常用账
+//   costs[i].calc: { mode, unitPrice, mu, people } | undefined   // 金额怎么算出来的（仅展示/回填，落账以 allocations 为准）
+//   costs[i].expr: '320+180+95' | undefined                     // 键盘连加表达式
 // }
 //
 // 同步契约：每次变更（upsert/remove/天气/标签）都会把 {col, op, id} 追加进 outbox 队列
@@ -25,7 +28,7 @@ let cache = null;
 function defaultTags() {
   const cost = {};
   C.COST_CATS.forEach(c => { cost[c.key] = c.subs.slice(); });
-  return { cost, log: C.DEFAULT_LOG_TAGS.map(t => Object.assign({}, t)) };
+  return { cost, log: C.DEFAULT_LOG_TAGS.map(t => Object.assign({}, t)), templates: [] };
 }
 
 function empty() {
@@ -51,6 +54,7 @@ function db() {
   ['plots', 'seasons', 'costs', 'logs'].forEach(k => { if (!Array.isArray(cache[k])) cache[k] = []; });
   if (!cache.weather) cache.weather = {};
   if (!cache.tags) cache.tags = defaultTags();
+  if (!Array.isArray(cache.tags.templates)) cache.tags.templates = [];
   // 默认记事类型补齐（老库新增「播种/收获/病虫害观察」等）
   C.DEFAULT_LOG_TAGS.forEach(t => {
     if (!cache.tags.log.some(x => x.name === t.name)) cache.tags.log.push(Object.assign({}, t));
@@ -109,6 +113,24 @@ function allocOf(c) {
   if (c.seasonId && (+c.amount || 0) > 0) return [{ seasonId: c.seasonId, amount: +c.amount }];
   return [];
 }
+// 按权重分摊 total（元，两位小数）：按"分"计算，最后一项吸收尾差，保证 Σ = total
+function splitBy(total, weights) {
+  const cents = Math.round((+total || 0) * 100);
+  const n = weights.length;
+  if (!n) return [];
+  const w = weights.map(x => (+x > 0 ? +x : 0));
+  const sum = w.reduce((a, b) => a + b, 0);
+  const ws = sum > 0 ? w : w.map(() => 1);
+  const tot = sum > 0 ? sum : n;
+  let used = 0;
+  return ws.map((x, i) => {
+    if (i === n - 1) return (cents - used) / 100;
+    const c = Math.floor(cents * x / tot);
+    used += c;
+    return c / 100;
+  });
+}
+
 // 删除某些季后收敛成本：只移除对应分摊；仍分摊给其他季的保留并回写，否则整笔删除
 function dropAllocations(d, sidSet) {
   const removed = [], updated = [];
@@ -175,6 +197,13 @@ const seasons = {
     lids.forEach(x => notify('logs', 'remove', x));
     notify('seasons', 'remove', id);
   },
+  // 品种快捷选项：本人历史用过的（按播种日倒序）在前，内置常见品种在后
+  varieties(crop) {
+    const used = [];
+    seasons.all().forEach(s => { const v = (s.variety || '').trim(); if (s.crop === crop && v && used.indexOf(v) < 0) used.push(v); });
+    const preset = (C.VARIETIES[crop] || []).filter(v => used.indexOf(v) < 0);
+    return { used, preset, all: used.concat(preset) };
+  },
   // 周期结束日：已收获取收获日，否则取今天
   endDate(s) { return s.status === 'done' && s.harvestDate ? s.harvestDate : U.today(); }
 };
@@ -187,6 +216,19 @@ const costs = {
   },
   get(id) { return get('costs', id); },
   allocOf,
+  splitBy,
+  // 按地块面积比例分摊到多个种植季
+  allocByArea(total, seasonIds) {
+    const areas = seasonIds.map(id => { const s = get('seasons', id); const p = s && get('plots', s.plotId); return p ? +p.area || 0 : 0; });
+    return splitBy(total, areas).map((amount, i) => ({ seasonId: seasonIds[i], amount }));
+  },
+  allocEven(total, seasonIds) {
+    return splitBy(total, seasonIds.map(() => 1)).map((amount, i) => ({ seasonId: seasonIds[i], amount }));
+  },
+  // 这些种植季对应地块的面积合计（按亩计默认亩数）
+  areaOf(seasonIds) {
+    return Math.round(seasonIds.reduce((a, id) => { const s = get('seasons', id); const p = s && get('plots', s.plotId); return a + (p ? +p.area || 0 : 0); }, 0) * 10) / 10;
+  },
   // 某笔账分摊到某季的金额（旧数据按整笔计入其 seasonId）
   amountFor(c, sid) {
     const a = allocOf(c).find(x => x.seasonId === sid);
@@ -197,6 +239,8 @@ const costs = {
     c.allocations = all;
     c.amount = all.reduce((s, a) => s + a.amount, 0);
     c.seasonId = all.length ? all[0].seasonId : (c.seasonId || '');
+    // 可选字段：未提供时显式清掉（编辑时从"按亩计"改回"直接填"要去掉旧 calc）
+    ['calc', 'expr', 'split'].forEach(k => { if (c[k] === undefined || c[k] === null || c[k] === '') c[k] = null; });
     return upsert('costs', c, 'cost');
   },
   remove(id) { remove('costs', id); }
@@ -306,18 +350,39 @@ const tags = {
     save(); return true;
   },
   removeLog(name) { const d = db(); d.tags.log = d.tags.log.filter(t => t.name !== name); save(); },
+  // ---- 常用账（模板）----
+  templates() { const t = db().tags; if (!Array.isArray(t.templates)) t.templates = []; return t.templates; },
+  template(id) { return tags.templates().find(x => x.id === id); },
+  saveTemplate(tp) {
+    const name = (tp.name || '').trim(); if (!name) return null;
+    const list = tags.templates();
+    const rec = {
+      id: tp.id || U.uid('tpl'), name, cat: tp.cat || 'agri', sub: tp.sub || '',
+      mode: tp.mode || 'fixed', unitPrice: +tp.unitPrice || 0, amount: +tp.amount || 0, people: +tp.people || 0,
+      split: tp.split || 'current', note: tp.note || ''
+    };
+    const i = list.findIndex(x => x.id === rec.id);
+    if (i >= 0) list[i] = rec; else list.push(rec);
+    save(); return rec;
+  },
+  removeTemplate(id) { const t = db().tags; t.templates = tags.templates().filter(x => x.id !== id); save(); },
+  moveTemplate(id, dir) {
+    const list = tags.templates(); const i = list.findIndex(x => x.id === id); const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    const tmp = list[i]; list[i] = list[j]; list[j] = tmp; save();
+  },
   move(kind, cat, name, dir) {
     const list = kind === 'log' ? db().tags.log : tags.cost(cat);
     const i = list.findIndex(x => (typeof x === 'string' ? x : x.name) === name); const j = i + dir;
     if (i < 0 || j < 0 || j >= list.length) return;
     const tmp = list[i]; list[i] = list[j]; list[j] = tmp; save();
   },
-  resetDefault() { db().tags = defaultTags(); save(); },
+  resetDefault() { const keep = tags.templates(); db().tags = defaultTags(); db().tags.templates = keep; save(); },
   colorOf(name) { const t = tags.logTag(name); return t ? t.color : '#9A8F7A'; }
 };
 
 // tags 的每个变更出口统一补一条 outbox（每用户单文档，幂等 upsert 整份 tags）
-['addCost', 'renameCost', 'removeCost', 'addLog', 'updateLog', 'removeLog', 'move', 'resetDefault'].forEach(fn => {
+['addCost', 'renameCost', 'removeCost', 'addLog', 'updateLog', 'removeLog', 'move', 'resetDefault', 'saveTemplate', 'removeTemplate', 'moveTemplate'].forEach(fn => {
   const orig = tags[fn];
   tags[fn] = function () { const r = orig.apply(tags, arguments); notify('tags', 'upsert', 'tags'); return r; };
 });

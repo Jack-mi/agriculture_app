@@ -95,6 +95,8 @@ async function pushTags() {
 function strip(rec) {
   const d = Object.assign({}, rec);
   delete d._openid;
+  // 云数据库不接受 undefined 字段（calc / expr / split 为可选）
+  Object.keys(d).forEach(k => { if (d[k] === undefined) delete d[k]; });
   return d;
 }
 
@@ -178,7 +180,7 @@ function mergeTags(records) {
   const localAt = (d.tags && d.tags.updatedAt) || 0;
   if ((rec.updatedAt || 0) <= localAt) return false;
   wx.setStorageSync(TAGS_DOCID_KEY, rec._id);
-  d.tags = { cost: rec.cost || d.tags.cost, log: rec.log || d.tags.log, updatedAt: rec.updatedAt };
+  d.tags = { cost: rec.cost || d.tags.cost, log: rec.log || d.tags.log, templates: Array.isArray(rec.templates) ? rec.templates : (d.tags.templates || []), updatedAt: rec.updatedAt };
   return true;
 }
 

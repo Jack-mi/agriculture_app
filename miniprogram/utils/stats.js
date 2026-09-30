@@ -81,6 +81,103 @@ function logCalendar(season) {
   }));
 }
 
+// 账本流水按日分组（本季分摊口径），倒序
+// filter(c) 可选；返回 [{ date, dayN, total, items:[cost] }]
+function costDays(season, filter) {
+  const map = {};
+  store.costs.bySeason(season.id).forEach(c => {
+    if (filter && !filter(c)) return;
+    const amt = store.costs.amountFor(c, season.id);
+    const g = map[c.date] || (map[c.date] = { date: c.date, dayN: U.diffDays(season.sowDate, c.date) + 1, total: 0, items: [] });
+    g.total += amt;
+    g.items.push(c);
+  });
+  return Object.keys(map).sort().reverse().map(d => {
+    map[d].total = Math.round(map[d].total * 100) / 100;
+    return map[d];
+  });
+}
+
+// 短金额：12,345 → 1.2万；用于日历格
+function shortMoney(n) {
+  n = +n || 0;
+  if (n >= 10000) return (Math.round(n / 1000) / 10) + '万';
+  return U.money(Math.round(n));
+}
+
+// 月历（周日起始，6×7 或 5×7）：ym = 'YYYY-MM'
+// 每格：{ date, day, inMonth, inSeason, future, spend, spendText, rain, hasLog, unrecorded, isToday }
+function costMonth(season, ym) {
+  const y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+  const first = U.fmtDate(new Date(y, m - 1, 1));
+  const last = U.fmtDate(new Date(y, m, 0));
+  const start = U.addDays(first, -new Date(y, m - 1, 1).getDay());
+  const tailPad = 6 - new Date(y, m, 0).getDay();
+  const end = U.addDays(last, tailPad);
+  const today = U.today();
+  const sEnd = store.seasons.endDate(season);
+  const w = store.weather.ofPlot(season.plotId);
+  const spend = {}, logged = {};
+  store.costs.bySeason(season.id).forEach(c => { spend[c.date] = (spend[c.date] || 0) + store.costs.amountFor(c, season.id); });
+  store.logs.bySeason(season.id).forEach(l => { logged[l.date] = true; });
+  let monthTotal = 0;
+  const cells = U.range(start, end).map(d => {
+    const inMonth = d >= first && d <= last;
+    const inSeason = d >= season.sowDate && d <= sEnd;
+    const future = d > today;
+    const sp = spend[d] || 0;
+    if (inMonth) monthTotal += sp;
+    const wd = w[d];
+    return {
+      date: d, day: +d.slice(8), inMonth, inSeason, future,
+      spend: sp, spendText: sp ? shortMoney(sp) : '', big: sp >= 2000,
+      rain: !!(wd && wd.p >= 0.1), hasLog: !!logged[d],
+      unrecorded: inMonth && inSeason && !future && !sp && !logged[d],
+      isToday: d === today
+    };
+  });
+  const minYm = season.sowDate.slice(0, 7);
+  const maxEnd = sEnd > today ? today : sEnd;
+  return {
+    ym, title: y + ' 年 ' + m + ' 月', cells,
+    monthTotal: Math.round(monthTotal * 100) / 100, monthTotalText: U.money(monthTotal),
+    canPrev: ym > minYm, canNext: ym < maxEnd.slice(0, 7)
+  };
+}
+function shiftYm(ym, n) {
+  const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1);
+  return d.getFullYear() + '-' + U.pad(d.getMonth() + 1);
+}
+
+// 某月全部地块花费（首页汇总，按分摊金额加总 = 整笔金额，不重复计）
+function monthSpend(ym) {
+  let total = 0, today = 0;
+  const t = U.today();
+  store.db().costs.forEach(c => {
+    const amt = store.costs.allocOf(c).reduce((a, x) => a + x.amount, 0);
+    if (c.date.slice(0, 7) === ym) total += amt;
+    if (c.date === t) today += amt;
+  });
+  return { total: Math.round(total * 100) / 100, today: Math.round(today * 100) / 100 };
+}
+
+// 常用账一句话描述
+function tplDesc(t) {
+  const split = t.split === 'area' ? ' · 按亩均摊' : t.split === 'even' ? ' · 平均分' : '';
+  if (t.mode === 'perMu') return '¥' + U.money(t.unitPrice) + '/亩' + split;
+  if (t.mode === 'perDay') return '¥' + U.money(t.unitPrice) + '/人·天' + (t.people ? ' × ' + t.people + '人' : '') + split;
+  return '¥' + U.money(t.amount) + split;
+}
+
+// 流水行"怎么算的"说明
+function calcText(c) {
+  if (c.calc && c.calc.mode === 'perMu') return '¥' + U.money(c.calc.unitPrice) + '/亩 × ' + c.calc.mu + '亩';
+  if (c.calc && c.calc.mode === 'perDay') return c.calc.people + '人 × ¥' + U.money(c.calc.unitPrice);
+  if (!c.calc && c.people && c.unitPrice) return c.people + '人 × ¥' + U.money(c.unitPrice);
+  if (c.expr) return c.expr.replace(/\+/g, '+').replace(/-/g, '−');
+  return '';
+}
+
 function seasonBrief(season) {
   const plot = store.plots.get(season.plotId) || {};
   const crop = C.cropOf(season.crop);
@@ -91,7 +188,7 @@ function seasonBrief(season) {
   const perMu = plot.area ? cs.total / plot.area : 0;
   return {
     id: season.id, plotId: plot.id, plotName: plot.name || '未命名地块', area: plot.area,
-    crop: crop.name, cropShort: crop.short, cropCls: crop.cls, cropIcon: crop.icon, cropKey: crop.key,
+    crop: crop.name, variety: (season.variety || '').trim(), cropFull: crop.name + ((season.variety || '').trim() ? ' · ' + season.variety.trim() : ''), cropShort: crop.short, cropCls: crop.cls, cropIcon: crop.icon, cropKey: crop.key,
     status: season.status, sowDate: season.sowDate, sowText: U.cnDate(season.sowDate, true),
     harvestDate: season.harvestDate, dayN: dayN < 1 ? 0 : dayN,
     costTotal: cs.total, costText: cs.totalText, perMuText: perMu ? U.money(Math.round(perMu)) : '',
@@ -110,4 +207,4 @@ function seasonYearLabel(s) {
   return y1;
 }
 
-module.exports = { costSummary, weatherSeries, seasonBrief, seasonYearLabel, logCalendar };
+module.exports = { costSummary, weatherSeries, seasonBrief, seasonYearLabel, logCalendar, costDays, costMonth, shiftYm, monthSpend, shortMoney, tplDesc, calcText };

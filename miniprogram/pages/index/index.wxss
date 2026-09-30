@@ -26,3 +26,16 @@
 .actions { display: flex; padding: 28rpx 32rpx 32rpx; }
 .act { flex: 1; font-size: 34rpx; letter-spacing: 2rpx; }
 .act + .act { margin-left: 20rpx; }
+
+.monthbar { display: flex; align-items: center; background: var(--card); border: 2rpx solid var(--line); border-radius: 24rpx; padding: 24rpx 28rpx; margin-bottom: 8rpx; box-shadow: 0 6rpx 24rpx rgba(46,91,52,.06); }
+.mb-v { font-size: 52rpx; font-weight: 800; }
+.mb-t { font-size: 36rpx; font-weight: 800; color: var(--wheat); }
+.qh { margin: 28rpx 8rpx 12rpx; }
+.qh-t { font-size: 30rpx; color: var(--sub); font-weight: 700; }
+.quick { white-space: nowrap; margin: 0 -28rpx 20rpx; padding: 0 28rpx; width: auto; display: flex; }
+.qc { display: inline-block; flex-shrink: 0; background: var(--card); border: 2rpx solid var(--line); border-radius: 20rpx; padding: 18rpx 22rpx; margin-right: 16rpx; min-width: 220rpx; }
+.qc-ic { width: 52rpx; height: 52rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12rpx; }
+.qc-img { width: 30rpx; height: 30rpx; }
+.qc-n { font-size: 30rpx; font-weight: 700; }
+.qc-p { font-size: 24rpx; color: var(--wheat); font-weight: 700; margin-top: 8rpx; }
+.qempty { background: #FBF8EF; border: 2rpx dashed var(--line); border-radius: 16rpx; padding: 20rpx 24rpx; margin-bottom: 20rpx; font-size: 26rpx; }
