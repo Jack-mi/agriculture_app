@@ -121,3 +121,31 @@
 .ds-log { background: #FBF8EF; border-radius: 12rpx; padding: 16rpx 20rpx; margin-bottom: 12rpx; font-size: 30rpx; }
 
 .t-var { font-size: 26rpx; font-weight: 600; margin-left: 12rpx; padding: 2rpx 14rpx; border-radius: 8rpx; background: rgba(255,255,255,.18); vertical-align: middle; }
+
+/* ===== 参谋 ===== */
+.adv-st { font-size: 46rpx; font-weight: 800; color: var(--green-d); }
+.adv-g { font-size: 42rpx; font-weight: 800; }
+.adv-g .u { font-size: 22rpx; color: var(--sub); font-weight: 500; }
+.stl { display: flex; margin-top: 20rpx; }
+.stl .sg { flex: 1; text-align: center; padding: 0 2rpx; }
+.stl .tr { height: 14rpx; background: #ECE7DA; border-radius: 4rpx; overflow: hidden; }
+.stl .tr view { height: 100%; background: var(--green); }
+.stl .lb { font-size: 19rpx; color: var(--sub); margin-top: 8rpx; white-space: nowrap; }
+.stl .cur .lb { color: var(--green-d); font-weight: 800; }
+.stl .cur .tr { box-shadow: 0 0 0 3rpx var(--green); }
+.adv-next { margin-top: 22rpx; background: #FBF8EF; border-radius: 14rpx; padding: 16rpx 20rpx; font-size: 28rpx; }
+.adv-link { font-size: 26rpx; font-weight: 700; color: var(--green-d); }
+.adv-row { display: flex; align-items: center; padding: 20rpx 24rpx; }
+.adv-ic { width: 44rpx; height: 44rpx; margin-right: 18rpx; flex-shrink: 0; }
+.adv-alert { background: #FBE9E1; border-color: #EDBFAC; color: #7D2E12; font-size: 29rpx; }
+.adv-alink { font-size: 26rpx; font-weight: 700; color: #A33A18; }
+.adv-tk { display: flex; align-items: center; padding: 22rpx 0; border-bottom: 2rpx solid var(--line); }
+.adv-tk:last-child { border-bottom: none; }
+.adv-bar { width: 8rpx; align-self: stretch; border-radius: 4rpx; margin-right: 18rpx; background: var(--wheat); }
+.adv-bar.now { background: var(--heat); } .adv-bar.later, .adv-bar.soft { background: #C9C3B2; }
+.adv-tt { font-size: 31rpx; font-weight: 700; }
+.adv-due { font-size: 24rpx; font-weight: 700; color: var(--wheat); margin-left: 12rpx; white-space: nowrap; }
+.adv-due.now { color: var(--heat); } .adv-due.later, .adv-due.soft { color: var(--sub); }
+.adv-talk { display: flex; align-items: center; justify-content: center; font-size: 29rpx; letter-spacing: 0; margin-top: 8rpx; }
+.adv-mic { width: 36rpx; height: 36rpx; margin-right: 10rpx; }
+.b { font-weight: 700; }

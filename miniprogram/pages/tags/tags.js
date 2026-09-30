@@ -7,7 +7,7 @@ const stats = require('../../utils/stats.js');
 Page({
   data: {
     tab: 'cost', cats: C.COST_CATS, cat: 'agri', costList: [], logList: [],
-    colors: C.TAG_COLORS, edit: null, costCatOpts: [], tplList: [], tpl: null, modes: C.CALC_MODES, tplSplits: [{ key: 'current', name: '只记当前季' }, { key: 'area', name: '按亩均摊' }, { key: 'even', name: '平均分' }]
+    colors: C.TAG_COLORS, logFields: C.LOG_FIELDS, matTypes: C.MATERIAL_TYPES, edit: null, costCatOpts: [], tplList: [], tpl: null, modes: C.CALC_MODES, tplSplits: [{ key: 'current', name: '只记当前季' }, { key: 'area', name: '按亩均摊' }, { key: 'even', name: '平均分' }]
   },
 
   onLoad(q) {
@@ -21,7 +21,8 @@ Page({
     const costList = store.tags.cost(cat).map(n => ({ name: n, count: d.costs.filter(c => c.cat === cat && c.sub === n).length }));
     const logList = store.tags.log().map(t => ({
       name: t.name, color: t.color, count: d.logs.filter(l => (l.ops || []).indexOf(t.name) >= 0).length,
-      costText: t.costCat ? C.catOf(t.costCat).name + (t.costSub ? ' · ' + t.costSub : '') : '不关联'
+      costText: t.costCat ? C.catOf(t.costCat).name + (t.costSub ? ' · ' + t.costSub : '') : '不关联',
+      fieldText: (t.fields || []).map(k => (C.LOG_FIELDS.find(f => f.key === k) || {}).name).filter(Boolean).join('、') || '只填具体情况'
     }));
     const tplList = store.tags.templates().map(t => ({ id: t.id, name: t.name, icon: C.iconOf(t.sub, t.cat), color: C.catOf(t.cat).color, catName: C.catOf(t.cat).name, sub: t.sub, desc: stats.tplDesc(t) }));
     this.setData({ costList, logList, tplList });
@@ -70,13 +71,14 @@ Page({
   },
 
   // ---- 记事类型 ----
-  addLog() { this.openEdit({ isNew: true, name: '', color: C.TAG_COLORS[store.tags.log().length % C.TAG_COLORS.length], costCat: '', costSub: '' }); },
+  addLog() { this.openEdit({ isNew: true, name: '', color: C.TAG_COLORS[store.tags.log().length % C.TAG_COLORS.length], costCat: '', costSub: '', fields: [], matType: '' }); },
   editLog(e) {
     const t = store.tags.logTag(e.currentTarget.dataset.n);
-    this.openEdit({ isNew: false, from: t.name, name: t.name, color: t.color, costCat: t.costCat || '', costSub: t.costSub || '' });
+    this.openEdit({ isNew: false, from: t.name, name: t.name, color: t.color, costCat: t.costCat || '', costSub: t.costSub || '', fields: (t.fields || []).slice(), matType: t.matType || '' });
   },
   openEdit(ed) {
     ed.subs = ed.costCat ? store.tags.cost(ed.costCat) : [];
+    ed.fmap = {}; (ed.fields || []).forEach(f => { ed.fmap[f] = true; });
     this.setData({ edit: ed });
   },
   onEName(e) { this.setData({ 'edit.name': e.detail.value }); },
@@ -90,11 +92,17 @@ Page({
     const s = e.currentTarget.dataset.s;
     this.setData({ 'edit.costSub': this.data.edit.costSub === s ? '' : s });
   },
+  toggleField(e) {
+    const k = e.currentTarget.dataset.k;
+    const fmap = Object.assign({}, this.data.edit.fmap); fmap[k] = !fmap[k];
+    this.setData({ 'edit.fmap': fmap, 'edit.fields': C.LOG_FIELDS.map(f => f.key).filter(x => fmap[x]) });
+  },
+  pickMatType(e) { const v = e.currentTarget.dataset.v; this.setData({ 'edit.matType': this.data.edit.matType === v ? '' : v }); },
   closeEdit() { this.setData({ edit: null }); },
   noop() {},
   saveEdit() {
     const ed = this.data.edit;
-    const patch = { name: ed.name, color: ed.color, costCat: ed.costCat, costSub: ed.costSub };
+    const patch = { name: ed.name, color: ed.color, costCat: ed.costCat, costSub: ed.costSub, fields: ed.fields || [], matType: (ed.fields || []).indexOf('mat') >= 0 ? ed.matType : '' };
     const ok = ed.isNew ? store.tags.addLog(patch) : store.tags.updateLog(ed.from, patch);
     if (!ok) return U.toast('名称为空或已存在');
     this.setData({ edit: null }); this.render();

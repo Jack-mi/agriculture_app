@@ -26,12 +26,13 @@
 
   <!-- 记事类型 -->
   <block wx:if="{{tab === 'log'}}">
-    <view class="muted" style="margin:0 8rpx 16rpx">可设置颜色，以及「保存并记花费」时默认记到哪一类账</view>
+    <view class="muted" style="margin:0 8rpx 16rpx">可设置颜色、选中后要填哪些内容，以及「保存并记花费」默认记到哪一类账</view>
     <view class="card" style="padding:0 32rpx">
       <view wx:for="{{logList}}" wx:key="name" class="trow" bindtap="editLog" data-n="{{item.name}}" hover-class="btn-hover">
         <view class="tdot" style="background:{{item.color}}"></view>
         <view class="flex1">
           <view class="tname">{{item.name}}</view>
+          <view class="muted" style="font-size:26rpx">要填：{{item.fieldText}}</view>
           <view class="muted" style="font-size:26rpx">记花费 → {{item.costText}}</view>
         </view>
         <text class="muted">{{item.count ? item.count + ' 条' : ''}}</text>
@@ -109,6 +110,16 @@
       <view class="label">颜色</view>
       <view class="colors">
         <view wx:for="{{colors}}" wx:key="*this" class="sw {{edit.color === item ? 'on' : ''}}" style="background:{{item}}" bindtap="pickColor" data-c="{{item}}"></view>
+      </view>
+    </view>
+    <view class="field">
+      <view class="label">选中这项活后，要填哪些 <text class="muted" style="font-weight:400">· 可多选，不选就只填具体情况</text></view>
+      <view class="chips">
+        <view wx:for="{{logFields}}" wx:key="key" class="chip {{edit.fmap[item.key] ? 'on' : ''}}" bindtap="toggleField" data-k="{{item.key}}">{{edit.fmap[item.key] ? '✓ ' : ''}}{{item.name}}</view>
+      </view>
+      <view wx:if="{{edit.fmap.mat}}" class="chips" style="margin-top:12rpx">
+        <text class="muted" style="margin:8rpx;line-height:68rpx;font-size:26rpx">农资默认品类</text>
+        <view wx:for="{{matTypes}}" wx:key="*this" class="chip small-chip {{edit.matType === item ? 'on' : ''}}" bindtap="pickMatType" data-v="{{item}}">{{item}}</view>
       </view>
     </view>
     <view class="field">

@@ -9,7 +9,10 @@
     "pages/cost-edit/cost-edit",
     "pages/log-edit/log-edit",
     "pages/harvest/harvest",
-    "pages/tags/tags"
+    "pages/tags/tags",
+    "pages/task/task",
+    "pages/alert/alert",
+    "pages/chat/chat"
   ],
   "window": {
     "navigationBarBackgroundColor": "#2E5B34",
@@ -49,5 +52,11 @@
   ],
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "plugins": {
+    "WechatSI": {
+      "version": "0.3.6",
+      "provider": "wx069ba97219f66d99"
+    }
+  }
 }

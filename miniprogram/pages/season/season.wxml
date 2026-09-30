@@ -30,6 +30,7 @@
 
 <!-- Tab -->
 <view class="tabs">
+  <view wx:if="{{adv}}" class="tab {{tab === 'advisor' ? 'on' : ''}}" bindtap="setTab" data-t="advisor">参谋</view>
   <view class="tab {{tab === 'cost' ? 'on' : ''}}" bindtap="setTab" data-t="cost">账本</view>
   <view class="tab {{tab === 'log' ? 'on' : ''}}" bindtap="setTab" data-t="log">记事</view>
   <view class="tab {{tab === 'wx' ? 'on' : ''}}" bindtap="setTab" data-t="wx">天气</view>
@@ -37,6 +38,50 @@
 </view>
 
 <view class="wrap" style="padding-top:24rpx">
+
+  <!-- ===== 参谋 ===== -->
+  <block wx:if="{{tab === 'advisor' && adv}}">
+    <view class="card" style="padding:28rpx">
+      <view class="row between">
+        <view><view class="muted">现在是</view><view class="adv-st">{{adv.stage}}</view></view>
+        <view style="text-align:right"><view class="muted">有效积温</view><view class="num adv-g">{{adv.gdd}}<text class="u"> ℃·天</text></view></view>
+      </view>
+      <view class="stl">
+        <view wx:for="{{adv.bar}}" wx:key="name" class="sg {{item.cur ? 'cur' : ''}}">
+          <view class="tr"><view style="width:{{item.on ? 100 : (item.cur ? adv.pct : 0)}}%"></view></view>
+          <view class="lb">{{item.name}}</view>
+        </view>
+      </view>
+      <view wx:if="{{adv.next}}" class="adv-next">下一阶段 <text class="b">{{adv.next}}</text>{{adv.eta ? '，预计 ' : ''}}<text wx:if="{{adv.eta}}" class="b">{{adv.eta}}</text><text wx:if="{{adv.eta}}" class="muted">（±{{adv.etaSpan}} 天）</text><text wx:if="{{!adv.eta}}" class="muted">，天冷暂停生长，暂不预估</text></view>
+      <view class="row between" style="margin-top:14rpx">
+        <text class="muted" style="font-size:22rpx">{{adv.variety ? '按「' + adv.variety + '」参数' : '未填品种，按常见品种推算'}}{{adv.calibrated ? ' · 已按你说的校准' : ''}}{{adv.missing ? ' · ' + adv.missing + ' 天缺天气' : ''}}</text>
+        <text class="adv-link" bindtap="talkStage">阶段不对？跟参谋说 ›</text>
+      </view>
+    </view>
+
+    <view class="card adv-row" bindtap="talkSeason" hover-class="btn-hover">
+      <image src="/assets/icons/sprout_green.svg" class="adv-ic" />
+      <view class="flex1" wx:if="{{adv.growthText}}"><view style="font-size:29rpx">最近一次长势：<text class="b">「{{adv.growthText}}」</text></view><view class="muted" style="font-size:22rpx">{{adv.growthDate}} 记录</view></view>
+      <view class="flex1 muted" wx:else>还没记过长势，巡田时记一句就行</view>
+      <text class="muted">›</text>
+    </view>
+
+    <view wx:if="{{adv.alert}}" class="card adv-row adv-alert" bindtap="goWx">
+      <image src="/assets/icons/rain_heat.svg" class="adv-ic" />
+      <view class="flex1"><text class="b">{{adv.alert.text}}</text></view><text class="adv-alink">天气 ›</text>
+    </view>
+
+    <view wx:if="{{adv.tasks.length}}" class="card" style="padding:4rpx 24rpx">
+      <view wx:for="{{adv.tasks}}" wx:key="id" class="adv-tk" bindtap="goTask" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="adv-bar {{item.bucket}}"></view>
+        <view class="flex1"><view class="adv-tt">{{item.title}}</view><view class="muted" style="font-size:23rpx">{{item.src}}</view></view>
+        <text class="adv-due {{item.bucket}}">{{item.due}}</text>
+      </view>
+    </view>
+    <view wx:else class="card muted" style="padding:28rpx;text-align:center">这块地眼下没有要紧的活</view>
+
+    <view class="btn ghost adv-talk" hover-class="btn-hover" bindtap="talkSeason"><image src="/assets/icons/mic_green.svg" class="adv-mic" />跟参谋说：问建议 / 记一笔 / 改任务</view>
+  </block>
 
   <!-- ===== 账本 ===== -->
   <block wx:if="{{tab === 'cost'}}">

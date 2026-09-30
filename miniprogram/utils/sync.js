@@ -3,14 +3,14 @@
 //
 // 写路径：store 每次变更先进 outbox 队列（store.js notify），这里节流 flush 逐条 upsert/remove 到云端。
 // 拉路径：pull() 按 updatedAt > lastPullAt 增量拉取合并，冲突 Last-Write-Wins（手工修正的天气永远赢）。
-// 集合：plots / seasons / costs / logs / weather / tags / users（users 由 login 云函数维护）。
+// 集合：plots / seasons / costs / logs / tasks / memory / weather / tags / users（users 由 login 云函数维护）。
 const store = require('./store.js');
 
 let enabled = false;
 let busy = false;
 let pulling = false;
 
-const COLS = ['plots', 'seasons', 'costs', 'logs'];
+const COLS = ['plots', 'seasons', 'costs', 'logs', 'tasks', 'memory'];
 const LASTPULL_KEY = 'guyuji_lastpull';
 const OPENID_KEY = 'guyuji_openid';
 const TAGS_DOCID_KEY = 'guyuji_tags_docid';

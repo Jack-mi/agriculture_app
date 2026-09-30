@@ -1,0 +1,61 @@
+<view class="page">
+  <view wx:if="{{head}}" class="head" bindtap="goTaskHead">
+    <block wx:if="{{head.kind === 'task'}}">
+      <text class="lv {{head.lv === 'now' ? 'red' : 'org'}}">{{head.lv === 'now' ? '马上办' : '任务'}}</text>
+      <text class="head-t">{{head.title}}</text><text class="muted">{{head.sub}}</text>
+    </block>
+    <block wx:else>
+      <view class="crop xs {{head.cls}}"><image class="crop-img" src="{{head.icon}}" mode="aspectFit" /></view>
+      <text class="head-t">{{head.title}}</text>
+    </block>
+  </view>
+
+  <scroll-view scroll-y class="body" scroll-into-view="{{scrollTo}}" scroll-with-animation>
+    <view class="pad">
+      <view wx:for="{{msgs}}" wx:key="id" id="{{item.id}}" class="msg {{item.role}}">
+        <image wx:if="{{item.img}}" src="{{item.img}}" class="photo" mode="aspectFill" />
+        <view wx:elif="{{item.text || item.cards.length || item.list}}" class="bub {{item.role}} {{item.cards.length ? 'wide' : ''}} {{item.thinking ? 'thinking' : ''}}">
+          <text wx:if="{{item.text}}">{{item.text}}</text>
+          <view wx:if="{{item.list}}" class="mlist">
+            <view wx:for="{{item.list}}" wx:for-item="li" wx:for-index="li_i" wx:key="id" class="mli">
+              <text class="num muted" style="width:32rpx">{{li_i + 1}}</text><text class="flex1">{{li.text}}</text><text class="muted" style="font-size:22rpx">{{li.src}}</text>
+            </view>
+          </view>
+          <view wx:for="{{item.cards}}" wx:for-item="c" wx:key="id" class="act {{c.state}}">
+            <view class="row" style="margin-bottom:6rpx"><text class="lv {{c.tagCls}}">{{c.tag}}</text><text class="act-t">{{c.title}}</text></view>
+            <view wx:for="{{c.rows}}" wx:for-item="r" wx:key="*this" class="act-r">
+              <block wx:if="{{r.old !== undefined}}"><text class="old">{{r.old}}</text> → <text class="b">{{r.now}}</text></block>
+              <text wx:else>{{r.text}}</text>
+            </view>
+            <view wx:if="{{c.warn}}" class="warn">{{c.warn}}</view>
+            <view wx:if="{{c.state === 'open'}}" class="row act-b">
+              <view class="btn ghost small-b" bindtap="reject" data-id="{{c.id}}">不对</view>
+              <view wx:if="{{c.tag === '记事' || c.tag === '记账'}}" class="btn ghost small-b" bindtap="edit" data-id="{{c.id}}">改一改</view>
+              <view class="btn small-b pri" bindtap="confirm" data-id="{{c.id}}">{{c.ok}}</view>
+            </view>
+            <view wx:elif="{{c.state === 'done'}}" class="done">✓ 已确认</view>
+            <view wx:elif="{{c.state === 'edit'}}" class="muted" style="font-size:24rpx;margin-top:8rpx">已打开编辑页</view>
+            <view wx:else class="muted" style="font-size:24rpx;margin-top:8rpx">已作废</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="bar">
+    <scroll-view scroll-x class="chips" enable-flex>
+      <view wx:for="{{chips}}" wx:key="*this" class="chip-s" bindtap="tapChip" data-c="{{item}}">{{item}}</view>
+    </scroll-view>
+    <view class="row">
+      <view class="ib" bindtap="photo"><image src="/assets/icons/cam_sub.svg" class="ii" /></view>
+      <block wx:if="{{typing || !hasVoice}}">
+        <input class="tin" value="{{text}}" bindinput="onInput" confirm-type="send" bindconfirm="sendText" focus="{{typing}}" placeholder="说点什么…" placeholder-class="ph" />
+        <view class="btn send" bindtap="sendText">发送</view>
+      </block>
+      <view wx:else class="btn hold {{recording ? 'on' : ''}}" bindtouchstart="holdStart" bindtouchend="holdEnd" bindtouchcancel="holdEnd">
+        <image src="/assets/icons/mic_w.svg" class="ii" style="margin-right:8rpx" />{{recording ? '松开发送' : '按住说话'}}
+      </view>
+      <view wx:if="{{hasVoice}}" class="ib" bindtap="toggleType"><image src="{{typing ? '/assets/icons/mic_sub.svg' : '/assets/icons/kb_sub.svg'}}" class="ii" /></view>
+    </view>
+  </view>
+</view>

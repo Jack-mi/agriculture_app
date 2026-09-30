@@ -1,0 +1,52 @@
+<view wx:if="{{t}}" class="wrap" style="padding-bottom:200rpx">
+  <view class="row" style="margin-bottom:12rpx">
+    <text class="lv {{lvCls}}">{{statusText || lvName}}</text>
+    <text class="src">{{t.src}}</text>
+    <text class="muted" style="margin-left:auto">{{t.due}}</text>
+  </view>
+  <view class="title">{{t.title}}</view>
+  <view class="muted">{{t.plot}}{{t.area ? ' · ' + t.area + ' 亩' : ''}} · {{t.crop}}{{t.variety ? ' ' + t.variety : ''}}</view>
+
+  <view wx:if="{{t.why.length}}" class="card sec">
+    <view class="label">为什么</view>
+    <view wx:for="{{t.why}}" wx:key="*this" class="why"><view class="dot"></view><text>{{item}}</text></view>
+  </view>
+
+  <view wx:if="{{t.steps.length}}" class="card sec">
+    <view class="label">怎么做</view>
+    <view wx:for="{{t.steps}}" wx:key="*this" class="step"><text class="no">{{index + 1}}</text><text class="flex1">{{item}}</text></view>
+  </view>
+
+  <view wx:if="{{prods.length || blocked.length}}" class="card sec">
+    <view class="label">推荐用药 · 已校验登记</view>
+    <view wx:for="{{prods}}" wx:key="name" class="prod">
+      <view class="row between"><text class="pn">{{item.name}} · {{item.form}}</text><text class="okb">已登记</text></view>
+      <view class="muted" style="font-size:24rpx;margin-top:6rpx">{{item.reg}} · 防治：{{item.target}}</view>
+      <view style="margin-top:8rpx;font-size:28rpx">每亩 <text class="num b">{{item.rateText}}</text> · 一季最多 {{item.times}} 次</view>
+    </view>
+    <view wx:for="{{blocked}}" wx:key="name" class="prod bad">
+      <view class="row between"><text class="pn del">{{item.name}}</text><text class="nob">不推荐</text></view>
+      <view style="margin-top:6rpx;font-size:26rpx;color:#7D2E12">{{item.reason}}</view>
+    </view>
+    <view class="muted" style="font-size:22rpx;margin-top:8rpx">登记证号为示意，上线接入官方登记数据</view>
+  </view>
+
+  <view wx:if="{{t.doc}}" class="ref" bindtap="openDoc" hover-class="btn-hover">
+    <image src="/assets/icons/book_green.svg" class="ref-ic" />
+    <view class="flex1"><view class="b">{{t.doc.title}}</view><view class="muted" style="font-size:23rpx">{{t.doc.org}} · {{t.doc.year}}</view></view>
+    <text class="muted">原文 ›</text>
+  </view>
+
+  <view wx:if="{{t.reason}}" class="muted" style="margin-top:20rpx">去掉原因：{{t.reason}}</view>
+</view>
+
+<view wx:if="{{t}}" class="fixed-bar">
+  <block wx:if="{{t.status === 'open'}}">
+    <view class="btn ghost talk" hover-class="btn-hover" bindtap="talk"><image src="/assets/icons/mic_green.svg" class="mic" />跟参谋说</view>
+    <view class="btn" hover-class="btn-hover" bindtap="goLog">去记一笔</view>
+  </block>
+  <block wx:else>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="reopen">放回待办</view>
+    <view class="btn ghost talk" hover-class="btn-hover" bindtap="talk"><image src="/assets/icons/mic_green.svg" class="mic" />跟参谋说</view>
+  </block>
+</view>

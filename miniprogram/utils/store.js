@@ -9,6 +9,10 @@
 //   costs:   [{ id, seasonId(兼容), allocations:[{seasonId, amount}], date, cat, sub, amount(=分摊合计), people, unitPrice, note, logId, createdAt }],
 //   logs:    [{ id, seasonId, date, ops:[], text, growth, pest, machine, areaMu, materials:[{type,name,rate,unit}], moisture, fertName/fertRate(旧字段兼容), createdAt }],
 //   weather: { [plotId]: { [date]: { t, p, wind, src:'api'|'manual' } } },
+//   tasks:   [{ id(=seasonId#ruleKey 或随机), seasonId, plotId, key, source:'stage'|'weather'|'record'|'user'|'advice', title, why[], steps[], ref, ops[], matType, target,
+//              dueStart, dueEnd, userDue, status:'open'|'done'|'dismissed'|'expired', logId, doneAt, reason }]   // 农事参谋任务
+//   memory:  [{ id, text, plotId, seasonId, kind:'note'|'suppress', ruleKey, source:'对话'|'校准' }]              // 参谋记住的
+//   seasons[i].stageCalib: { stage, date, gddAt }                                                              // 生育期校准
 //   tags:    { cost: { [catKey]: ['种子', ...] }, log: [{ name, color, costCat, costSub }],
 //              templates: [{ id, name, cat, sub, mode:'fixed'|'perMu'|'perDay', unitPrice, amount, people, split:'current'|'area'|'even', note }] }   // 用户自定义类型 + 常用账
 //   costs[i].calc: { mode, unitPrice, mu, people } | undefined   // 金额怎么算出来的（仅展示/回填，落账以 allocations 为准）
@@ -32,7 +36,7 @@ function defaultTags() {
 }
 
 function empty() {
-  return { ver: 1, updatedAt: 0, plots: [], seasons: [], costs: [], logs: [], weather: {}, tags: defaultTags() };
+  return { ver: 1, updatedAt: 0, plots: [], seasons: [], costs: [], logs: [], tasks: [], memory: [], weather: {}, tags: defaultTags() };
 }
 
 // ---------- outbox（待同步队列） ----------
@@ -51,13 +55,28 @@ function weatherId(plotId, date) { return plotId + '@' + date; }
 function db() {
   if (cache) return cache;
   try { cache = wx.getStorageSync(KEY) || empty(); } catch (e) { cache = empty(); }
-  ['plots', 'seasons', 'costs', 'logs'].forEach(k => { if (!Array.isArray(cache[k])) cache[k] = []; });
+  return migrate(cache);
+}
+
+// 结构补齐（本地读取 / 云端恢复 / replaceAll 都走这里）
+function migrate(cache) {
+  ['plots', 'seasons', 'costs', 'logs', 'tasks', 'memory'].forEach(k => { if (!Array.isArray(cache[k])) cache[k] = []; });
   if (!cache.weather) cache.weather = {};
   if (!cache.tags) cache.tags = defaultTags();
+  if (!cache.tags.cost) cache.tags.cost = defaultTags().cost;
+  if (!Array.isArray(cache.tags.log)) cache.tags.log = [];
   if (!Array.isArray(cache.tags.templates)) cache.tags.templates = [];
   // 默认记事类型补齐（老库新增「播种/收获/病虫害观察」等）
   C.DEFAULT_LOG_TAGS.forEach(t => {
     if (!cache.tags.log.some(x => x.name === t.name)) cache.tags.log.push(Object.assign({}, t));
+  });
+  // 老库记事类型补"填写项"：默认类型按名称补默认 fields，自定义类型为空（只填具体情况）
+  cache.tags.log.forEach(t => {
+    if (!Array.isArray(t.fields)) {
+      const def = C.DEFAULT_LOG_TAGS.find(x => x.name === t.name);
+      t.fields = def ? def.fields.slice() : [];
+      t.matType = def ? def.matType : '';
+    }
   });
   return cache;
 }
@@ -74,7 +93,7 @@ function save(opts) {
 }
 
 function replaceAll(data) {
-  cache = Object.assign(empty(), data || {});
+  cache = migrate(Object.assign(empty(), data || {}));
   wx.setStorageSync(KEY, cache);
 }
 
@@ -162,6 +181,8 @@ const plots = {
     const sids = d.seasons.filter(s => s.plotId === id).map(s => s.id);
     const lids = d.logs.filter(l => sids.indexOf(l.seasonId) >= 0).map(l => l.id);
     const wdates = Object.keys(d.weather[id] || {});
+    const tids = d.tasks.filter(t => sids.indexOf(t.seasonId) >= 0).map(t => t.id);
+    d.tasks = d.tasks.filter(t => sids.indexOf(t.seasonId) < 0);
     d.seasons = d.seasons.filter(s => s.plotId !== id);
     const cids = dropAllocations(d, sids);
     d.logs = d.logs.filter(l => sids.indexOf(l.seasonId) < 0);
@@ -171,6 +192,7 @@ const plots = {
     cids.removed.forEach(x => notify('costs', 'remove', x));
     cids.updated.forEach(x => notify('costs', 'upsert', x));
     lids.forEach(x => notify('logs', 'remove', x));
+    tids.forEach(x => notify('tasks', 'remove', x));
     sids.forEach(x => notify('seasons', 'remove', x));
     wdates.forEach(dt => notify('weather', 'remove', weatherId(id, dt)));
     notify('plots', 'remove', id);
@@ -189,9 +211,12 @@ const seasons = {
     const d = db();
     const cids = dropAllocations(d, [id]);
     const lids = d.logs.filter(l => l.seasonId === id).map(l => l.id);
+    const tids = d.tasks.filter(t => t.seasonId === id).map(t => t.id);
     d.seasons = d.seasons.filter(s => s.id !== id);
     d.logs = d.logs.filter(l => l.seasonId !== id);
+    d.tasks = d.tasks.filter(t => t.seasonId !== id);
     save();
+    tids.forEach(x => notify('tasks', 'remove', x));
     cids.removed.forEach(x => notify('costs', 'remove', x));
     cids.updated.forEach(x => notify('costs', 'upsert', x));
     lids.forEach(x => notify('logs', 'remove', x));
@@ -304,6 +329,50 @@ const weather = {
   }
 };
 
+// ---------- 农事参谋：任务 ----------
+// 规则任务 id 固定为 seasonId#ruleKey（同一季同一规则只一条）；刷新时只在内容变化时写入并进 outbox
+const TASK_SYNC_FIELDS = ['title', 'dueStart', 'dueEnd', 'status', 'why', 'steps', 'ref', 'ops', 'matType', 'target', 'userDue', 'logId', 'doneAt', 'reason', 'level'];
+const tasks = {
+  all() { return db().tasks.slice(); },
+  get(id) { return get('tasks', id); },
+  bySeason(sid) { return db().tasks.filter(t => t.seasonId === sid); },
+  open() { return db().tasks.filter(t => t.status === 'open'); },
+  save(t) { if (!t.status) t.status = 'open'; return upsert('tasks', t, 'task'); },
+  // 批量合并（规则刷新用）：只写有变化的，统一保存一次
+  putMany(list) {
+    const d = db(); const changed = [];
+    list.forEach(t => {
+      const i = d.tasks.findIndex(x => x.id === t.id);
+      if (i < 0) { d.tasks.push(Object.assign({ createdAt: Date.now(), updatedAt: Date.now() }, t)); changed.push(t.id); return; }
+      const cur = d.tasks[i];
+      const diff = TASK_SYNC_FIELDS.some(k => t[k] !== undefined && JSON.stringify(cur[k]) !== JSON.stringify(t[k]));
+      if (diff) { d.tasks[i] = Object.assign({}, cur, t, { updatedAt: Date.now() }); changed.push(t.id); }
+    });
+    if (changed.length) { save(); changed.forEach(id => notify('tasks', 'upsert', id)); }
+    return changed.length;
+  },
+  complete(id, logId, date) { if (!tasks.get(id)) return null; return upsert('tasks', { id, status: 'done', logId: logId || '', doneAt: date || U.today() }); },
+  dismiss(id, reason) { if (!tasks.get(id)) return null; return upsert('tasks', { id, status: 'dismissed', reason: reason || '' }); },
+  reopen(id) { if (!tasks.get(id)) return null; return upsert('tasks', { id, status: 'open', reason: '' }); },
+  setDue(id, start, end) { if (!tasks.get(id)) return null; return upsert('tasks', { id, dueStart: start, dueEnd: end || start, userDue: true, status: 'open' }); },
+  rename(id, title) { if (!tasks.get(id)) return null; return upsert('tasks', { id, title }); },
+  remove(id) { remove('tasks', id); }
+};
+
+// ---------- 农事参谋：记住的 ----------
+const memory = {
+  all() { return db().memory.slice().sort((a, b) => b.createdAt - a.createdAt); },
+  get(id) { return get('memory', id); },
+  add(m) {
+    const text = (m.text || '').trim(); if (!text) return null;
+    const dup = db().memory.find(x => x.text === text && (x.plotId || '') === (m.plotId || ''));
+    if (dup) return dup;
+    return upsert('memory', { text, plotId: m.plotId || '', seasonId: m.seasonId || '', kind: m.kind || 'note', ruleKey: m.ruleKey || '', source: m.source || '对话' }, 'mem');
+  },
+  remove(id) { remove('memory', id); },
+  suppressed(ruleKey, plotId) { return db().memory.some(x => x.kind === 'suppress' && x.ruleKey === ruleKey && x.plotId === plotId); }
+};
+
 // ---------- 自定义类型（tag） ----------
 // 记录里直接存类型名称；改名时同步改写历史记录；删除类型时历史记录保留原名
 const tags = {
@@ -333,7 +402,7 @@ const tags = {
   addLog(t) {
     const name = (t.name || '').trim(); if (!name || tags.logTag(name)) return false;
     const list = db().tags.log;
-    list.push({ name, color: t.color || C.TAG_COLORS[list.length % C.TAG_COLORS.length], costCat: t.costCat || '', costSub: t.costSub || '' });
+    list.push({ name, color: t.color || C.TAG_COLORS[list.length % C.TAG_COLORS.length], costCat: t.costCat || '', costSub: t.costSub || '', fields: Array.isArray(t.fields) ? t.fields : [], matType: t.matType || '' });
     save(); return true;
   },
   updateLog(from, patch) {
@@ -387,4 +456,4 @@ const tags = {
   tags[fn] = function () { const r = orig.apply(tags, arguments); notify('tags', 'upsert', 'tags'); return r; };
 });
 
-module.exports = { tags, db, save, replaceAll, plots, seasons, costs, logs, weather, notify, outbox, weatherId, KEY, OUTBOX_KEY };
+module.exports = { tasks, memory, tags, db, save, replaceAll, plots, seasons, costs, logs, weather, notify, outbox, weatherId, KEY, OUTBOX_KEY };

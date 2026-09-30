@@ -1,0 +1,13 @@
+.top { background: #A33A18; color: #fff; padding: 28rpx 32rpx 32rpx; }
+.top .t { font-size: 40rpx; font-weight: 800; }
+.top .s { font-size: 27rpx; opacity: .9; margin-top: 4rpx; }
+.days { display: flex; margin-top: 20rpx; }
+.day { flex: 1; text-align: center; background: #DCE8F2; border-radius: 16rpx; margin: 0 6rpx; padding: 12rpx 0; }
+.dv { font-weight: 800; font-size: 36rpx; }
+.dv .u { font-size: 20rpx; margin-left: 2rpx; }
+.rain { color: var(--rain); } .heat { color: var(--heat); }
+.pn { font-weight: 700; font-size: 31rpx; margin-left: 16rpx; }
+.lv { display: inline-block; font-size: 22rpx; font-weight: 700; padding: 2rpx 12rpx; border-radius: 8rpx; }
+.lv.red { background: #F8DDD3; color: #A33A18; } .lv.org { background: var(--wheat-l); color: #7A5210; }
+.gen { display: flex; align-items: center; background: #FBF8EF; border-radius: 12rpx; padding: 16rpx 20rpx; font-size: 28rpx; margin-top: 8rpx; }
+.okb { font-size: 22rpx; font-weight: 700; color: var(--green-d); background: var(--green-l); border-radius: 8rpx; padding: 2rpx 12rpx; }

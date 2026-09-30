@@ -3,22 +3,29 @@ const stats = require('../../utils/stats.js');
 const weather = require('../../utils/weather.js');
 const C = require('../../utils/const.js');
 const U = require('../../utils/util.js');
+const advisor = require('../../utils/advisor.js');
 
 Page({
   data: {
-    id: '', tab: 'cost', brief: {}, season: {}, plot: {},
+    id: '', tab: 'advisor', adv: null, brief: {}, season: {}, plot: {},
     cost: { cats: [], total: 0 }, costList: [], openCat: '',
     logGroups: [], costView: 'list', costDays: [], calYm: '', cal: null, daySheet: null, costFilter: '', logFilter: '', costSubs: [], logTags: [], met: {}, bars: [], seasonInfo: {}, wxRows: [], wxLoading: false, wxMsg: '',
     edit: null
   },
 
-  onLoad(q) { this.setData({ id: q.id, tab: q.tab || 'cost' }); },
+  onLoad(q) {
+    const s = store.seasons.get(q.id);
+    // 在种的季默认打开「参谋」；已收获的季默认「账本」
+    this.setData({ id: q.id, tab: q.tab || (s && s.status === 'growing' ? 'advisor' : 'cost') });
+  },
   onShow() { this.render(); this.loadWeather(); },
 
   render() {
     const s = store.seasons.get(this.data.id);
     if (!s) { wx.navigateBack(); return; }
     const plot = store.plots.get(s.plotId) || {};
+    if (s.status === 'growing') advisor.refreshSeason(s);
+    this.setData({ adv: s.status === 'growing' ? advisor.seasonPanel(s) : null });
     const brief = stats.seasonBrief(s);
     wx.setNavigationBarTitle({ title: plot.name + ' · ' + brief.crop });
 
@@ -135,6 +142,10 @@ Page({
   setCostFilter(e) { const k = e.currentTarget.dataset.k || ''; this.setData({ costFilter: this.data.costFilter === k ? '' : k }); this.render(); },
   setLogFilter(e) { const k = e.currentTarget.dataset.k || ''; this.setData({ logFilter: this.data.logFilter === k ? '' : k }); this.render(); },
   goTags() { wx.navigateTo({ url: '/pages/tags/tags?tab=' + (this.data.tab === 'log' ? 'log' : 'cost') }); },
+  goTask(e) { wx.navigateTo({ url: '/pages/task/task?id=' + encodeURIComponent(e.currentTarget.dataset.id) }); },
+  talkSeason() { wx.navigateTo({ url: '/pages/chat/chat?seasonId=' + this.data.id }); },
+  talkStage() { wx.navigateTo({ url: '/pages/chat/chat?seasonId=' + this.data.id }); },
+  goWx() { this.setData({ tab: 'wx' }); },
   setTab(e) { this.setData({ tab: e.currentTarget.dataset.t }); },
   toggleCat(e) { const k = e.currentTarget.dataset.k; this.setData({ openCat: this.data.openCat === k ? '' : k }); },
 

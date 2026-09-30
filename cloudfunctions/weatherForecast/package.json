@@ -1,0 +1,7 @@
+{
+  "name": "weatherForecast",
+  "version": "1.0.0",
+  "description": "农事参谋：16 天天气预报（Open-Meteo，只读）",
+  "main": "index.js",
+  "dependencies": {}
+}

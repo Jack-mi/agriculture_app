@@ -25,18 +25,37 @@ const COST_CATS = [
 // 每日田间操作（PRD 5.2-1）—— 仅作"默认记事类型"，用户可在「类型管理」里增删改
 const OPS = ['播种', '施肥', '打药', '浇水', '机械作业', '除草', '巡田', '病虫害观察', '收获', '其他'];
 // costCat/costSub：该类型"保存并记花费"时默认带入的记账类别
+// fields：选中该类型后，记事页"才出现"的填写项（上下对应）；matType：农资用量默认品类
 const DEFAULT_LOG_TAGS = [
-  { name: '播种', color: '#B0882A', costCat: 'mach', costSub: '播种' },
-  { name: '施肥', color: '#2E5B34', costCat: 'agri', costSub: '化肥' },
-  { name: '打药', color: '#6B8E23', costCat: 'agri', costSub: '农药' },
-  { name: '浇水', color: '#2F6F9F', costCat: 'labor', costSub: '' },
-  { name: '机械作业', color: '#C98B1E', costCat: 'mach', costSub: '' },
-  { name: '除草', color: '#8A6D3B', costCat: 'labor', costSub: '' },
-  { name: '巡田', color: '#5E6656', costCat: '', costSub: '' },
-  { name: '病虫害观察', color: '#B0476E', costCat: '', costSub: '' },
-  { name: '收获', color: '#C4532B', costCat: 'mach', costSub: '收获' },
-  { name: '其他', color: '#9A8F7A', costCat: '', costSub: '' }
+  { name: '播种', color: '#B0882A', costCat: 'mach', costSub: '播种', fields: ['mat', 'machine', 'area'], matType: '种子' },
+  { name: '施肥', color: '#2E5B34', costCat: 'agri', costSub: '化肥', fields: ['mat', 'machine', 'area'], matType: '化肥' },
+  { name: '打药', color: '#6B8E23', costCat: 'agri', costSub: '农药', fields: ['pest', 'mat', 'machine', 'area'], matType: '农药' },
+  { name: '浇水', color: '#2F6F9F', costCat: 'labor', costSub: '', fields: ['area', 'moisture'], matType: '' },
+  { name: '机械作业', color: '#C98B1E', costCat: 'mach', costSub: '', fields: ['machine', 'area'], matType: '' },
+  { name: '除草', color: '#8A6D3B', costCat: 'labor', costSub: '', fields: ['mat', 'area'], matType: '农药' },
+  { name: '巡田', color: '#5E6656', costCat: '', costSub: '', fields: ['growth', 'pest', 'moisture'], matType: '' },
+  { name: '病虫害观察', color: '#B0476E', costCat: '', costSub: '', fields: ['pest', 'growth'], matType: '' },
+  { name: '收获', color: '#C4532B', costCat: 'mach', costSub: '收获', fields: ['machine', 'area'], matType: '' },
+  { name: '其他', color: '#9A8F7A', costCat: '', costSub: '', fields: [], matType: '' }
 ];
+// 记事可选填写项（类型管理里可给自定义类型勾选）
+const LOG_FIELDS = [
+  { key: 'mat', name: '农资用量' },
+  { key: 'machine', name: '机械 / 机手' },
+  { key: 'area', name: '完成面积' },
+  { key: 'growth', name: '作物长势' },
+  { key: 'pest', name: '病虫害' },
+  { key: 'moisture', name: '土壤墒情' }
+];
+// 按记事类型定制的提示语（未命中用通用提示）
+const LOG_FIELD_PH = {
+  machine: { 播种: '如：汤日刚的高精度播种机', 打药: '如：老张家无人机', 施肥: '如：自家拖拉机撒肥', 收获: '如：老王家的收割机', _: '如：谁家的什么机械' },
+  pest: { 打药: '防治什么，如：玉米螟、蚜虫', _: '如：地头发现蚜虫，零星发生' },
+  growth: { _: '如：开始拔节，苗齐苗壮' },
+  moisture: { 浇水: '浇后墒情，如：浇透、表层湿', _: '如：表层干，10公分下湿润' }
+};
+// 农资品类默认单位
+const MATERIAL_UNIT_DEFAULT = { 种子: '斤/亩', 化肥: '斤/亩', 农药: 'ml/亩', 其他: '斤/亩' };
 // 自定义类型可选颜色
 const TAG_COLORS = ['#2E5B34', '#6B8E23', '#2F6F9F', '#C98B1E', '#C4532B', '#6B5B95', '#8A6D3B', '#B0476E', '#5E6656'];
 
@@ -76,4 +95,4 @@ const SPLIT_MODES = [
 function cropOf(key) { return CROPS.find(c => c.key === key) || CROPS[0]; }
 function catOf(key) { return COST_CATS.find(c => c.key === key) || COST_CATS[0]; }
 
-module.exports = { VARIETIES, SUB_ICONS, CAT_ICONS, iconOf, CALC_MODES, SPLIT_MODES, CROPS, COST_CATS, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };
+module.exports = { LOG_FIELDS, LOG_FIELD_PH, MATERIAL_UNIT_DEFAULT, VARIETIES, SUB_ICONS, CAT_ICONS, iconOf, CALC_MODES, SPLIT_MODES, CROPS, COST_CATS, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };

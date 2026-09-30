@@ -167,6 +167,25 @@ test('品种（二级类目）：选填落库，快捷选项 = 用过的在前 +
   assert.strictEqual(stats.seasonBrief(store.seasons.get('sa')).cropFull, '玉米');
 });
 
+test('记事类型带"要填的项"：默认类型有 fields，老库自动补齐，自定义类型默认只填具体情况', () => {
+  reset();
+  const t = n => store.tags.logTag(n);
+  assert.deepStrictEqual(t('施肥').fields, ['mat', 'machine', 'area']);
+  assert.strictEqual(t('施肥').matType, '化肥');
+  assert.ok(t('打药').fields.indexOf('pest') >= 0);
+  assert.ok(t('巡田').fields.indexOf('growth') >= 0);
+  assert.deepStrictEqual(t('其他').fields, []);
+  // 老库：记事类型没有 fields 字段
+  mem[store.KEY] = { plots: [], seasons: [], costs: [], logs: [], weather: {}, tags: { cost: {}, log: [{ name: '施肥', color: '#000' }, { name: '镇压', color: '#111' }] } };
+  store.replaceAll(mem[store.KEY]);
+  assert.deepStrictEqual(t('施肥').fields, ['mat', 'machine', 'area']);
+  assert.deepStrictEqual(t('镇压').fields, []);
+  store.tags.addLog({ name: '中耕' });
+  assert.deepStrictEqual(t('中耕').fields, []);
+  store.tags.updateLog('中耕', { fields: ['machine', 'area'] });
+  assert.deepStrictEqual(t('中耕').fields, ['machine', 'area']);
+});
+
 test('旧库无 templates / calc / expr 字段时正常读取', () => {
   reset();
   mem[store.KEY] = { plots: [], seasons: [], costs: [], logs: [], weather: {}, tags: { cost: { agri: ['种子'] }, log: [] } };

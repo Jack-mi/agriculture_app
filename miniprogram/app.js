@@ -8,7 +8,9 @@ const sync = require('./utils/sync.js');
 const weather = require('./utils/weather.js');
 
 App({
-  globalData: { cloudEnv: CLOUD_ENV, online: true },
+  // aiModel：配置后「跟参谋说」先走云开发 AI 大模型理解（结果仍经白名单 + 确认卡片）；留空 = 纯本地规则解析
+  // 例：{ provider: 'hunyuan-exp', name: 'hunyuan-turbos-latest' }，需在云开发控制台开通 AI 能力，基础库 ≥ 3.7.1
+  globalData: { cloudEnv: CLOUD_ENV, online: true, aiModel: null },
 
   onLaunch() {
     sync.init(CLOUD_ENV);

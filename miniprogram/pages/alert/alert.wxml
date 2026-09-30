@@ -1,0 +1,34 @@
+<view wx:if="{{a}}">
+  <view class="top">
+    <view class="t">{{a.name}} · {{a.level}}</view>
+    <view class="s">{{a.text}}</view>
+  </view>
+  <view class="wrap">
+    <view class="card" style="padding:24rpx 28rpx">
+      <view class="label">触发条件</view>
+      <view style="font-size:30rpx">{{a.rule}}</view>
+      <view class="days">
+        <view wx:for="{{a.days}}" wx:key="date" class="day">
+          <view class="muted" style="font-size:22rpx">{{item.date}}</view>
+          <view wx:if="{{a.type === 'rain'}}" class="num dv rain">{{item.p}}<text class="u">mm</text></view>
+          <view wx:elif="{{a.type === 'frost'}}" class="num dv heat">{{item.tmin}}<text class="u">℃</text></view>
+          <view wx:else class="num dv">{{item.wind}}<text class="u">m/s</text></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="sec-title">对你的地块</view>
+    <view wx:for="{{plots}}" wx:key="id" class="card" style="padding:24rpx 28rpx">
+      <view class="row">
+        <view class="crop sm {{item.cls}}"><image class="crop-img" src="{{item.icon}}" mode="aspectFit" /></view>
+        <text class="pn">{{item.name}} · {{item.stage}}{{item.crop}}</text>
+        <text class="lv {{item.lv === '影响大' ? 'red' : 'org'}}" style="margin-left:auto">{{item.lv}}</text>
+      </view>
+      <view wx:if="{{item.text}}" style="font-size:29rpx;margin:12rpx 0">{{item.text}}</view>
+      <view wx:for="{{item.tasks}}" wx:for-item="t" wx:key="id" class="gen" bindtap="goTask" data-id="{{t.id}}" hover-class="btn-hover">
+        <text class="flex1">{{t.title}}</text><text class="okb">已生成任务 ›</text>
+      </view>
+    </view>
+    <view class="muted" style="font-size:22rpx;text-align:center;margin-top:12rpx">天气：Open-Meteo 16 天预报 · 每天打开时更新</view>
+  </view>
+</view>

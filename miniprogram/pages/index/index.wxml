@@ -1,96 +1,114 @@
 <view class="hero">
-  <view class="hero-date">{{todayText}}<text class="hero-week">{{week}}</text></view>
-  <view class="hero-sub">今天地里干了啥、花了多少，随手记一笔</view>
+  <view class="row between" style="align-items:flex-end">
+    <view>
+      <view class="hero-date">{{todayText}}<text class="hero-week">{{week}}</text></view>
+      <view class="hero-sub">{{wxLine || '今天地里干了啥、花了多少，随手记一笔'}}</view>
+    </view>
+    <view wx:if="{{growing}}" class="hero-m">本月花费<view class="num hero-mv">¥{{month}}</view></view>
+  </view>
   <view wx:if="{{!online}}" class="offline">当前无网络 · 记录已存手机，联网后自动同步</view>
 </view>
 
-<view class="wrap lift" style="padding-top:0">
-  <!-- 本月花费汇总（全部地块） -->
-  <view wx:if="{{hasPlots && cards.length}}" class="monthbar">
-    <view class="flex1">
-      <view class="muted">{{month.label}}</view>
-      <view class="num mb-v">¥{{month.total}}</view>
-    </view>
-    <view wx:if="{{month.hasToday}}" style="text-align:right">
-      <view class="muted">今天</view>
-      <view class="num mb-t">¥{{month.today}}</view>
-    </view>
-  </view>
-
-  <!-- 常用账 -->
-  <view wx:if="{{cards.length}}" class="row between qh">
-    <text class="qh-t">常用账 · 点一下就记</text>
-    <text class="muted" bindtap="goTpl">{{tpls.length ? '管理 ›' : '添加 ›'}}</text>
-  </view>
-  <scroll-view wx:if="{{cards.length && tpls.length}}" scroll-x class="quick" enable-flex>
-    <view wx:for="{{tpls}}" wx:key="id" class="qc" bindtap="useTpl" data-id="{{item.id}}" hover-class="btn-hover">
-      <view class="row"><view class="qc-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="qc-img" /></view><text class="qc-n">{{item.name}}</text></view>
-      <view class="qc-p num">{{item.desc}}</view>
-    </view>
-  </scroll-view>
-  <view wx:elif="{{cards.length}}" class="qempty muted" bindtap="goTpl">把飞防 15 元/亩、雇工 200 元/天这类重复的账存成常用账，点一下就记</view>
-
-  <!-- 空状态：还没地块 -->
+<view class="wrap lift" style="padding-top:0;padding-bottom:260rpx">
+  <!-- 空状态 -->
   <view wx:if="{{!hasPlots}}" class="card empty">
     <view class="big">先添加第一块地</view>
     <view class="muted" style="margin-bottom:40rpx">填上名称、亩数，定个位置，就能自动记天气</view>
     <view class="btn" hover-class="btn-hover" bindtap="addPlot">＋ 添加地块</view>
   </view>
-
-  <!-- 有地块但没有在种的季 -->
-  <view wx:elif="{{!cards.length}}" class="card empty">
+  <view wx:elif="{{!growing}}" class="card empty">
     <view class="big">还没有在种的作物</view>
     <view class="muted" style="margin-bottom:40rpx">开一季：选地块、选作物、填播种日</view>
     <view class="btn" hover-class="btn-hover" bindtap="newSeason">＋ 开始新一季</view>
   </view>
 
-  <block wx:for="{{cards}}" wx:key="id">
-    <view class="scard">
-      <view class="scard-top" bindtap="goSeason" data-id="{{item.id}}" hover-class="btn-hover">
-        <view class="crop {{item.cropCls}}"><image class="crop-img" src="{{item.cropIcon}}" mode="aspectFit" /></view>
-        <view class="flex1" style="margin-left:24rpx">
-          <view class="scard-name">{{item.plotName}}<text class="tag">{{item.cropFull}}</text></view>
-          <view class="muted">{{item.area ? item.area + ' 亩 · ' : ''}}播种第 <text class="num strong">{{item.dayN}}</text> 天</view>
-        </view>
-        <view class="arrow">›</view>
+  <block wx:else>
+    <!-- 预警 -->
+    <view wx:for="{{v.alerts}}" wx:key="key" class="alertbar" bindtap="goAlert" data-key="{{item.key}}" hover-class="btn-hover">
+      <view class="flex1">
+        <view class="al-t">{{item.text}}<text class="al-lv">{{item.level}}</text></view>
+        <view class="al-s">影响 {{item.plots.length > 2 ? item.plots.length + ' 块地' : ''}}{{item.plots.length <= 2 ? item.plots[0] + (item.plots[1] ? '、' + item.plots[1] : '') : ''}}</view>
       </view>
+      <text class="al-arrow">›</text>
+    </view>
 
-      <view class="wx-row">
-        <view class="wx-cell">
-          <view class="wx-k">今日均温</view>
-          <view class="wx-v num heat">{{item.wT}}<text class="u">℃</text></view>
+    <!-- 有事：待办 -->
+    <view wx:if="{{v.now.length || v.week.length}}" class="card tasks">
+      <block wx:if="{{v.now.length}}">
+        <view class="grp"><text class="lv red">马上办</text></view>
+        <view wx:for="{{v.now}}" wx:key="id" class="tk" bindtap="goTask" data-id="{{item.id}}" hover-class="btn-hover">
+          <view class="tk-bar red"></view>
+          <view class="flex1"><view class="tk-t">{{item.title}}</view><view class="tk-m">{{item.plot}}<text class="src">{{item.src}}</text></view></view>
+          <view class="tk-d red-t">{{item.due}}</view>
         </view>
-        <view class="wx-cell">
-          <view class="wx-k">今日降雨</view>
-          <view class="wx-v num rain">{{item.wP}}<text class="u">mm</text></view>
+      </block>
+      <block wx:if="{{v.week.length}}">
+        <view class="grp"><text class="lv org">这周</text></view>
+        <view wx:for="{{v.week}}" wx:key="id" class="tk" bindtap="goTask" data-id="{{item.id}}" hover-class="btn-hover">
+          <view class="tk-bar org"></view>
+          <view class="flex1"><view class="tk-t">{{item.title}}</view><view class="tk-m">{{item.plot}}<text class="src">{{item.src}}</text></view></view>
+          <view class="tk-d org-t">{{item.due}}</view>
         </view>
-        <view class="wx-cell">
-          <view class="wx-k">累计积温</view>
-          <view class="wx-v num">{{item.gdd}}<text class="u">℃·d</text></view>
-        </view>
-        <view class="wx-cell">
-          <view class="wx-k">累计降雨</view>
-          <view class="wx-v num">{{item.rain}}<text class="u">mm</text></view>
-        </view>
+      </block>
+      <view wx:if="{{v.later.length}}" class="later-h" bindtap="toggleLater">
+        <text>往后还有 {{v.later.length}} 件{{showLater ? '' : ' · 最近是 ' + v.later[0].due + '「' + v.later[0].title + '」'}}</text><text>{{showLater ? '收起' : '›'}}</text>
       </view>
+      <block wx:if="{{showLater}}">
+        <view wx:for="{{v.later}}" wx:key="id" class="tk" bindtap="goTask" data-id="{{item.id}}" hover-class="btn-hover">
+          <view class="tk-bar gry"></view>
+          <view class="flex1"><view class="tk-t muted-t">{{item.title}}</view><view class="tk-m">{{item.plot}}<text class="src">{{item.src}}</text></view></view>
+          <view class="tk-d muted">{{item.due}}</view>
+        </view>
+      </block>
+    </view>
 
-      <view class="total-row">
-        <text class="muted">本季已投入</text>
-        <text class="num total">¥{{item.costText}}</text>
-        <text wx:if="{{item.perMuText}}" class="muted"> · ¥{{item.perMuText}}/亩</text>
+    <!-- 没事 -->
+    <view wx:else class="card quiet">
+      <view class="row"><text class="ok-ic">✓</text><text class="quiet-t">今天地里没有要紧的事</text></view>
+      <view wx:if="{{nextText}}" class="next" bindtap="goTask" data-id="{{v.nextTask.id}}">
+        <view class="flex1">下一件：<text class="b">{{nextText}}</text><view class="muted">{{nextDue}}，到时提醒你</view></view><text class="muted">›</text>
       </view>
+      <view wx:else class="muted" style="margin-top:12rpx">有新情况参谋会提醒你。想到什么，点下面麦克风说一声</view>
+    </view>
 
-      <view wx:if="{{item.todayDone || item.todayCost}}" class="today-done">
-        ✓ 今天已记：{{item.todayOps}}{{item.todayCost ? ' · 花费 ¥' + item.todayCost : ''}}
-      </view>
+    <!-- 巡田等轻提示 -->
+    <view wx:for="{{v.soft}}" wx:key="id" class="soft" bindtap="goTask" data-id="{{item.id}}">{{item.plot}}：{{item.title}} ›</view>
 
-      <view class="actions">
-        <view class="btn wheat act" hover-class="btn-hover" bindtap="addCost" data-id="{{item.id}}">记一笔账</view>
-        <view class="btn act" hover-class="btn-hover" bindtap="addLog" data-id="{{item.id}}">记今天的活</view>
+    <!-- 生育期小卡 -->
+    <view class="stages">
+      <view wx:for="{{v.stages}}" wx:key="id" class="stc" bindtap="goSeason" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="row"><view class="crop xs {{item.cls}}"><image class="crop-img" src="{{item.icon}}" mode="aspectFit" /></view><text class="stc-n">{{item.plot}}</text></view>
+        <view class="muted stc-s">{{item.crop}} · <text class="stc-st">{{item.stage}}</text></view>
+        <view class="stc-p"><view style="width:{{item.pct}}%"></view></view>
       </view>
     </view>
-  </block>
 
-  <view wx:if="{{cards.length}}" class="btn ghost" style="margin-top:12rpx" hover-class="btn-hover" bindtap="newSeason">＋ 开始新一季</view>
-  <view wx:if="{{loadingWx}}" class="muted" style="text-align:center;margin-top:24rpx">正在更新天气…</view>
+    <!-- 最近记的 -->
+    <view wx:if="{{recent.length}}" class="card recent">
+      <view class="row between" style="padding:16rpx 0 4rpx"><text class="b">最近记的</text></view>
+      <view wx:for="{{recent}}" wx:key="id" class="rc" bindtap="goRecent" data-id="{{item.id}}" data-kind="{{item.kind}}">
+        <text class="muted num rc-d">{{item.dateText}}</text>
+        <view class="flex1" style="min-width:0"><view class="rc-t">{{item.title}}</view><view class="muted ellipsis" style="font-size:24rpx">{{item.sub}}</view></view>
+        <text wx:if="{{item.amt}}" class="num b">{{item.amt}}</text>
+      </view>
+    </view>
+
+    <!-- 常用账 -->
+    <scroll-view wx:if="{{tpls.length}}" scroll-x class="quick" enable-flex>
+      <view wx:for="{{tpls}}" wx:key="id" class="qc" bindtap="useTpl" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="row"><view class="qc-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="qc-img" /></view><text class="qc-n">{{item.name}}</text></view>
+        <view class="qc-p num">{{item.desc}}</view>
+      </view>
+    </scroll-view>
+
+    <view class="btn ghost" style="margin-top:12rpx" hover-class="btn-hover" bindtap="newSeason">＋ 开始新一季</view>
+    <view wx:if="{{loading}}" class="muted" style="text-align:center;margin-top:24rpx">正在更新天气和参谋建议…</view>
+  </block>
+</view>
+
+<!-- 常驻记录入口 -->
+<view wx:if="{{growing}}" class="dock">
+  <view class="btn wheat dk" hover-class="btn-hover" bindtap="addCost">记一笔账</view>
+  <view class="btn dk" hover-class="btn-hover" bindtap="addLog">记今天的活</view>
+  <view class="btn ghost dk-mic" hover-class="btn-hover" bindtap="talk"><image src="/assets/icons/mic_green.svg" class="mic-img" /></view>
 </view>

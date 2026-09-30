@@ -50,7 +50,10 @@ pages/tags                       类型管理：记账类型 / 记事类型 / �
 - 作物二级类目 = 品种（`seasons.variety`，选填，≤20 字）：开季时可点选「用过的 / 常见品种」或自由输入，季详情「信息」页可随时补填/修改/清空；展示为「玉米 · 登海605」。常见品种建议见 `const.VARIETIES`。
 - 常用账存于 `tags.templates`（随 tags 单文档同步，不新增集合）；「恢复默认类型」不清除常用账。
 
+## 农事参谋（种植决策）
+详见 `docs/农事参谋.md`。新增：`utils/growth|rules|advisor|chat|nlu|kb|pesticide.js`、`pages/task|alert|chat`、季详情「参谋」标签页、今天页（有事 / 没事）、云函数 `weatherForecast`、集合 `tasks` / `memory`。
+
 ## 测试
 ```
-node --test miniprogram/tests/*.test.js   # 16 例：成本分摊 / 日历 / 旧数据迁移 / 风力 / 键盘 / 按亩均摊尾差 / 按日分组 / 月历 / 常用账
+node --test miniprogram/tests/*.test.js   # 35 例
 ```
