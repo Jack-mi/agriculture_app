@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/plots/plots",
+    "pages/mine/mine",
+    "pages/plot-edit/plot-edit",
+    "pages/season-new/season-new",
+    "pages/season/season",
+    "pages/cost-edit/cost-edit",
+    "pages/log-edit/log-edit",
+    "pages/harvest/harvest",
+    "pages/tags/tags"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#2E5B34",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "田祖记",
+    "backgroundColor": "#F5F0E4",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#5E6656",
+    "selectedColor": "#2E5B34",
+    "backgroundColor": "#FFFDF7",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "今天"
+      },
+      {
+        "pagePath": "pages/plots/plots",
+        "text": "地块"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于确定地块位置，自动获取当地每日气温和降雨"
+    }
+  },
+  "requiredPrivateInfos": [
+    "chooseLocation",
+    "getFuzzyLocation"
+  ],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,4 @@
+{
+  "desc": "谷雨记",
+  "rules": [{ "action": "allow", "page": "*" }]
+}

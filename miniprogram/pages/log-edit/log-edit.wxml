@@ -1,0 +1,84 @@
+<view class="wrap">
+  <view class="row between" style="margin:0 8rpx 16rpx">
+    <text class="muted">{{seasonLabel}}</text>
+    <picker mode="date" value="{{date}}" start="{{dateStart}}" end="{{dateEnd}}" bindchange="onDate">
+      <view class="date-pill num">{{date === today ? '今天' : date}} ▾</view>
+    </picker>
+  </view>
+
+  <view wx:if="{{w}}" class="wx-strip">
+    当天天气：均温 <text class="num b heat">{{w.t}}℃</text> · 降雨 <text class="num b rain">{{w.p}}mm</text>
+    <text class="muted" style="font-size:24rpx">（自动获取）</text>
+  </view>
+
+  <view class="card">
+    <view class="label">今天干了什么活（可多选）</view>
+    <view class="tiles">
+      <view wx:for="{{opsAll}}" wx:key="name" class="tile {{ops[item.name] ? 'on' : ''}}" bindtap="toggleOp" data-o="{{item.name}}">
+        <view class="dot" style="background:{{item.color}}"></view>{{ops[item.name] ? '✓ ' : ''}}{{item.name}}
+      </view>
+      <view class="tile add" bindtap="addOp">＋ 自定义</view>
+    </view>
+    <view class="manage" bindtap="manageTags">管理类型 ›</view>
+
+    <view class="field" style="margin:32rpx 0 0">
+      <view class="label">具体情况</view>
+      <textarea class="textarea" placeholder="如：雇老张家无人机飞防，打了一遍吡虫啉" placeholder-class="ph" value="{{text}}" bindinput="onText" maxlength="500" />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="label">作物生长 <text class="muted" style="font-weight:400">· 长势、生育期随手记</text></view>
+    <input class="input" placeholder="如：开始拔节，苗齐苗壮" placeholder-class="ph" value="{{growth}}" bindinput="onGrowth" maxlength="120" />
+    <view class="label" style="margin-top:24rpx">病虫害 <text class="muted" style="font-weight:400">· 发现什么、严重程度</text></view>
+    <input class="input" placeholder="如：地头发现蚜虫，零星发生" placeholder-class="ph" value="{{pest}}" bindinput="onPest" maxlength="120" />
+  </view>
+
+  <view class="card">
+    <view class="label">机械 / 机手 <text class="muted" style="font-weight:400">· 什么机械、谁家的</text></view>
+    <input class="input" placeholder="如：汤日刚的高精度播种机" placeholder-class="ph" value="{{machine}}" bindinput="onMachine" maxlength="120" />
+    <view class="label" style="margin-top:24rpx">完成面积</view>
+    <view class="input-unit" style="width:320rpx">
+      <input class="input" type="digit" placeholder="0" placeholder-class="ph" value="{{areaMu}}" bindinput="onAreaMu" />
+      <text class="unit">亩</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="label">农资使用 <text class="muted" style="font-weight:400">· 种子 / 农药 / 化肥用量</text></view>
+    <view wx:for="{{materials}}" wx:key="index" class="mat-row">
+      <view class="row" style="margin-bottom:12rpx">
+        <picker class="mat-type" range="{{materialTypes}}" value="{{item.typeIndex}}" bindchange="onMatType" data-i="{{index}}">
+          <view class="picker num">{{item.type}} ▾</view>
+        </picker>
+        <input class="input flex1" style="margin:0 16rpx" placeholder="品名，如尿素" placeholder-class="ph" value="{{item.name}}" bindinput="onMatName" data-i="{{index}}" maxlength="40" />
+        <view class="mat-del" bindtap="delMat" data-i="{{index}}">×</view>
+      </view>
+      <view class="row">
+        <view class="input-unit flex1" style="margin-right:16rpx">
+          <input class="input" type="digit" placeholder="用量" placeholder-class="ph" value="{{item.rate}}" bindinput="onMatRate" data-i="{{index}}" />
+        </view>
+        <picker class="mat-unit" range="{{materialUnits}}" value="{{item.unitIndex}}" bindchange="onMatUnit" data-i="{{index}}">
+          <view class="picker num">{{item.unit}} ▾</view>
+        </picker>
+      </view>
+    </view>
+    <view class="chip add" style="margin-top:8rpx" bindtap="addMat">＋ 添加农资</view>
+  </view>
+
+  <view class="card">
+    <view class="label">土壤墒情 <text class="muted" style="font-weight:400">· 有观察就记</text></view>
+    <view class="chips" style="margin-bottom:16rpx">
+      <view wx:for="{{moistQuick}}" wx:key="*this" class="chip {{moisture === item ? 'on' : ''}}" bindtap="pickMoist" data-m="{{item}}">{{item}}</view>
+    </view>
+    <input class="input" placeholder="或自己写，如：表层干，10公分下湿润" placeholder-class="ph" value="{{moisture}}" bindinput="onMoist" maxlength="80" />
+  </view>
+
+  <view wx:if="{{isEdit && linkedCost}}" class="muted" style="text-align:center;margin-bottom:20rpx">这条记事已关联 ¥{{linkedCost}} 花费</view>
+  <view wx:if="{{isEdit}}" class="btn danger" hover-class="btn-hover" bindtap="del">删除这条记事</view>
+</view>
+
+<view class="fixed-bar">
+  <view class="btn wheat" hover-class="btn-hover" bindtap="saveWithCost">保存并记花费</view>
+  <view class="btn" hover-class="btn-hover" bindtap="save">保存</view>
+</view>

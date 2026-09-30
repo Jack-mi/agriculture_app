@@ -1,0 +1,8 @@
+.env
+lovagentic-screenshots/
+node_modules/
+project.private.config.json
+
+# 主体变更/证件类敏感材料（身份证号、信用代码、公章扫描件），禁止提交
+*主体变更*
+*申请函*

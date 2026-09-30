@@ -1,0 +1,15 @@
+.tabs { display: flex; background: var(--card); border-bottom: 2rpx solid var(--line); }
+.tab { flex: 1; text-align: center; height: 96rpx; line-height: 96rpx; font-size: 34rpx; color: var(--sub); position: relative; }
+.tab.on { color: var(--green); font-weight: 800; }
+.tab.on::after { content: ''; position: absolute; left: 30%; right: 30%; bottom: 0; height: 6rpx; border-radius: 6rpx; background: var(--green); }
+.trow { display: flex; align-items: center; min-height: 112rpx; border-bottom: 2rpx solid var(--line); }
+.trow:last-child { border-bottom: none; }
+.tname { font-size: 34rpx; font-weight: 600; }
+.tdot { width: 24rpx; height: 24rpx; border-radius: 50%; margin-right: 20rpx; flex-shrink: 0; }
+.more { color: #B9B3A2; font-size: 36rpx; margin-left: 20rpx; }
+.colors { display: flex; flex-wrap: wrap; }
+.sw { width: 64rpx; height: 64rpx; border-radius: 50%; margin: 0 18rpx 18rpx 0; border: 4rpx solid #fff; box-shadow: 0 0 0 2rpx var(--line); }
+.sw.on { box-shadow: 0 0 0 4rpx var(--ink); }
+.small-chip { height: 68rpx; line-height: 64rpx; font-size: 28rpx; }
+.reset { text-align: center; color: var(--sub); font-size: 28rpx; margin-top: 40rpx; text-decoration: underline; }
+.btn.danger.small { line-height: 70rpx; }

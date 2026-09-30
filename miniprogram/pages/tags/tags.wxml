@@ -1,0 +1,78 @@
+<view class="tabs">
+  <view class="tab {{tab === 'cost' ? 'on' : ''}}" bindtap="setTab" data-t="cost">记账类型</view>
+  <view class="tab {{tab === 'log' ? 'on' : ''}}" bindtap="setTab" data-t="log">记事类型</view>
+</view>
+
+<view class="wrap">
+  <!-- 记账类型 -->
+  <block wx:if="{{tab === 'cost'}}">
+    <view class="muted" style="margin:0 8rpx 16rpx">5 个大类固定，大类下的细分类型可以自己加</view>
+    <view class="chips" style="margin-bottom:24rpx">
+      <view wx:for="{{cats}}" wx:key="key" class="chip {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
+        <text class="cdot" style="background:{{cat === item.key ? '#fff' : item.color}}"></text>{{item.name}}
+      </view>
+    </view>
+    <view class="card" style="padding:0 32rpx">
+      <view wx:if="{{!costList.length}}" class="empty muted">这一类还没有细分类型</view>
+      <view wx:for="{{costList}}" wx:key="name" class="trow" bindtap="costAction" data-n="{{item.name}}" hover-class="btn-hover">
+        <view class="flex1 tname">{{item.name}}</view>
+        <text class="muted">{{item.count ? item.count + ' 笔' : ''}}</text>
+        <text class="more">···</text>
+      </view>
+    </view>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="addCost">＋ 新增细分类型</view>
+  </block>
+
+  <!-- 记事类型 -->
+  <block wx:if="{{tab === 'log'}}">
+    <view class="muted" style="margin:0 8rpx 16rpx">可设置颜色，以及「保存并记花费」时默认记到哪一类账</view>
+    <view class="card" style="padding:0 32rpx">
+      <view wx:for="{{logList}}" wx:key="name" class="trow" bindtap="editLog" data-n="{{item.name}}" hover-class="btn-hover">
+        <view class="tdot" style="background:{{item.color}}"></view>
+        <view class="flex1">
+          <view class="tname">{{item.name}}</view>
+          <view class="muted" style="font-size:26rpx">记花费 → {{item.costText}}</view>
+        </view>
+        <text class="muted">{{item.count ? item.count + ' 条' : ''}}</text>
+        <text class="more">›</text>
+      </view>
+    </view>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="addLog">＋ 新增记事类型</view>
+  </block>
+
+  <view class="reset" bindtap="reset">恢复默认类型</view>
+</view>
+
+<!-- 记事类型编辑弹层 -->
+<view wx:if="{{edit}}" class="mask" bindtap="closeEdit">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">{{edit.isNew ? '新增记事类型' : '编辑记事类型'}}</view>
+    <view class="field">
+      <view class="label">名称</view>
+      <input class="input" value="{{edit.name}}" bindinput="onEName" placeholder="如：镇压、中耕" placeholder-class="ph" maxlength="8" />
+    </view>
+    <view class="field">
+      <view class="label">颜色</view>
+      <view class="colors">
+        <view wx:for="{{colors}}" wx:key="*this" class="sw {{edit.color === item ? 'on' : ''}}" style="background:{{item}}" bindtap="pickColor" data-c="{{item}}"></view>
+      </view>
+    </view>
+    <view class="field">
+      <view class="label">记花费时默认记到 <text class="muted" style="font-weight:400">· 再点一次取消</text></view>
+      <view class="chips">
+        <view wx:for="{{cats}}" wx:key="key" class="chip {{edit.costCat === item.key ? 'on' : ''}}" bindtap="pickCostCat" data-k="{{item.key}}">{{item.name}}</view>
+      </view>
+      <view wx:if="{{edit.subs.length}}" class="chips" style="margin-top:12rpx">
+        <view wx:for="{{edit.subs}}" wx:key="*this" class="chip small-chip {{edit.costSub === item ? 'on' : ''}}" bindtap="pickCostSub" data-s="{{item}}">{{item}}</view>
+      </view>
+    </view>
+    <view class="row">
+      <block wx:if="{{!edit.isNew}}">
+        <view class="btn ghost small" style="margin-right:12rpx" bindtap="moveLog" data-d="-1">上移</view>
+        <view class="btn ghost small" style="margin-right:12rpx" bindtap="moveLog" data-d="1">下移</view>
+        <view class="btn danger small" style="margin-right:12rpx" bindtap="delLog">删除</view>
+      </block>
+      <view class="btn flex1" bindtap="saveEdit">保存</view>
+    </view>
+  </view>
+</view>

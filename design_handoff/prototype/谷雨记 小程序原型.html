@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>谷雨记 · 小程序原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="proto/proto.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="proto/logic.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="proto/screens-a.jsx"></script>
+<script type="text/babel" src="proto/screens-b.jsx"></script>
+<script type="text/babel">
+const TITLES = { home: '谷雨记', plots: '我的地块', mine: '我的', plotEdit: '添加地块', seasonNew: '开始新一季', season: '种植季', costEdit: '记一笔账', logEdit: '记今天的活', harvest: '登记收获' };
+const PAGES = { home: HomePage, plots: PlotsPage, mine: MinePage, plotEdit: PlotEditPage, seasonNew: SeasonNewPage, season: SeasonPage, costEdit: CostEditPage, logEdit: LogEditPage, harvest: HarvestPage };
+const TABS = [['home', '今天', '今'], ['plots', '地块', '地'], ['mine', '我的', '我']];
+const RKEY = 'guyuji_proto_route';
+
+function titleOf(r) {
+  if (r.name === 'season') { const s = GY.S.seasons.get(r.params.id); if (s) { const p = GY.S.plots.get(s.plotId); return (p ? p.name : '') + ' · ' + GY.cropOf(s.crop).name; } }
+  if (r.name === 'plotEdit' && r.params.id) return '编辑地块';
+  if (r.name === 'costEdit' && r.params.id) return '修改账目';
+  if (r.name === 'logEdit' && r.params.id) return '修改记事';
+  return TITLES[r.name];
+}
+
+function App() {
+  GY.load();
+  const [stack, setStack] = React.useState(() => {
+    try { const s = JSON.parse(localStorage.getItem(RKEY)); if (Array.isArray(s) && s.length) return s; } catch (e) {}
+    return [{ name: 'home', params: {} }];
+  });
+  const [toast, setToast] = React.useState('');
+  const [modal, setModal] = React.useState(null);
+  const [, force] = React.useState(0);
+  React.useEffect(() => GY.S.subscribe(() => force(x => x + 1)), []);
+  React.useEffect(() => { localStorage.setItem(RKEY, JSON.stringify(stack)); }, [stack]);
+  const bodyRef = React.useRef();
+  React.useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [stack.length, stack[stack.length - 1].name]);
+
+  const nav = {
+    go: (name, params) => setStack(s => (TABS.some(t => t[0] === name) ? [{ name, params: {} }] : [...s, { name, params: params || {} }])),
+    back: () => setStack(s => (s.length > 1 ? s.slice(0, -1) : s)),
+    redirect: (name, params) => setStack(s => [...s.slice(0, -1), { name, params: params || {} }]),
+    tab: name => setStack([{ name, params: {} }])
+  };
+  const tRef = React.useRef();
+  const ui = {
+    toast: m => { setToast(m); clearTimeout(tRef.current); tRef.current = setTimeout(() => setToast(''), 1500); },
+    modal: m => setModal(m)
+  };
+  const cur = stack[stack.length - 1];
+  const Page = PAGES[cur.name] || HomePage;
+  const isTab = TABS.some(t => t[0] === cur.name) && stack.length === 1;
+  const now = new Date();
+  const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+  return (
+    <div className="stagewrap">
+      <div className="side">
+        <h1>谷雨记</h1>
+        <div className="tg">种粮大户的农田电子账本 · 小程序可交互原型</div>
+        <div>数据存在浏览器本地；天气为 <b>Open-Meteo</b> 真实接口按地块经纬度拉取。</div>
+        <button className="b" onClick={() => { GY.S.reset(); setStack([{ name: 'home', params: {} }]); }}>↺ 重置为演示数据（荣成）</button>
+        <button className="b" onClick={() => { GY.S.clear(); setStack([{ name: 'home', params: {} }]); }}>○ 清空，体验首次使用</button>
+        <small>源码见 miniprogram/ 目录，可直接导入微信开发者工具。</small>
+      </div>
+      <div className="phone">
+        <div className="screen" data-screen-label={cur.name}>
+          <div className="status"><span className="num">{time}</span><span style={{ fontSize: 12, letterSpacing: 1 }}>▮▮▮ 4G ▭</span></div>
+          <div className="nav">
+            {!isTab && <div className="back" onClick={nav.back}>‹</div>}
+            <span style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titleOf(cur)}</span>
+            <div className="capsule"><i className="dots"></i><i><span className="ring"></span></i></div>
+          </div>
+          <div className="body" ref={bodyRef}>
+            <Page key={stack.length + cur.name + JSON.stringify(cur.params)} nav={nav} ui={ui} params={cur.params} />
+          </div>
+          {isTab && <div className="tabbar">{TABS.map(([k, l, ic]) => <div key={k} className={'ti' + (cur.name === k ? ' on' : '')} onClick={() => nav.tab(k)}><div className="ic">{ic}</div>{l}</div>)}</div>}
+          {toast && <div className="toast">{toast}</div>}
+          {modal && <div className="modal"><div className="modal-b">
+            <div className="mt">{modal.title}</div>
+            {modal.content ? <div className="mc">{modal.content}</div> : <div style={{ height: 16 }} />}
+            <div className="mf">
+              {modal.onOk && !modal.single && <div style={{ color: '#555' }} onClick={() => setModal(null)}>取消</div>}
+              <div style={{ color: modal.danger ? 'var(--danger)' : 'var(--green)' }} onClick={() => { const f = modal.onOk; setModal(null); f && f(); }}>{modal.confirm || '确定'}</div>
+            </div>
+          </div></div>}
+          <div className="homebar"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

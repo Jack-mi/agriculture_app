@@ -1,0 +1,9 @@
+.tile { height: 120rpx; font-size: 30rpx; }
+.manage { text-align: right; color: var(--sub); font-size: 26rpx; margin-top: 16rpx; }
+.amount-box { display: flex; align-items: center; border-bottom: 4rpx solid var(--wheat); padding: 8rpx 0; }
+.yen { font-size: 56rpx; font-weight: 800; color: var(--wheat); margin-right: 12rpx; }
+.amount { flex: 1; font-size: 72rpx; font-weight: 800; height: 110rpx; }
+.alloc-row { display: flex; align-items: center; gap: 16rpx; margin-top: 16rpx; }
+.alloc-season { flex: 1; min-width: 0; }
+.alloc-amt { width: 220rpx; }
+.alloc-del { width: 56rpx; text-align: center; color: var(--sub); font-size: 40rpx; line-height: 1; }

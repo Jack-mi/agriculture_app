@@ -1,0 +1,17 @@
+{
+  "$schema": "https://lovagentic.com/schema/v1.json",
+  "version": 1,
+  "projectUrl": "https://lovable.dev/projects/REPLACE-ME",
+  "defaults": {
+    "headless": false,
+    "verifyEffect": true,
+    "timeoutMs": 480000
+  },
+  "prompts": {
+    "dir": "./prompts"
+  },
+  "ci": {
+    "autoRetry": false,
+    "failOnPublishMismatch": true
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "weatherDaily",
+  "version": "1.0.0",
+  "description": "每日定时为在种的季拉取昨日天气",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

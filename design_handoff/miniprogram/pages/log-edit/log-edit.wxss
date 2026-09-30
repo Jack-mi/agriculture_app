@@ -1,0 +1,7 @@
+.date-pill { background: var(--green); color: #fff; padding: 10rpx 28rpx; border-radius: 40rpx; font-size: 30rpx; font-weight: 700; }
+.wx-strip { background: #FBF8EF; border: 2rpx solid var(--line); border-radius: 16rpx; padding: 18rpx 24rpx; margin-bottom: 24rpx; font-size: 30rpx; }
+.b { font-weight: 800; }
+.heat { color: var(--heat); }
+.rain { color: var(--rain); }
+.tile { height: 110rpx; font-size: 34rpx; }
+.fert { margin-top: 28rpx; padding: 24rpx; background: var(--green-l); border-radius: 16rpx; }

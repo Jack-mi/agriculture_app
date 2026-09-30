@@ -1,0 +1,9 @@
+{
+  "name": "weatherBackfill",
+  "version": "1.0.0",
+  "description": "开季/手动回补天气（Open-Meteo）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

@@ -1,0 +1,192 @@
+<!-- 顶部概览 -->
+<view class="top">
+  <view class="row">
+    <view class="crop {{brief.cropCls}}">{{brief.cropShort}}</view>
+    <view class="flex1" style="margin-left:24rpx">
+      <view class="t-name">{{brief.yearLabel}} {{brief.crop}}
+        <text class="tag {{brief.status === 'done' ? 'done' : ''}}">{{brief.status === 'done' ? '已收获' : '在种'}}</text>
+      </view>
+      <view class="t-sub">{{brief.plotName}} · {{brief.area}} 亩 · {{brief.status === 'done' ? '全周期' : '第'}} {{brief.dayN}} 天</view>
+    </view>
+  </view>
+  <view class="kpis">
+    <view class="kpi">
+      <view class="k">总投入</view>
+      <view class="v num">¥{{brief.costText}}</view>
+      <view class="s" wx:if="{{brief.perMuText}}">¥{{brief.perMuText}}/亩</view>
+    </view>
+    <view class="kpi">
+      <view class="k">累计积温</view>
+      <view class="v num">{{met.gdd}}</view>
+      <view class="s">℃·天</view>
+    </view>
+    <view class="kpi">
+      <view class="k">累计降雨</view>
+      <view class="v num">{{met.rain}}</view>
+      <view class="s">毫米</view>
+    </view>
+  </view>
+</view>
+
+<!-- Tab -->
+<view class="tabs">
+  <view class="tab {{tab === 'cost' ? 'on' : ''}}" bindtap="setTab" data-t="cost">账本</view>
+  <view class="tab {{tab === 'log' ? 'on' : ''}}" bindtap="setTab" data-t="log">记事</view>
+  <view class="tab {{tab === 'wx' ? 'on' : ''}}" bindtap="setTab" data-t="wx">天气</view>
+  <view class="tab {{tab === 'info' ? 'on' : ''}}" bindtap="setTab" data-t="info">信息</view>
+</view>
+
+<view class="wrap" style="padding-top:24rpx">
+
+  <!-- ===== 账本 ===== -->
+  <block wx:if="{{tab === 'cost'}}">
+    <view class="card" style="padding:12rpx 32rpx">
+      <view wx:if="{{cost.total > 0}}" class="stack">
+        <view wx:for="{{cost.cats}}" wx:key="key" wx:if="{{item.total > 0}}" style="width:{{item.pct}}%;background:{{item.color}}"></view>
+      </view>
+      <view wx:for="{{cost.cats}}" wx:key="key" class="cat-row" bindtap="toggleCat" data-k="{{item.key}}">
+        <view class="row">
+          <view class="cat-dot" style="background:{{item.color}}"></view>
+          <view class="flex1 cat-name">{{item.name}}<text class="muted" wx:if="{{item.count}}"> · {{item.count}}笔</text></view>
+          <view class="num cat-amt">¥{{item.totalText}}</view>
+          <view class="muted pct num">{{item.pct}}%</view>
+        </view>
+        <view wx:if="{{openCat === item.key && item.subList.length}}" class="subs">
+          <view wx:for="{{item.subList}}" wx:for-item="sb" wx:key="name" class="row between sub-row">
+            <text>{{sb.name}}</text><text class="num">¥{{sb.amount}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="row between sum-row">
+        <text style="font-weight:800">本季合计</text>
+        <text class="num" style="font-size:44rpx;font-weight:800">¥{{cost.totalText}}</text>
+      </view>
+    </view>
+
+    <view class="sec-title">流水（{{costList.length}}）</view>
+    <view wx:if="{{!costList.length}}" class="card empty"><view class="muted">还没有记账，点下面「记一笔账」</view></view>
+    <view wx:else class="card" style="padding:0 32rpx">
+      <view wx:for="{{costList}}" wx:key="id" class="flow" bindtap="editCost" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="flow-date num">{{item.dateText}}</view>
+        <view class="flex1" style="min-width:0">
+          <view><text class="cat-pill" style="color:{{item.color}};border-color:{{item.color}}">{{item.catName}}</text>{{item.sub}}<text wx:if="{{item.people}}" class="muted"> · {{item.people}}人</text></view>
+          <view wx:if="{{item.note}}" class="muted ellipsis">{{item.note}}</view>
+        </view>
+        <view class="num flow-amt">¥{{item.amount}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ===== 记事 ===== -->
+  <block wx:if="{{tab === 'log'}}">
+    <view wx:if="{{!logGroups.length}}" class="card empty"><view class="muted">还没有记事，每天干了什么活随手记下来</view></view>
+    <view wx:for="{{logGroups}}" wx:key="date" class="day">
+      <view class="day-head">
+        <text class="day-date">{{item.dateText}}</text><text class="muted"> {{item.week}} · 第{{item.dayN}}天</text>
+        <text class="day-wx" wx:if="{{item.w}}">{{item.w}}</text>
+      </view>
+      <view wx:for="{{item.items}}" wx:for-item="l" wx:key="id" class="card log" bindtap="editLog" data-id="{{l.id}}" hover-class="btn-hover">
+        <view wx:if="{{l.ops}}" class="log-ops">{{l.ops}}</view>
+        <view wx:if="{{l.text}}" class="log-text">{{l.text}}</view>
+        <view wx:if="{{l.fert}}" class="log-meta">施肥：{{l.fert}}</view>
+        <view wx:if="{{l.moisture}}" class="log-meta">墒情：{{l.moisture}}</view>
+        <view wx:if="{{l.costText}}" class="log-meta wheat-t">关联花费 ¥{{l.costText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ===== 天气 ===== -->
+  <block wx:if="{{tab === 'wx'}}">
+    <view class="card">
+      <view class="row between">
+        <view>
+          <view class="muted">全周期积温（逐日均温累计）</view>
+          <view class="num big-v heat">{{met.gdd}}<text class="u">℃·天</text></view>
+        </view>
+        <view style="text-align:right">
+          <view class="muted">全周期降雨</view>
+          <view class="num big-v rain">{{met.rain}}<text class="u">mm</text></view>
+        </view>
+      </view>
+      <view class="muted" style="margin-top:12rpx;font-size:26rpx">
+        共 {{met.days}} 天，已获取 {{met.known}} 天{{met.manual ? '（手工修正 ' + met.manual + ' 天）' : ''}}{{met.missing ? '，缺 ' + met.missing + ' 天' : ''}}{{met.gdd0 !== met.gdd ? ' · 仅计0℃以上：' + met.gdd0 : ''}}
+      </view>
+      <view wx:if="{{bars.length}}" class="bars">
+        <view wx:for="{{bars}}" wx:key="d" class="bar-c"><view class="bar" style="height:{{item.h}}%"></view></view>
+      </view>
+      <view wx:if="{{bars.length}}" class="row between muted" style="font-size:22rpx"><text>{{bars[0].d}}</text><text>近30天降雨</text><text>{{bars[bars.length-1].d}}</text></view>
+      <view wx:if="{{wxMsg}}" class="warn-box">{{wxMsg}}<text wx:if="{{!met.hasLoc}}" class="link" bindtap="goPlot"> 去定位 ›</text></view>
+      <view class="btn ghost small" style="margin-top:20rpx" hover-class="btn-hover" bindtap="refreshWx">{{wxLoading ? '获取中…' : '重新获取天气'}}</view>
+    </view>
+
+    <view class="sec-title">逐日记录 · 点某天可手工修正</view>
+    <view class="card" style="padding:0">
+      <view class="wx-head row">
+        <text class="c1">日期</text><text class="c2">均温℃</text><text class="c3">降雨mm</text><text class="c4">积温</text><text class="c5">累计雨</text>
+      </view>
+      <view wx:for="{{wxRows}}" wx:key="date" class="wx-line row" bindtap="editWx" data-i="{{index}}" hover-class="btn-hover">
+        <view class="c1"><text>{{item.dateText}}</text><text wx:if="{{item.src === 'manual'}}" class="tag warn" style="margin-left:6rpx;font-size:20rpx">改</text></view>
+        <text class="c2 num heat">{{item.tText}}</text>
+        <text class="c3 num rain">{{item.pText}}</text>
+        <text class="c4 num">{{item.gdd}}</text>
+        <text class="c5 num">{{item.rain}}</text>
+      </view>
+    </view>
+    <view class="muted" style="font-size:24rpx;text-align:center;margin-top:12rpx">数据来源：Open-Meteo 开源天气</view>
+  </block>
+
+  <!-- ===== 信息 ===== -->
+  <block wx:if="{{tab === 'info'}}">
+    <view class="card">
+      <view class="kv"><text class="muted">播种时间</text><text>{{seasonInfo.sow}}</text></view>
+      <view class="kv"><text class="muted">播种量</text><text>{{seasonInfo.seed}}</text></view>
+      <view class="kv col"><text class="muted">整地情况</text><text style="margin-top:8rpx">{{seasonInfo.tillage}}</text></view>
+    </view>
+    <view wx:if="{{brief.status === 'done'}}" class="card">
+      <view class="kv"><text class="muted">收获时间</text><text>{{seasonInfo.harvest}}</text></view>
+      <view class="kv"><text class="muted">总产量</text><text>{{seasonInfo.yieldText}}</text></view>
+      <view class="kv" wx:if="{{seasonInfo.perMuYield}}"><text class="muted">亩产</text><text>{{seasonInfo.perMuYield}}</text></view>
+      <view class="kv" wx:if="{{seasonInfo.costPerJin}}"><text class="muted">每斤成本</text><text>{{seasonInfo.costPerJin}}</text></view>
+      <view class="kv"><text class="muted">全周期积温</text><text>{{met.gdd}} ℃·天</text></view>
+      <view class="kv"><text class="muted">全周期降雨</text><text>{{met.rain}} mm</text></view>
+      <view class="btn ghost small" style="margin-top:12rpx" bindtap="harvest">修改收获信息</view>
+      <view class="btn ghost small" style="margin:12rpx 0 0 16rpx" bindtap="reopen">撤销收获</view>
+    </view>
+    <view class="btn danger" hover-class="btn-hover" bindtap="delSeason">删除这一季</view>
+  </block>
+</view>
+
+<!-- 底部操作 -->
+<view class="fixed-bar">
+  <block wx:if="{{brief.status !== 'done'}}">
+    <view class="btn wheat" hover-class="btn-hover" bindtap="addCost">记一笔账</view>
+    <view class="btn" hover-class="btn-hover" bindtap="addLog">记今天的活</view>
+    <view class="btn ghost harvest-btn" hover-class="btn-hover" bindtap="harvest">收获</view>
+  </block>
+  <block wx:else>
+    <view class="btn wheat" hover-class="btn-hover" bindtap="addCost">补记一笔账</view>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="addLog">补记事</view>
+  </block>
+</view>
+
+<!-- 天气修正弹层 -->
+<view wx:if="{{edit}}" class="mask" bindtap="closeEdit">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">修正 {{edit.dateText}} 天气</view>
+    <view class="row">
+      <view class="field flex1" style="margin-right:20rpx">
+        <view class="label">平均气温</view>
+        <view class="input-unit"><input class="input" type="digit" value="{{edit.t}}" bindinput="onEditT" /><text class="unit">℃</text></view>
+      </view>
+      <view class="field flex1">
+        <view class="label">降雨量</view>
+        <view class="input-unit"><input class="input" type="digit" value="{{edit.p}}" bindinput="onEditP" /><text class="unit">mm</text></view>
+      </view>
+    </view>
+    <view class="muted" style="font-size:26rpx;margin:-12rpx 0 24rpx">零下气温可直接输入负号，如 -3.5</view>
+    <view class="row">
+      <view wx:if="{{edit.src === 'manual'}}" class="btn ghost" style="flex:1;margin-right:20rpx" bindtap="resetEdit">恢复自动</view>
+      <view class="btn" style="flex:2" bindtap="saveEdit">保存</view>
+    </view>
+  </view>
+</view>
