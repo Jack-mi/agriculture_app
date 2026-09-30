@@ -11,6 +11,7 @@
 >
 > **2026-09-29 更新**
 > - 体验版已上传：版本号 `0.1.0`（mp 后台「版本管理 → 开发版本」，可扫体验版二维码真机测试）
+> - **2026-09-30：体验版 `0.2.0` 已上传**（农事日志 + 多地块成本分摊 + 每日风力；云函数 weatherBackfill/weatherDaily 已重新部署，风力单位 m/s）
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
 >   - 因此当前 `app.json` 的 `requiredPrivateInfos` **临时只声明 `["chooseLocation"]`**，保证体验版可上传、地图选点可用
