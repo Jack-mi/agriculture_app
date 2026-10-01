@@ -30,3 +30,28 @@ test('app.globalData.aiModel 作为缺省（用户未选过时）', () => {
   mem[chat.AI_MODEL_KEY] = 'local';
   assert.strictEqual(chat.modelChoice().key, 'local');
 });
+
+test('BYOK 全链路：ask → advisorChat 云函数 → fromLLM 出卡（用线上真实 LLM 响应回放）', async () => {
+  Object.keys(mem).forEach(k => delete mem[k]);
+  mem[chat.AI_MODEL_KEY] = 'byok';
+  // 2026-10-01 线上 deepseek-flash 对「后天提醒我去东大块打除草剂」的真实返回
+  const REAL_LLM_TEXT = '{"reply":"行，10月3号提醒你去东大块打除草剂。","actions":[{"type":"task.create","seasonId":"SEED","title":"去东大块打除草剂","date":"2026-10-03"}]}';
+  global.wx.cloud = {
+    callFunction: ({ name, data }) => {
+      assert.strictEqual(name, 'advisorChat');
+      assert.strictEqual(data.action, 'chat');
+      assert.ok(Array.isArray(data.messages) && data.messages.length === 2);
+      return Promise.resolve({ result: { ok: true, text: REAL_LLM_TEXT.replace('SEED', 's1') } });
+    }
+  };
+  const store = require('../utils/store.js');
+  store.replaceAll({});
+  store.plots.save({ id: 'p1', name: '东大块', area: 12 });
+  store.seasons.save({ id: 's1', plotId: 'p1', crop: 'wheat', sowDate: '2026-09-30' });
+  const r = await chat.ask('后天提醒我去东大块打除草剂', { seasonId: 's1' }, null);
+  assert.ok(r.reply.indexOf('除草剂') >= 0);
+  assert.strictEqual(r.cards.length, 1);
+  assert.strictEqual(r.cards[0].type, 'task.create');
+  assert.strictEqual(r.cards[0].payload.dueStart, '2026-10-03');
+  delete global.wx.cloud;
+});
