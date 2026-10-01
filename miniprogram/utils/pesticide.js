@@ -1,7 +1,8 @@
 // 农事参谋 · 农药合规校验（薄适配层）
 // 数据在 miniprogram/kb/pesticides.js 与 blocked.js（ICAMA 公开登记整理，可插拔）。
 // 两层口径：参谋推荐时——未登记 / 本地限用一律不推荐；农户自己记录时——超量只提醒，不拦保存
-const { PESTICIDES: REG, BLOCKED: BLOCK } = require('../kb');
+const REG = require('../kb/pesticides.js');
+const BLOCK = require('../kb/blocked.js');
 
 // 推荐：按作物 + 防治对象，只返回已登记的
 function recommend(crop, target) {

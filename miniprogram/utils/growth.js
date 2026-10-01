@@ -2,7 +2,7 @@
 // 阈值/品种系数/积温口径在 miniprogram/kb/stages.js（可插拔，标定只改那里）
 const U = require('./util.js');
 const store = require('./store.js');
-const { CROP_GDD, STAGES, VARIETY_FACTOR } = require('../kb');
+const { CROP_GDD, STAGES, VARIETY_FACTOR } = require('../kb/stages.js');
 
 function dayGdd(crop, t) {
   const c = CROP_GDD[crop] || CROP_GDD.wheat;
