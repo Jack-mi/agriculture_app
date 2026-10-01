@@ -17,6 +17,7 @@ Page({
     this.ctx = { taskId: q.taskId ? decodeURIComponent(q.taskId) : '', seasonId: q.seasonId || '' };
     this.pending = null;
     this.cards = {};
+    this.history = []; // 多轮对话上下文（只存文本轮，最多 12 条）
     const rc = chat.resolveCtx(this.ctx);
     let head = null;
     if (rc.task) head = { kind: 'task', lv: advisor.bucketOf(rc.task), title: rc.task.title, sub: (rc.plot || {}).name || '' };
@@ -69,7 +70,12 @@ Page({
   send(text) {
     this.push({ role: 'me', text });
     const thinking = this.push({ role: 'ai', text: '…', thinking: true });
-    chat.ask(text, this.ctx, this.pending).then(r => this.reply(r, thinking)).catch(() => this.reply({ reply: '出了点问题，再说一次？', cards: [], chips: [] }, thinking));
+    chat.ask(text, this.ctx, this.pending, this.history).then(r => {
+      this.history.push({ role: 'user', content: text });
+      if (r.reply) this.history.push({ role: 'assistant', content: r.reply });
+      if (this.history.length > 12) this.history = this.history.slice(-12);
+      this.reply(r, thinking);
+    }).catch(() => this.reply({ reply: '出了点问题，再说一次？', cards: [], chips: [] }, thinking));
   },
   reply(r, replaceId) {
     const msgs = this.data.msgs.filter(m => m.id !== replaceId);

@@ -10,6 +10,7 @@ const advisor = require('./advisor.js');
 const nlu = require('./nlu.js');
 const pesticide = require('./pesticide.js');
 const { RULES } = require('./rules.js');
+const kb = require('./kb.js');
 
 const ACTIONS = ['task.create', 'task.update', 'task.dismiss', 'log.create', 'cost.create', 'stage.calibrate', 'memory.add', 'memory.remove'];
 
@@ -477,31 +478,49 @@ function modelChoice() {
   return AI_MODELS[0];
 }
 
-// ask：优先 LLM（已选云模型且可用），否则 / 失败时本地解析
-function ask(text, ctx, pending) {
+// ask：优先 LLM（已选云模型且可用），否则 / 失败时本地解析；history 为最近几轮对话
+function ask(text, ctx, pending, history) {
   const f = followUp(text, pending, ctx);
   if (f) return Promise.resolve(f);
   const model = modelChoice();
-  if (model.provider === 'byok') return askByok(text, ctx);
+  if (model.provider === 'byok') return askByok(text, ctx, null, history);
   const ai = typeof wx !== 'undefined' && wx.cloud && wx.cloud.extend && wx.cloud.extend.AI;
   if (!model.provider || !ai) return Promise.resolve(understand(text, ctx));
-  return callLLM(ai, model, text, ctx).then(j => {
+  return callLLM(ai, model, text, ctx, history).then(j => {
     const r = j ? fromLLM(j, ctx) : null;
     return r && (r.cards.length || r.reply) ? r : understand(text, ctx);
   }).catch(() => understand(text, ctx));
 }
-// 系统提示与上下文（云开发 AI 与 BYOK 云函数共用）
-function buildMessages(text, ctx, imageBase64) {
+// ---------- 系统提示（云开发 AI 与 BYOK 云函数共用） ----------
+// 设计：先是个能聊农业的参谋，再是个能记账的助手。问答正常答，记东西才出 actions。
+function sysPrompt() {
+  const kbText = Object.keys(kb.DOCS).map(k => '· 《' + kb.DOCS[k].title + '》(' + kb.DOCS[k].org + ')：' + kb.DOCS[k].excerpt).join('\n');
+  const regText = pesticide.REG.map(r => r.name + '(' + r.form + '，' + r.crops.map(c => C.cropOf(c).name).join('/') + '，防' + r.target + '，' + r.rate[0] + '–' + r.rate[1] + ' ' + r.unit + ')').join('；');
+  const stageText = ['wheat', 'corn'].map(c =>
+    C.cropOf(c).name + '：' + growth.STAGES[c].map(s => s.name).join('→')
+  ).join('\n');
+  return '你是「田祖记」的农事参谋，服务对象是胶东种粮大户（小麦、夏玉米为主）。你既是有经验的庄稼把式，也是懂合规的农技员。\n' +
+    '【怎么聊】\n' +
+    '- 农户问农业问题就正常回答，可以把道理讲清楚，别只回一句话。说人话、口语化，农户怎么种地你怎么说。\n' +
+    '- 拿不准就直说拿不准，别编数据、别编药名。涉及农药只推荐已登记药剂，剂量按登记用量讲，并提醒看标签。\n' +
+    '- 只有农户明确想记活、记账、设提醒、改任务时，才在 actions 里出动作；问答和闲聊一律不出动作。\n' +
+    '【输出格式】只输出 JSON：{"reply":"回复（可多说几句，需要分段用\\n）","actions":[可为空数组]}\n' +
+    'actions 只能是：task.create{seasonId,title,date}、task.update{taskId,date}、task.dismiss{taskId,reason,remember}、stage.calibrate{seasonId,stage}、memory.add{text}、memory.remove{id}、log.create{source}、cost.create{source}（source 填农户原话）。日期一律 YYYY-MM-DD，seasonId 只能用上下文里给的。\n' +
+    '【生育期顺序】\n' + stageText + '\n' +
+    '【本地技术依据】\n' + kbText + '\n' +
+    '【农药登记（参考）】' + regText + '。限用：' + pesticide.BLOCK.map(b => b.name + '（' + b.reason + '）').join('；') + '。';
+}
+
+// 组装消息：系统提示 + 最近几轮对话 + 本轮（可带图）
+function buildMessages(text, ctx, imageBase64, history) {
   const rc = resolveCtx(ctx);
-  const sys = '你是「田祖记」的农事参谋，面向种粮农户，说话简短、口语化。只能输出 JSON：{"reply":"一句话回复","actions":[...]}。' +
-    'actions 只能是：task.create{seasonId,title,date}、task.update{taskId,date}、task.dismiss{taskId,reason,remember}、stage.calibrate{seasonId,stage}、memory.add{text}、memory.remove{id}、log.create{source}、cost.create{source}（source 填农户原话）。不确定就只回复、不出动作。日期格式 YYYY-MM-DD。';
   const context = {
     today: U.today(),
     task: rc.task ? { id: rc.task.id, title: rc.task.title, due: rc.task.dueStart } : null,
-    seasons: store.seasons.growing().map(s => ({ id: s.id, plot: plotName(s), crop: C.cropOf(s.crop).name, variety: s.variety || '', stage: growth.current(s).stage.key })),
+    seasons: store.seasons.growing().map(s => ({ id: s.id, plot: plotName(s), crop: C.cropOf(s.crop).name, variety: s.variety || '', stage: growth.current(s).stage.name })),
     memory: store.memory.all().map(m => ({ id: m.id, text: m.text }))
   };
-  let userContent = '上下文：' + JSON.stringify(context) + '\n农户说：' + text;
+  let userContent = '当前上下文：' + JSON.stringify(context) + '\n农户说：' + text;
   // 带图：OpenAI 视觉格式（仅 DeepSeek Flash 等支持图片的模型；调用方保证模型支持）
   if (imageBase64) {
     userContent = [
@@ -509,28 +528,40 @@ function buildMessages(text, ctx, imageBase64) {
       { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + imageBase64 } }
     ];
   }
-  return [{ role: 'system', content: sys }, { role: 'user', content: userContent }];
+  const msgs = [{ role: 'system', content: sysPrompt() }];
+  (history || []).slice(-12).forEach(h => {
+    if (h && h.content && (h.role === 'user' || h.role === 'assistant')) msgs.push({ role: h.role, content: String(h.content).slice(0, 600) });
+  });
+  msgs.push({ role: 'user', content: userContent });
+  return msgs;
 }
-function callLLM(ai, model, text, ctx) {
-  const messages = buildMessages(text, ctx);
+function callLLM(ai, model, text, ctx, history) {
+  const messages = buildMessages(text, ctx, null, history);
   return ai.createModel(model.provider || 'hunyuan-exp').generateText({
     model: model.name || 'hunyuan-turbos-latest',
     messages
   }).then(r => {
     const s = (r && (r.text || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '';
     const m = s.match(/\{[\s\S]*\}/);
-    return m ? JSON.parse(m[0]) : null;
+    if (m) return JSON.parse(m[0]);
+    return s ? { reply: s, actions: [] } : null; // 模型直接回了纯文本也接住
   });
 }
 // BYOK：走 advisorChat 云函数（Key 存云端，不下发）；失败回落本地规则；imageBase64 带图（DeepSeek Flash 支持）
-function askByok(text, ctx, imageBase64) {
+function askByok(text, ctx, imageBase64, history) {
   const cf = typeof wx !== 'undefined' && wx.cloud && wx.cloud.callFunction;
   if (!cf) return Promise.resolve(understand(text, ctx));
-  return wx.cloud.callFunction({ name: 'advisorChat', data: { action: 'chat', messages: buildMessages(text, ctx, imageBase64) } }).then(r => {
+  return wx.cloud.callFunction({ name: 'advisorChat', data: { action: 'chat', messages: buildMessages(text, ctx, imageBase64, history) } }).then(r => {
     const res = r && r.result;
     if (!res || !res.ok || !res.text) return understand(text, ctx);
     const m = String(res.text).match(/\{[\s\S]*\}/);
-    const j = m ? JSON.parse(m[0]) : null;
+    let j = null;
+    if (m) { try { j = JSON.parse(m[0]); } catch (e) { j = null; } }
+    if (!j) {
+      // JSON 里夹了真实换行等情况：单独抠 reply 字段；抠不出来就当纯文本整段用
+      const rm = String(res.text).match(/"reply"\s*:\s*"([\s\S]*?)"\s*[,}]/);
+      j = rm ? { reply: rm[1].replace(/\\n/g, '\n'), actions: [] } : { reply: String(res.text), actions: [] };
+    }
     const out = j ? fromLLM(j, ctx) : null;
     return out && (out.cards.length || out.reply) ? out : understand(text, ctx);
   }).catch(() => understand(text, ctx));
@@ -615,4 +646,4 @@ function chipsFor(ctx) {
   return ['提醒我…', '今天干了啥活', '你记住了啥'];
 }
 
-module.exports = { understand, followUp, ask, askImage, execute, fillCard, chipsFor, resolveCtx, fromLLM, ACTIONS, AI_MODELS, AI_MODEL_KEY, modelChoice };
+module.exports = { understand, followUp, ask, askImage, execute, fillCard, chipsFor, resolveCtx, fromLLM, ACTIONS, AI_MODELS, AI_MODEL_KEY, modelChoice, buildMessages, sysPrompt };
