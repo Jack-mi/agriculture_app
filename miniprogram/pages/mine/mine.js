@@ -2,9 +2,10 @@ const store = require('../../utils/store.js');
 const sync = require('../../utils/sync.js');
 const stats = require('../../utils/stats.js');
 const U = require('../../utils/util.js');
+const chat = require('../../utils/chat.js');
 
 Page({
-  data: { counts: {}, sync: {}, syncText: '', yearCost: '', yearLabel: '' },
+  data: { counts: {}, sync: {}, syncText: '', yearCost: '', yearLabel: '', aiLabel: '' },
 
   onShow() {
     const d = store.db();
@@ -18,6 +19,21 @@ Page({
       syncText: !st.enabled ? '本地模式 · 数据存在这部手机里' :
         (st.dirty ? '有新记录待同步（联网后自动）' : (st.syncedAt ? '已同步 · ' + new Date(st.syncedAt).toLocaleString() : '已开启云备份')),
       yearCost: U.money(yc), yearLabel: y
+    });
+    this.setData({ aiLabel: chat.modelChoice().label });
+  },
+
+  pickAi() {
+    const models = chat.AI_MODELS;
+    wx.showActionSheet({
+      itemList: models.map(m => m.label),
+      success: r => {
+        const m = models[r.tapIndex];
+        if (!m) return;
+        wx.setStorageSync(chat.AI_MODEL_KEY, m.key);
+        this.setData({ aiLabel: m.label });
+        U.toast('参谋模型：' + m.label, 'success');
+      }
     });
   },
 

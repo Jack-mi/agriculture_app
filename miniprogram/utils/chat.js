@@ -455,14 +455,34 @@ function fromLLM(json, ctx) {
 }
 function valid(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : ''; }
 
-// ask：优先 LLM（若 app 配置了 AI_MODEL 且可用），否则 / 失败时本地解析
+// 可选的参谋模型：本地规则兜底免费；云开发 AI 支持混元 / DeepSeek
+const AI_MODELS = [
+  { key: 'local', label: '本地规则（免费）', provider: '', name: '' },
+  { key: 'hunyuan', label: '混元 Turbo', provider: 'hunyuan-exp', name: 'hunyuan-turbos-latest' },
+  { key: 'dsv3', label: 'DeepSeek V3', provider: 'deepseek', name: 'deepseek-v3' },
+  { key: 'dsr1', label: 'DeepSeek R1', provider: 'deepseek', name: 'deepseek-r1' }
+];
+const AI_MODEL_KEY = 'guyuji_ai_model';
+// 当前选用的模型：用户在「我的」里切换（存 Storage），缺省回落到 app.globalData.aiModel，再回落本地规则
+function modelChoice() {
+  try {
+    const k = wx.getStorageSync(AI_MODEL_KEY);
+    const m = AI_MODELS.find(x => x.key === k);
+    if (m) return m;
+  } catch (e) {}
+  const app = typeof getApp === 'function' ? getApp() : null;
+  const g = app && app.globalData && app.globalData.aiModel;
+  if (g && g.name) return { key: 'custom', label: g.name, provider: g.provider, name: g.name };
+  return AI_MODELS[0];
+}
+
+// ask：优先 LLM（已选云模型且可用），否则 / 失败时本地解析
 function ask(text, ctx, pending) {
   const f = followUp(text, pending, ctx);
   if (f) return Promise.resolve(f);
-  const app = typeof getApp === 'function' ? getApp() : null;
-  const model = app && app.globalData && app.globalData.aiModel;
+  const model = modelChoice();
   const ai = typeof wx !== 'undefined' && wx.cloud && wx.cloud.extend && wx.cloud.extend.AI;
-  if (!model || !ai) return Promise.resolve(understand(text, ctx));
+  if (!model.provider || !ai) return Promise.resolve(understand(text, ctx));
   return callLLM(ai, model, text, ctx).then(j => {
     const r = j ? fromLLM(j, ctx) : null;
     return r && (r.cards.length || r.reply) ? r : understand(text, ctx);
@@ -558,4 +578,4 @@ function chipsFor(ctx) {
   return ['提醒我…', '今天干了啥活', '你记住了啥'];
 }
 
-module.exports = { understand, followUp, ask, execute, fillCard, chipsFor, resolveCtx, fromLLM, ACTIONS };
+module.exports = { understand, followUp, ask, execute, fillCard, chipsFor, resolveCtx, fromLLM, ACTIONS, AI_MODELS, AI_MODEL_KEY, modelChoice };
