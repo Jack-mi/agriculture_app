@@ -1,0 +1,9 @@
+{
+  "name": "advisorAgent",
+  "version": "1.0.0",
+  "description": "农事参谋多智能体运行时（DeepSeek tool-calling agent loop）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

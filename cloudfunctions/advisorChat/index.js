@@ -51,6 +51,17 @@ exports.main = async (event) => {
     return { ok: true, configured: !!(c && c.apiKey), model: c ? c.model : '', baseUrl: c ? c.baseUrl : '' };
   }
 
+  if (action === 'setModel') {
+    const c = await cfgDoc();
+    if (!c || !c.apiKey) return { ok: false, reason: 'nokey' };
+    const model = String(event.model || '').trim();
+    if (!model) return { ok: false, reason: 'badargs' };
+    await db.collection('config').doc('advisor_ai').set({
+      data: { apiKey: c.apiKey, baseUrl: c.baseUrl || DEFAULT_BASE, model, updatedAt: Date.now() }
+    });
+    return { ok: true };
+  }
+
   // chat：messages 原样转发（系统提示由客户端组装），返回纯文本
   const c = await cfgDoc();
   if (!c || !c.apiKey) return { ok: false, reason: 'nokey' };

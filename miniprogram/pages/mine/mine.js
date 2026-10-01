@@ -30,10 +30,7 @@ Page({
       success: r => {
         const m = models[r.tapIndex];
         if (!m) return;
-        if (m.key === 'byok') return this.setupByok(m);
-        wx.setStorageSync(chat.AI_MODEL_KEY, m.key);
-        this.setData({ aiLabel: m.label });
-        U.toast('参谋模型：' + m.label, 'success');
+        this.setupByok(m);
       }
     });
   },
@@ -43,10 +40,11 @@ Page({
     const cf = wx.cloud && wx.cloud.callFunction;
     if (!cf) return U.toast('需要先在 app.js 配置云开发环境');
     const enable = () => {
-      wx.setStorageSync(chat.AI_MODEL_KEY, 'byok');
+      wx.setStorageSync(chat.AI_MODEL_KEY, m.key);
       this.setData({ aiLabel: m.label });
       U.toast('参谋模型：' + m.label, 'success');
     };
+    const applyModel = () => cf({ name: 'advisorChat', data: { action: 'setModel', model: m.model || 'deepseek-flash' } }).then(() => enable()).catch(() => enable());
     cf({ name: 'advisorChat', data: { action: 'status' } }).then(r => {
       const configured = r.result && r.result.configured;
       wx.showModal({
@@ -54,10 +52,10 @@ Page({
         content: configured ? '已保存过 Key，直接点「取消」沿用；输入新 Key 点「确定」覆盖。' : '去 platform.deepseek.com 注册拿 API Key，粘贴到这里。Key 只存你的云环境。',
         editable: true, placeholderText: 'sk-...',
         success: mr => {
-          if (!mr.confirm) { if (configured) enable(); return; }
+          if (!mr.confirm) { if (configured) applyModel(); return; }
           const key = (mr.content || '').trim();
           if (!key) return U.toast('Key 不能为空');
-          cf({ name: 'advisorChat', data: { action: 'setKey', apiKey: key } }).then(sr => {
+          cf({ name: 'advisorChat', data: { action: 'setKey', apiKey: key, model: m.model || 'deepseek-flash' } }).then(sr => {
             if (sr.result && sr.result.ok) enable();
             else U.toast('保存失败，稍后再试');
           }).catch(() => U.toast('网络不好，稍后再试'));

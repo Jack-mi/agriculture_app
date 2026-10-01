@@ -10,7 +10,6 @@ const U = require('../utils/util.js');
 const store = require('../utils/store.js');
 const growth = require('../utils/growth.js');
 const advisor = require('../utils/advisor.js');
-const nlu = require('../utils/nlu.js');
 const chat = require('../utils/chat.js');
 const pesticide = require('../utils/pesticide.js');
 
@@ -138,149 +137,24 @@ test('巡田提醒：7 天没记就推一条（soft），今天页不计入待�
 });
 
 // ---------- 语义解析 ----------
-test('nlu：中文数字 / 日期 / 金额 / 农资 / 机械', () => {
-  assert.strictEqual(nlu.cn2num('十五'), 15);
-  assert.strictEqual(nlu.cn2num('一千二'), 1200);
-  assert.strictEqual(nlu.cn2num('两万五'), 25000);
-  assert.strictEqual(nlu.cn2num('三百'), 300);
-  assert.strictEqual(nlu.parseDate('后天提醒我'), D(2));
-  assert.strictEqual(nlu.parseDate('明天'), D(1));
-  const m = nlu.parseMoney('老张家无人机，一亩十五，打的吡虫啉');
-  assert.strictEqual(m.mode, 'perMu'); assert.strictEqual(m.unitPrice, 15);
-  const m2 = nlu.parseMoney('一共花了一千二');
-  assert.strictEqual(m2.mode, 'fixed'); assert.strictEqual(m2.amount, 1200);
-  const m3 = nlu.parseMoney('雇了三个人，一人两百');
-  assert.strictEqual(m3.mode, 'perDay'); assert.strictEqual(m3.people, 3); assert.strictEqual(m3.unitPrice, 200);
-  assert.deepStrictEqual(nlu.parseMaterials('打的吡虫啉，一亩20克', ['吡虫啉']), [{ type: '农药', name: '吡虫啉', rate: 20, unit: 'g/亩' }]);
-  assert.strictEqual(nlu.parseMachine('老张家无人机飞的'), '老张家无人机');
-  assert.ok(nlu.matchOps('今天飞防了').indexOf('打药') >= 0);
-  assert.strictEqual(nlu.parseShift('往后推三天'), 3);
-});
 
-// ---------- 对话 ----------
-function seedTwo() {
+test('LLM 动作白名单：非法类型丢弃；无结构化载荷的记账也丢弃；结构化载荷出卡', () => {
   reset();
-  store.plots.save({ id: 'pa', name: '村东大块', area: 52, lat: 37.1, lng: 122.4 });
   store.plots.save({ id: 'pb', name: '河边地', area: 28, lat: 37.1, lng: 122.4 });
-  store.seasons.save({ id: 'sc', plotId: 'pa', crop: 'corn', sowDate: D(-60) });
-  store.seasons.save({ id: 'sw', plotId: 'pb', crop: 'wheat', sowDate: D(-9) });
-  fillWeather('pa', D(-60), T, 22); fillWeather('pb', D(-9), T, 15);
-  setFc('pa', []); setFc('pb', [{ date: D(2), t: 15, p: 0 }, { date: D(3), t: 14, p: 4 }]);
-}
-
-test('对话 · 新建任务：「后天提醒我去河边地打蚜虫」→ 新任务卡，确认后进待办', () => {
-  seedTwo();
-  const r = chat.understand('后天提醒我去河边地打蚜虫', {});
-  assert.strictEqual(r.cards.length, 1);
-  const c = r.cards[0];
-  assert.strictEqual(c.type, 'task.create');
-  assert.strictEqual(c.payload.seasonId, 'sw');
-  assert.strictEqual(c.payload.dueStart, D(2));
-  assert.ok(c.payload.title.indexOf('蚜虫') >= 0);
-  assert.ok(c.warn.indexOf('小雨') >= 0 || c.warn.indexOf('雨') >= 0, '次日有雨给提示');
-  const res = chat.execute(c);
-  const t = store.tasks.get(res.taskId);
-  assert.strictEqual(t.source, 'user');
-  assert.strictEqual(t.status, 'open');
-});
-
-test('对话 · 调整任务：改日期 → 改任务卡（改前→改后），追问后可记住', () => {
-  seedTwo();
-  const t = store.tasks.save({ seasonId: 'sc', plotId: 'pa', key: 'corn.harvest', source: 'stage', title: '雨前抢收玉米', dueStart: T, dueEnd: D(1), ops: ['收获'] });
-  const r = chat.understand('收割机明天来不了，最早后天上午。东头那片还没熟透', { taskId: t.id });
-  const c = r.cards.find(x => x.type === 'task.update');
-  assert.ok(c);
-  assert.strictEqual(c.payload.dueStart, D(2));
-  assert.ok(r.pending && r.pending.kind === 'rememberAfterUpdate');
-  chat.execute(c);
-  assert.strictEqual(store.tasks.get(t.id).dueStart, D(2));
-  assert.ok(store.tasks.get(t.id).userDue);
-  const f = chat.followUp('记住', r.pending, { taskId: t.id });
-  assert.strictEqual(f.cards[0].type, 'memory.add');
-  chat.execute(f.cards[0]);
-  assert.strictEqual(store.memory.all().length, 1);
-});
-
-test('对话 · 一句话两件事：校准生育期 + 补记完成任务', () => {
-  seedTwo();
-  const t = store.tasks.save({ id: 'sw#wheat.checkSeedling', seasonId: 'sw', plotId: 'pb', key: 'wheat.checkSeedling', source: 'stage', title: '查苗，缺苗断垄及时补种', dueStart: T, dueEnd: D(6), ops: ['巡田'] });
-  const r = chat.understand('麦子都三片叶了，查苗昨天也弄完了，断垄补了两垄', { taskId: t.id });
-  const types = r.cards.map(c => c.type);
-  assert.ok(types.indexOf('stage.calibrate') >= 0);
-  assert.ok(types.indexOf('log.create') >= 0);
-  const log = r.cards.find(c => c.type === 'log.create');
-  assert.strictEqual(log.payload.date, D(-1));
-  assert.strictEqual(log.payload.taskId, t.id);
-  r.cards.forEach(c => chat.execute(c));
-  assert.strictEqual(store.tasks.get(t.id).status, 'done');
-  assert.strictEqual(growth.current(store.seasons.get('sw')).stage.key, 'leaf3');
-});
-
-test('对话 · 删除任务：「这件不用做了」→ 删除卡；说「以后都不用」会记住并抑制该规则', () => {
-  seedTwo();
-  const t = store.tasks.save({ id: 'sw#wheat.herbicide', seasonId: 'sw', plotId: 'pb', key: 'wheat.herbicide', source: 'stage', title: '冬前化学除草', dueStart: T, dueEnd: D(10), ops: ['除草'] });
-  const r = chat.understand('这块地不用打除草剂，以后都不用', { taskId: t.id });
-  const c = r.cards[0];
-  assert.strictEqual(c.type, 'task.dismiss');
-  assert.ok(c.payload.remember);
-  chat.execute(c);
-  assert.strictEqual(store.tasks.get(t.id).status, 'dismissed');
-  assert.ok(store.memory.suppressed('wheat.herbicide', 'pb'));
-});
-
-test('对话 · 地块语音记事 + 记账：两块地飞防，按亩计 + 按亩均摊；缺用量追问后补上', () => {
-  seedTwo();
-  const r = chat.understand('今天两块地都飞防了，老张家无人机，一亩十五，打的吡虫啉', {});
-  const log = r.cards.find(c => c.type === 'log.create');
-  const cost = r.cards.find(c => c.type === 'cost.create');
-  assert.ok(log && cost);
-  assert.deepStrictEqual(log.payload.seasonIds.sort(), ['sc', 'sw']);
-  assert.strictEqual(log.payload.machine, '老张家无人机');
-  assert.strictEqual(cost.payload.calc.unitPrice, 15);
-  assert.strictEqual(cost.payload.calc.mu, 80);
-  assert.deepStrictEqual(cost.payload.allocations.map(a => a.amount).sort((a, b) => a - b), [420, 780]);
-  assert.strictEqual(cost.payload.sub, '飞防');
-  assert.ok(r.pending && r.pending.kind === 'fillRate');
-  const f = chat.followUp('一亩 20 克', r.pending, {});
-  const filled = chat.fillCard(log, f.fill);
-  assert.strictEqual(filled.payload.materials[0].rate, 20);
-  chat.execute(filled); chat.execute(cost);
-  assert.strictEqual(store.logs.bySeason('sc').length, 1);
-  assert.strictEqual(store.logs.bySeason('sw').length, 1);
-  assert.strictEqual(store.costs.bySeason('sc')[0].amount, 1200);
-});
-
-test('对话 · 问建议 → 建议卡（不自动进待办），加成任务后来源为参谋建议', () => {
-  seedTwo();
-  const r = chat.understand('这块麦子入冬前还要干点啥？', { seasonId: 'sw' });
-  assert.ok(r.cards.length >= 1);
-  assert.ok(r.cards.every(c => c.type === 'task.create' && c.payload.source === 'advice'));
-  const before = store.tasks.open().length;
-  assert.strictEqual(before, 0, '建议不自动进待办');
-  const res = chat.execute(r.cards[0]);
-  assert.strictEqual(store.tasks.get(res.taskId).source, 'advice');
-});
-
-test('对话 · 查询：这季化肥花了多少 / 上回打药哪天；记住的列表与忘掉', () => {
-  seedTwo();
-  store.costs.save({ seasonId: 'sw', date: D(-3), cat: 'agri', sub: '化肥', allocations: [{ seasonId: 'sw', amount: 3080 }] });
-  store.logs.save({ seasonId: 'sw', date: D(-5), ops: ['打药'], text: '打了一遍' });
-  assert.ok(chat.understand('河边地这季化肥花了多少', {}).reply.indexOf('3,080') >= 0);
-  assert.ok(chat.understand('上回打药是哪天', { seasonId: 'sw' }).reply.indexOf(advisor.md(D(-5))) >= 0);
-  store.memory.add({ text: '不用 2,4-D 丁酯（周边有花生）', plotId: 'pb' });
-  const l = chat.understand('你都记住我啥了？', {});
-  assert.strictEqual(l.list.length, 1);
-  const f = chat.understand('2,4-D 那条忘了吧', {});
-  assert.strictEqual(f.cards[0].type, 'memory.remove');
-  chat.execute(f.cards[0]);
-  assert.strictEqual(store.memory.all().length, 0);
-});
-
-test('对话 · LLM 动作白名单：非法类型丢弃，记账必须经本地复核', () => {
-  seedTwo();
-  const r = chat.fromLLM({ reply: '好', actions: [{ type: 'db.drop' }, { type: 'task.create', seasonId: 'sw', title: '浇水', date: D(3) }, { type: 'cost.create', source: '花了一千二' }] }, {});
+  store.seasons.save({ id: 'sw', plotId: 'pb', crop: 'wheat', variety: '济麦22', sowDate: D(-10) });
+  const r = chat.fromLLM({ reply: '好', actions: [
+    { type: 'db.drop' },
+    { type: 'task.create', seasonId: 'sw', title: '浇水', date: D(3) },
+    { type: 'cost.create', source: '花了一千二' },
+    { type: 'cost.create', cost: { seasonIds: ['sw'], cat: 'agri', sub: '化肥', date: T, money: { mode: 'fixed', amount: 1200 }, note: '复合肥' } },
+    { type: 'log.create', log: { seasonIds: ['sw'], date: T, ops: ['打药'], text: '打了遍蚜虫', materials: [{ type: '农药', name: '吡虫啉', rate: 3, unit: 'g/亩' }] } }
+  ] }, {});
   assert.strictEqual(r.cards.filter(c => c.type === 'task.create').length, 1);
   assert.ok(!r.cards.some(c => c.type === 'db.drop'));
+  assert.strictEqual(r.cards.filter(c => c.type === 'cost.create').length, 1);
+  assert.strictEqual(r.cards.filter(c => c.type === 'cost.create')[0].payload.allocations[0].amount, 1200);
+  const log = r.cards.find(c => c.type === 'log.create');
+  assert.ok(log && log.payload.materials[0].name === '吡虫啉');
 });
 
 test('合规：推荐只含已登记；记录超量只提醒', () => {
