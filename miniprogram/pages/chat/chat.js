@@ -50,7 +50,12 @@ Page({
     wx.chooseMedia({ count: 1, mediaType: ['image'], sourceType: ['camera', 'album'], success: r => {
       const path = r.tempFiles[0].tempFilePath;
       this.push({ role: 'me', img: path });
-      this.push({ role: 'ai', text: '照片收到了。说一下这是哪块地、看到了什么，我帮你记下来。' });
+      const thinking = this.push({ role: 'ai', text: '…', thinking: true });
+      let b64 = '';
+      try { b64 = wx.getFileSystemManager().readFileSync(path, 'base64'); } catch (e) {}
+      if (!b64) return this.reply({ reply: '照片读不出来，再拍一次？', cards: [], chips: [] }, thinking);
+      chat.askImage('', b64, this.ctx).then(res => this.reply(res, thinking))
+        .catch(() => this.reply({ reply: '识图出了点问题，再发一次？', cards: [], chips: [] }, thinking));
     } });
   },
 

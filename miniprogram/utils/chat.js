@@ -491,7 +491,7 @@ function ask(text, ctx, pending) {
   }).catch(() => understand(text, ctx));
 }
 // 系统提示与上下文（云开发 AI 与 BYOK 云函数共用）
-function buildMessages(text, ctx) {
+function buildMessages(text, ctx, imageBase64) {
   const rc = resolveCtx(ctx);
   const sys = '你是「田祖记」的农事参谋，面向种粮农户，说话简短、口语化。只能输出 JSON：{"reply":"一句话回复","actions":[...]}。' +
     'actions 只能是：task.create{seasonId,title,date}、task.update{taskId,date}、task.dismiss{taskId,reason,remember}、stage.calibrate{seasonId,stage}、memory.add{text}、memory.remove{id}、log.create{source}、cost.create{source}（source 填农户原话）。不确定就只回复、不出动作。日期格式 YYYY-MM-DD。';
@@ -501,7 +501,15 @@ function buildMessages(text, ctx) {
     seasons: store.seasons.growing().map(s => ({ id: s.id, plot: plotName(s), crop: C.cropOf(s.crop).name, variety: s.variety || '', stage: growth.current(s).stage.key })),
     memory: store.memory.all().map(m => ({ id: m.id, text: m.text }))
   };
-  return [{ role: 'system', content: sys }, { role: 'user', content: '上下文：' + JSON.stringify(context) + '\n农户说：' + text }];
+  let userContent = '上下文：' + JSON.stringify(context) + '\n农户说：' + text;
+  // 带图：OpenAI 视觉格式（仅 DeepSeek Flash 等支持图片的模型；调用方保证模型支持）
+  if (imageBase64) {
+    userContent = [
+      { type: 'text', text: userContent },
+      { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + imageBase64 } }
+    ];
+  }
+  return [{ role: 'system', content: sys }, { role: 'user', content: userContent }];
 }
 function callLLM(ai, model, text, ctx) {
   const messages = buildMessages(text, ctx);
@@ -514,11 +522,11 @@ function callLLM(ai, model, text, ctx) {
     return m ? JSON.parse(m[0]) : null;
   });
 }
-// BYOK：走 advisorChat 云函数（Key 存云端，不下发）；失败回落本地规则
-function askByok(text, ctx) {
+// BYOK：走 advisorChat 云函数（Key 存云端，不下发）；失败回落本地规则；imageBase64 带图（DeepSeek Flash 支持）
+function askByok(text, ctx, imageBase64) {
   const cf = typeof wx !== 'undefined' && wx.cloud && wx.cloud.callFunction;
   if (!cf) return Promise.resolve(understand(text, ctx));
-  return wx.cloud.callFunction({ name: 'advisorChat', data: { action: 'chat', messages: buildMessages(text, ctx) } }).then(r => {
+  return wx.cloud.callFunction({ name: 'advisorChat', data: { action: 'chat', messages: buildMessages(text, ctx, imageBase64) } }).then(r => {
     const res = r && r.result;
     if (!res || !res.ok || !res.text) return understand(text, ctx);
     const m = String(res.text).match(/\{[\s\S]*\}/);
@@ -526,6 +534,15 @@ function askByok(text, ctx) {
     const out = j ? fromLLM(j, ctx) : null;
     return out && (out.cards.length || out.reply) ? out : understand(text, ctx);
   }).catch(() => understand(text, ctx));
+}
+
+// 带图提问：仅 BYOK（DeepSeek Flash 支持图片）；其他模型退回文字描述引导
+function askImage(text, imageBase64, ctx) {
+  const model = modelChoice();
+  if (model.provider !== 'byok') {
+    return Promise.resolve({ reply: '照片收到了。看图识物要用「DeepSeek（自己的 Key）」模型，去 我的 → 参谋 AI 模型 切换后重发。', cards: [], chips: [] });
+  }
+  return askByok(text || '看看这张照片，地里是什么情况？', ctx, imageBase64);
 }
 
 // ---------- 执行（唯一的写入口） ----------
@@ -598,4 +615,4 @@ function chipsFor(ctx) {
   return ['提醒我…', '今天干了啥活', '你记住了啥'];
 }
 
-module.exports = { understand, followUp, ask, execute, fillCard, chipsFor, resolveCtx, fromLLM, ACTIONS, AI_MODELS, AI_MODEL_KEY, modelChoice };
+module.exports = { understand, followUp, ask, askImage, execute, fillCard, chipsFor, resolveCtx, fromLLM, ACTIONS, AI_MODELS, AI_MODEL_KEY, modelChoice };
