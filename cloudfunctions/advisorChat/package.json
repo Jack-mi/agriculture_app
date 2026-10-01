@@ -1,0 +1,9 @@
+{
+  "name": "advisorChat",
+  "version": "1.0.0",
+  "description": "农事参谋 BYOK 大模型代理（OpenAI 兼容，默认 DeepSeek）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

@@ -460,7 +460,8 @@ const AI_MODELS = [
   { key: 'local', label: '本地规则（免费）', provider: '', name: '' },
   { key: 'hunyuan', label: '混元 Turbo', provider: 'hunyuan-exp', name: 'hunyuan-turbos-latest' },
   { key: 'dsv3', label: 'DeepSeek V3', provider: 'deepseek', name: 'deepseek-v3' },
-  { key: 'dsr1', label: 'DeepSeek R1', provider: 'deepseek', name: 'deepseek-r1' }
+  { key: 'dsr1', label: 'DeepSeek R1', provider: 'deepseek', name: 'deepseek-r1' },
+  { key: 'byok', label: 'DeepSeek（自己的 Key）', provider: 'byok', name: 'deepseek-chat' }
 ];
 const AI_MODEL_KEY = 'guyuji_ai_model';
 // 当前选用的模型：用户在「我的」里切换（存 Storage），缺省回落到 app.globalData.aiModel，再回落本地规则
@@ -481,6 +482,7 @@ function ask(text, ctx, pending) {
   const f = followUp(text, pending, ctx);
   if (f) return Promise.resolve(f);
   const model = modelChoice();
+  if (model.provider === 'byok') return askByok(text, ctx);
   const ai = typeof wx !== 'undefined' && wx.cloud && wx.cloud.extend && wx.cloud.extend.AI;
   if (!model.provider || !ai) return Promise.resolve(understand(text, ctx));
   return callLLM(ai, model, text, ctx).then(j => {
@@ -488,7 +490,8 @@ function ask(text, ctx, pending) {
     return r && (r.cards.length || r.reply) ? r : understand(text, ctx);
   }).catch(() => understand(text, ctx));
 }
-function callLLM(ai, model, text, ctx) {
+// 系统提示与上下文（云开发 AI 与 BYOK 云函数共用）
+function buildMessages(text, ctx) {
   const rc = resolveCtx(ctx);
   const sys = '你是「田祖记」的农事参谋，面向种粮农户，说话简短、口语化。只能输出 JSON：{"reply":"一句话回复","actions":[...]}。' +
     'actions 只能是：task.create{seasonId,title,date}、task.update{taskId,date}、task.dismiss{taskId,reason,remember}、stage.calibrate{seasonId,stage}、memory.add{text}、memory.remove{id}、log.create{source}、cost.create{source}（source 填农户原话）。不确定就只回复、不出动作。日期格式 YYYY-MM-DD。';
@@ -498,14 +501,31 @@ function callLLM(ai, model, text, ctx) {
     seasons: store.seasons.growing().map(s => ({ id: s.id, plot: plotName(s), crop: C.cropOf(s.crop).name, variety: s.variety || '', stage: growth.current(s).stage.key })),
     memory: store.memory.all().map(m => ({ id: m.id, text: m.text }))
   };
+  return [{ role: 'system', content: sys }, { role: 'user', content: '上下文：' + JSON.stringify(context) + '\n农户说：' + text }];
+}
+function callLLM(ai, model, text, ctx) {
+  const messages = buildMessages(text, ctx);
   return ai.createModel(model.provider || 'hunyuan-exp').generateText({
     model: model.name || 'hunyuan-turbos-latest',
-    messages: [{ role: 'system', content: sys }, { role: 'user', content: '上下文：' + JSON.stringify(context) + '\n农户说：' + text }]
+    messages
   }).then(r => {
     const s = (r && (r.text || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '';
     const m = s.match(/\{[\s\S]*\}/);
     return m ? JSON.parse(m[0]) : null;
   });
+}
+// BYOK：走 advisorChat 云函数（Key 存云端，不下发）；失败回落本地规则
+function askByok(text, ctx) {
+  const cf = typeof wx !== 'undefined' && wx.cloud && wx.cloud.callFunction;
+  if (!cf) return Promise.resolve(understand(text, ctx));
+  return wx.cloud.callFunction({ name: 'advisorChat', data: { action: 'chat', messages: buildMessages(text, ctx) } }).then(r => {
+    const res = r && r.result;
+    if (!res || !res.ok || !res.text) return understand(text, ctx);
+    const m = String(res.text).match(/\{[\s\S]*\}/);
+    const j = m ? JSON.parse(m[0]) : null;
+    const out = j ? fromLLM(j, ctx) : null;
+    return out && (out.cards.length || out.reply) ? out : understand(text, ctx);
+  }).catch(() => understand(text, ctx));
 }
 
 // ---------- 执行（唯一的写入口） ----------
