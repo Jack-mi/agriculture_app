@@ -1,16 +1,7 @@
-// 农事参谋 · 农药合规校验（一期内置示意登记表）
-// 上线前：接入农药登记信息库（ICAMA）月度数据，存 pesticide_reg；登记证号此处为占位
+// 农事参谋 · 农药合规校验（薄适配层）
+// 数据在 miniprogram/kb/pesticides.js 与 blocked.js（ICAMA 公开登记整理，可插拔）。
 // 两层口径：参谋推荐时——未登记 / 本地限用一律不推荐；农户自己记录时——超量只提醒，不拦保存
-const REG = [
-  { name: '双氟磺草胺', form: '50g/L 悬浮剂', reg: 'PD2016XXXX', crops: ['wheat'], target: '阔叶杂草', rate: [5, 6], unit: 'ml/亩', times: 1 },
-  { name: '氯氟吡氧乙酸', form: '200g/L 乳油', reg: 'PD2009XXXX', crops: ['wheat'], target: '阔叶杂草', rate: [50, 60], unit: 'ml/亩', times: 1 },
-  { name: '吡虫啉', form: '70% 水分散粒剂', reg: 'PD2012XXXX', crops: ['wheat'], target: '蚜虫', rate: [4, 6], unit: 'g/亩', times: 2 },
-  { name: '氯虫苯甲酰胺', form: '5% 悬浮剂', reg: 'PD2014XXXX', crops: ['corn'], target: '玉米螟', rate: [16, 20], unit: 'ml/亩', times: 2 },
-  { name: '戊唑醇', form: '430g/L 悬浮剂', reg: 'PD2011XXXX', crops: ['wheat'], target: '赤霉病', rate: [15, 20], unit: 'ml/亩', times: 2 }
-];
-const BLOCK = [
-  { name: '2,4-D 丁酯', reason: '挥发飘移，易伤周边棉花、花生等阔叶作物，本地区已限用' }
-];
+const { PESTICIDES: REG, BLOCKED: BLOCK } = require('../kb');
 
 // 推荐：按作物 + 防治对象，只返回已登记的
 function recommend(crop, target) {
