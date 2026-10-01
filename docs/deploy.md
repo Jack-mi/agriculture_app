@@ -14,6 +14,7 @@
 > - **2026-09-30：体验版 `0.2.0` 已上传**（农事日志 + 多地块成本分摊 + 每日风力；云函数 weatherBackfill/weatherDaily 已重新部署，风力单位 m/s）
 > - **2026-09-30：体验版 `0.3.0` 已上传**（随手记式记一笔：键盘/按亩计/按亩均摊 + 流水按日/日历 + 常用账 + 作物品种；纯前端改版，云函数未动）
 > - **2026-10-01：体验版 `0.4.0` 已上传**（农事参谋一期：今天页两态/预警/待办/参谋标签页/任务/生育期/跟参谋说；新增云函数 `weatherForecast` 已部署；新建集合 `tasks`、`memory`；WechatSI 插件因后台添加失败暂未声明，聊天页降级打字，添加后恢复 app.json 的 plugins 声明即可）
+> - **2026-10-01：体验版 `0.4.1` 已上传**（参谋 AI 模型可切换：本地规则/混元 Turbo/DeepSeek V3/R1 + BYOK 自带 Key；新增云函数 `advisorChat`（OpenAI 兼容代理，Key 存云端 `config` 集合，仅创建者可读写）已部署并实测 status/chat 通道；新建集合 `config`。云开发 AI 额度未开通（需管理员扫码进腾讯云控制台），微信同声传译插件添加被平台拒（214008，疑似主体变更审核中限制））
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
 >   - 因此当前 `app.json` 的 `requiredPrivateInfos` **临时只声明 `["chooseLocation"]`**，保证体验版可上传、地图选点可用
