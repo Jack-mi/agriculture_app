@@ -7,8 +7,9 @@ const store = require('./store.js');
 const growth = require('./growth.js');
 const advisor = require('./advisor.js');
 const pesticide = require('./pesticide.js');
+const weather = require('./weather.js');
 
-const ACTIONS = ['task.create', 'task.update', 'task.dismiss', 'log.create', 'cost.create', 'stage.calibrate', 'memory.add', 'memory.remove'];
+const ACTIONS = ['plot.create', 'plot.update', 'plot.remove', 'plot.locate', 'season.create', 'season.harvest', 'season.remove', 'season.variety', 'task.create', 'task.update', 'task.dismiss', 'task.complete', 'log.create', 'log.remove', 'cost.create', 'cost.remove', 'tag.cost', 'tag.log', 'weather.set', 'stage.calibrate', 'memory.add', 'memory.remove'];
 
 // ---------- 上下文 ----------
 // ctx: { taskId?, seasonId? } → 解析出 task / season / plot
@@ -117,6 +118,82 @@ function cardMemAdd(text, season) {
 function cardMemRemove(m) {
   return { id: cid(), type: 'memory.remove', tag: '忘掉', tagCls: 'gry', title: m.text, rows: ['以后不再参考这条'], ok: '确认忘掉', payload: { id: m.id } };
 }
+function cardPlotCreate(name, area, address) {
+  return { id: cid(), type: 'plot.create', tag: '新地块', tagCls: 'org', title: name + ' · ' + area + '亩',
+    rows: [address ? '位置：' + address : '位置先空着，之后可以在地块页补定位'], ok: '建上',
+    payload: { name, area: +area, address: address || '' } };
+}
+function cardPlotUpdate(plot, name, area) {
+  const rows = [];
+  if (name && name !== plot.name) rows.push({ old: plot.name, now: name });
+  if (+area > 0 && +area !== +plot.area) rows.push({ old: (plot.area || '?') + '亩', now: area + '亩' });
+  return { id: cid(), type: 'plot.update', tag: '改地块', tagCls: 'org', title: plot.name,
+    rows: rows.length ? rows : ['没有要改的'], ok: '确认',
+    payload: { plotId: plot.id, name: name || '', area: +area > 0 ? +area : '' } };
+}
+function cardPlotRemove(plot) {
+  return { id: cid(), type: 'plot.remove', tag: '删地块', tagCls: 'red', title: plot.name,
+    rows: ['这块地下的种植季、账、记事会一起删掉，不能恢复'], ok: '确认删除', warn: '删了找不回来',
+    payload: { plotId: plot.id } };
+}
+function cardSeasonCreate(plot, crop, sowDate, variety, seedRate) {
+  const rows = ['播种 ' + advisor.md(sowDate), variety ? '品种 ' + variety : '', seedRate ? '播量 ' + seedRate + '斤/亩' : ''].filter(Boolean);
+  return { id: cid(), type: 'season.create', tag: '开季', tagCls: 'org', title: plot.name + ' · ' + C.cropOf(crop).name,
+    rows, ok: '开季',
+    payload: { plotId: plot.id, crop, sowDate, variety: variety || '', seedRate: seedRate || '' } };
+}
+function cardHarvest(season, date, yieldJin, note) {
+  const plot = store.plots.get(season.plotId) || {};
+  const rows = ['收获日 ' + advisor.md(date), yieldJin ? '产量 ' + yieldJin + '斤' : '产量先不填', note || ''].filter(Boolean);
+  return { id: cid(), type: 'season.harvest', tag: '收获', tagCls: 'org', title: (plot.name || '这块地') + ' · ' + C.cropOf(season.crop).name,
+    rows, ok: '记上收获', payload: { seasonId: season.id, date, yieldJin: yieldJin || '', note: note || '' } };
+}
+function cardSeasonRemove(season) {
+  const plot = store.plots.get(season.plotId) || {};
+  return { id: cid(), type: 'season.remove', tag: '删季', tagCls: 'red', title: (plot.name || '') + ' · ' + C.cropOf(season.crop).name,
+    rows: ['这一季的账、记事、任务会一起删掉，不能恢复'], ok: '确认删除', warn: '删了找不回来',
+    payload: { seasonId: season.id } };
+}
+function cardVariety(season, variety) {
+  const plot = store.plots.get(season.plotId) || {};
+  return { id: cid(), type: 'season.variety', tag: '改品种', tagCls: 'org', title: (plot.name || '这块地') + ' · ' + C.cropOf(season.crop).name,
+    rows: [{ old: season.variety || '未填', now: variety }], ok: '改上',
+    payload: { seasonId: season.id, variety } };
+}
+function cardLogRemove(log) {
+  const s = store.seasons.get(log.seasonId);
+  const plot = s ? (store.plots.get(s.plotId) || {}) : {};
+  return { id: cid(), type: 'log.remove', tag: '删记事', tagCls: 'red', title: advisor.md(log.date) + ' · ' + ((log.ops || []).join('·') || '记事'),
+    rows: [(plot.name || '记事') + (log.text ? ' 「' + String(log.text).slice(0, 24) + '」' : '')], ok: '确认删除', warn: '删了找不回来',
+    payload: { logId: log.id } };
+}
+function cardCostRemove(cost) {
+  return { id: cid(), type: 'cost.remove', tag: '删账', tagCls: 'red', title: C.catOf(cost.cat).name + ' · ' + (cost.sub || ''),
+    rows: [advisor.md(cost.date) + ' · ¥' + U.money(cost.amount)], ok: '确认删除', warn: '删了找不回来',
+    payload: { costId: cost.id } };
+}
+function cardLocate(plot) {
+  return { id: cid(), type: 'plot.locate', tag: '选位置', tagCls: 'blu', title: plot.name,
+    rows: ['确认后打开地图，点一下这块地的位置'], ok: '去选点', payload: { plotId: plot.id } };
+}
+function cardCostTag(cat, name) {
+  return { id: cid(), type: 'tag.cost', tag: '记账类型', tagCls: 'org', title: C.catOf(cat).name + ' · ' + name,
+    rows: ['加到记账细分类型里'], ok: '加上', payload: { cat, name } };
+}
+function cardLogTag(name) {
+  return { id: cid(), type: 'tag.log', tag: '记事类型', tagCls: 'blu', title: name,
+    rows: ['加到记事类型里'], ok: '加上', payload: { name } };
+}
+function cardWeather(plot, date, t, p, wind) {
+  const rows = [advisor.md(date) + ' · ' + t + '℃ · 降雨 ' + p + 'mm'];
+  if (wind !== '' && wind !== undefined && !isNaN(+wind)) rows.push('风速 ' + wind + ' m/s');
+  return { id: cid(), type: 'weather.set', tag: '改天气', tagCls: 'blu', title: plot.name,
+    rows, ok: '按这个改', payload: { plotId: plot.id, date, t: +t, p: +p, wind: wind === '' || wind === undefined ? '' : +wind } };
+}
+function cardTaskDone(task) {
+  return { id: cid(), type: 'task.complete', tag: '完成', tagCls: 'blu', title: task.title,
+    rows: ['标成已完成'], ok: '确认完成', payload: { taskId: task.id, date: U.today() } };
+}
 
 // ---------- 动作 → 确认卡（白名单校验 + 结构化草稿） ----------
 function fromLLM(json, ctx) {
@@ -125,7 +202,60 @@ function fromLLM(json, ctx) {
   (json.actions || []).forEach(a => {
     if (!a || ACTIONS.indexOf(a.type) < 0) return;
     try {
-      if (a.type === 'task.create') {
+      if (a.type === 'plot.create') {
+        const name = String(a.name || '').trim().slice(0, 20);
+        if (!name || !(+a.area > 0)) return;
+        out.cards.push(cardPlotCreate(name, +a.area, String(a.address || '').slice(0, 40)));
+      } else if (a.type === 'plot.update') {
+        const plot = store.plots.get(a.plotId); if (!plot) return;
+        const name = String(a.name || '').trim().slice(0, 20);
+        const area = +a.area > 0 ? +a.area : '';
+        if ((!name || name === plot.name) && (!area || area === +plot.area)) return;
+        out.cards.push(cardPlotUpdate(plot, name, area));
+      } else if (a.type === 'plot.remove') {
+        const plot = store.plots.get(a.plotId); if (!plot) return;
+        out.cards.push(cardPlotRemove(plot));
+      } else if (a.type === 'season.create') {
+        const plot = store.plots.get(a.plotId); if (!plot || !valid(a.sowDate)) return;
+        if (a.crop !== 'wheat' && a.crop !== 'corn') return;
+        if (store.seasons.current(plot.id)) return;
+        out.cards.push(cardSeasonCreate(plot, a.crop, a.sowDate, String(a.variety || '').slice(0, 20), +a.seedRate > 0 ? +a.seedRate : ''));
+      } else if (a.type === 'season.harvest') {
+        const s = store.seasons.get(a.seasonId) || rc.season; if (!s || s.status === 'done' || !valid(a.date)) return;
+        out.cards.push(cardHarvest(s, a.date, +a.yieldJin > 0 ? +a.yieldJin : '', String(a.note || '').slice(0, 80)));
+      } else if (a.type === 'season.remove') {
+        const s = store.seasons.get(a.seasonId); if (!s) return;
+        out.cards.push(cardSeasonRemove(s));
+      } else if (a.type === 'season.variety') {
+        const s = store.seasons.get(a.seasonId) || rc.season; if (!s) return;
+        const variety = String(a.variety || '').trim().slice(0, 20);
+        if (!variety || variety === (s.variety || '')) return;
+        out.cards.push(cardVariety(s, variety));
+      } else if (a.type === 'log.remove') {
+        const log = store.logs.get(a.logId); if (!log) return;
+        out.cards.push(cardLogRemove(log));
+      } else if (a.type === 'cost.remove') {
+        const cost = store.costs.get(a.costId); if (!cost) return;
+        out.cards.push(cardCostRemove(cost));
+      } else if (a.type === 'plot.locate') {
+        const plot = store.plots.get(a.plotId); if (!plot) return;
+        out.cards.push(cardLocate(plot));
+      } else if (a.type === 'tag.cost') {
+        const name = String(a.name || '').trim().slice(0, 12);
+        if (!name || ['agri', 'mach', 'trans', 'labor', 'asset'].indexOf(a.cat) < 0) return;
+        out.cards.push(cardCostTag(a.cat, name));
+      } else if (a.type === 'tag.log') {
+        const name = String(a.name || '').trim().slice(0, 12);
+        if (!name) return;
+        out.cards.push(cardLogTag(name));
+      } else if (a.type === 'weather.set') {
+        const plot = store.plots.get(a.plotId); if (!plot || !valid(a.date)) return;
+        if (a.t === undefined || a.t === '' || a.p === undefined || a.p === '' || isNaN(+a.t) || isNaN(+a.p)) return;
+        out.cards.push(cardWeather(plot, a.date, a.t, a.p, a.wind));
+      } else if (a.type === 'task.complete') {
+        const task = store.tasks.get(a.taskId) || rc.task; if (!task || task.status === 'done') return;
+        out.cards.push(cardTaskDone(task));
+      } else if (a.type === 'task.create') {
         const s = store.seasons.get(a.seasonId) || rc.season; if (!s || !a.title) return;
         out.cards.push(cardTaskCreate(s, String(a.title).slice(0, 30), valid(a.date) || U.addDays(U.today(), 1)));
       } else if (a.type === 'task.update') {
@@ -136,7 +266,9 @@ function fromLLM(json, ctx) {
         out.cards.push(cardTaskDismiss(task, String(a.reason || '').slice(0, 30), !!a.remember));
       } else if (a.type === 'stage.calibrate') {
         const s = store.seasons.get(a.seasonId) || rc.season; if (!s) return;
-        const c = cardCalib(s, a.stage); if (c) out.cards.push(c);
+        const known = (growth.STAGES[s.crop] || []).some(x => x.key === a.stage);
+        const stage = known ? a.stage : growth.stageByName(s.crop, a.stage);
+        const c = cardCalib(s, stage); if (c) out.cards.push(c);
       } else if (a.type === 'memory.add') {
         if (a.text) out.cards.push(cardMemAdd(String(a.text).slice(0, 40), rc.season));
       } else if (a.type === 'memory.remove') {
@@ -184,6 +316,7 @@ function lightContext(ctx) {
   return {
     today: U.today(),
     task: rc.task ? { id: rc.task.id, title: rc.task.title, due: rc.task.dueStart } : null,
+    plots: store.plots.all().map(p => ({ plotId: p.id, name: p.name, area: p.area, growingSeasonId: (store.seasons.current(p.id) || {}).id || '' })),
     seasons: store.seasons.growing().map(s => ({ seasonId: s.id, plotId: s.plotId, plot: plotName(s), crop: C.cropOf(s.crop).name, variety: s.variety || '', stage: growth.current(s).stage.name })),
     memory: store.memory.all().map(m => ({ id: m.id, text: m.text }))
   };
@@ -195,11 +328,12 @@ function askAgent(text, ctx, imageBase64, history) {
     const res = r && r.result;
     if (!res) return { reply: '参谋暂时连不上，稍后再试。', cards: [], chips: [] };
     if (!res.ok) {
-      if (res.reason === 'nokey') return { reply: '参谋还没配模型 Key：我的 → 参谋 AI 模型 → 粘贴你的 DeepSeek API Key 就好。', cards: [], chips: [] };
+      if (res.reason === 'nokey') return { reply: '参谋还没配上模型 Key。云端那份 DeepSeek Key 是空的，配好才能聊。', cards: [], chips: [] };
       return { reply: '参谋脑子卡了一下（' + (res.reason || '网络') + '），再说一次？', cards: [], chips: [] };
     }
     const out = fromLLM({ reply: res.reply, actions: res.actions || [] }, ctx);
     if (!out.reply && !out.cards.length) out.reply = '嗯，我在。想问啥直接说。';
+    out.reasoning = String(res.reasoning || '').slice(0, 4000);
     return out;
   }).catch(() => ({ reply: '网络不太好，参谋没接上线，稍后再试。', cards: [], chips: [] }));
 }
@@ -210,6 +344,78 @@ function askImage(text, imageBase64, ctx) { return askAgent(text || '', ctx, ima
 function execute(card) {
   const p = card.payload || {};
   switch (card.type) {
+    case 'plot.create': {
+      if (!p.name || !(+p.area > 0)) return { ok: false };
+      const plot = store.plots.save({ name: p.name, area: +p.area, lat: '', lng: '', address: p.address || '' });
+      return { ok: true, plotId: plot.id };
+    }
+    case 'plot.update': {
+      const cur = store.plots.get(p.plotId); if (!cur) return { ok: false };
+      store.plots.save({ id: cur.id, name: p.name || cur.name, area: +p.area > 0 ? +p.area : cur.area, lat: cur.lat, lng: cur.lng, address: cur.address || '' });
+      return { ok: true };
+    }
+    case 'plot.remove': {
+      if (!store.plots.get(p.plotId)) return { ok: false };
+      store.plots.remove(p.plotId);
+      return { ok: true };
+    }
+    case 'plot.locate': return { ok: false };
+    case 'tag.cost': {
+      const name = String(p.name || '').trim();
+      if (!name) return { ok: false };
+      store.tags.addCost(p.cat, name);
+      return { ok: store.tags.cost(p.cat).indexOf(name) >= 0 };
+    }
+    case 'tag.log': {
+      const name = String(p.name || '').trim();
+      if (!name) return { ok: false };
+      if (!store.tags.logTag(name)) store.tags.addLog({ name });
+      return { ok: !!store.tags.logTag(name) };
+    }
+    case 'weather.set': {
+      if (!store.plots.get(p.plotId) || !p.date) return { ok: false };
+      store.weather.setManual(p.plotId, p.date, p.t, p.p, p.wind === '' ? undefined : p.wind);
+      return { ok: true };
+    }
+    case 'season.create': {
+      const plot = store.plots.get(p.plotId); if (!plot) return { ok: false };
+      if (store.seasons.current(plot.id)) return { ok: false };
+      if (p.crop !== 'wheat' && p.crop !== 'corn') return { ok: false };
+      const s = store.seasons.save({ plotId: plot.id, crop: p.crop, variety: p.variety || '', sowDate: p.sowDate, seedRate: p.seedRate || '', tillage: '', status: 'growing' });
+      weather.fillSeason(s).catch(() => null);
+      advisor.onSeasonChanged(s.id);
+      return { ok: true, seasonId: s.id };
+    }
+    case 'season.harvest': {
+      const s = store.seasons.get(p.seasonId); if (!s || s.status === 'done') return { ok: false };
+      store.seasons.save({ id: s.id, status: 'done', harvestDate: p.date, yieldJin: p.yieldJin || '', harvestNote: p.note || '' });
+      advisor.onSeasonChanged(s.id);
+      return { ok: true };
+    }
+    case 'season.remove': {
+      if (!store.seasons.get(p.seasonId)) return { ok: false };
+      store.seasons.remove(p.seasonId);
+      return { ok: true };
+    }
+    case 'season.variety': {
+      const s = store.seasons.get(p.seasonId); if (!s || !p.variety) return { ok: false };
+      store.seasons.save({ id: s.id, variety: String(p.variety).slice(0, 20) });
+      return { ok: true };
+    }
+    case 'log.remove': {
+      if (!store.logs.get(p.logId)) return { ok: false };
+      store.logs.remove(p.logId);
+      return { ok: true };
+    }
+    case 'cost.remove': {
+      if (!store.costs.get(p.costId)) return { ok: false };
+      store.costs.remove(p.costId);
+      return { ok: true };
+    }
+    case 'task.complete': {
+      const t = store.tasks.complete(p.taskId, '', p.date || U.today());
+      return { ok: !!t };
+    }
     case 'task.create': {
       const s = store.seasons.get(p.seasonId); if (!s) return { ok: false };
       const id = p.key ? s.id + '#' + p.key : undefined;

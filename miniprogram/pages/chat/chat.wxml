@@ -14,8 +14,15 @@
     <view class="pad">
       <view wx:for="{{msgs}}" wx:key="id" id="{{item.id}}" class="msg {{item.role}}">
         <image wx:if="{{item.img}}" src="{{item.img}}" class="photo" mode="aspectFill" />
-        <view wx:elif="{{item.text || item.cards.length || item.list}}" class="bub {{item.role}} {{item.cards.length ? 'wide' : ''}} {{item.thinking ? 'thinking' : ''}}">
-          <text wx:if="{{item.text}}">{{item.text}}</text>
+        <view wx:elif="{{item.thinking || item.text || item.reasoning || (item.cards && item.cards.length) || item.list}}" class="bub {{item.role}} {{item.cards && item.cards.length ? 'wide' : ''}} {{item.thinking ? 'thinking' : ''}}">
+          <view wx:if="{{item.thinking}}" class="think-live">思考中<text class="dot">.</text><text class="dot d2">.</text><text class="dot d3">.</text></view>
+          <block wx:else>
+          <view wx:if="{{item.reasoning}}" class="reason" catchtap="toggleReason" data-id="{{item.id}}">
+            <text>已思考</text><text class="reason-act">{{item.reasonOpen ? '收起' : '展开'}}</text>
+          </view>
+          <text wx:if="{{item.reasoning && item.reasonOpen}}" class="reason-bd" user-select>{{item.reasoning}}</text>
+          <rich-text wx:if="{{item.nodes && item.nodes.length}}" nodes="{{item.nodes}}" />
+          <text wx:elif="{{item.text}}">{{item.text}}</text>
           <view wx:if="{{item.list}}" class="mlist">
             <view wx:for="{{item.list}}" wx:for-item="li" wx:for-index="li_i" wx:key="id" class="mli">
               <text class="num muted" style="width:32rpx">{{li_i + 1}}</text><text class="flex1">{{li.text}}</text><text class="muted" style="font-size:22rpx">{{li.src}}</text>
@@ -37,15 +44,13 @@
             <view wx:elif="{{c.state === 'edit'}}" class="muted" style="font-size:24rpx;margin-top:8rpx">已打开编辑页</view>
             <view wx:else class="muted" style="font-size:24rpx;margin-top:8rpx">已作废</view>
           </view>
+          </block>
         </view>
       </view>
     </view>
   </scroll-view>
 
   <view class="bar">
-    <scroll-view scroll-x class="chips" enable-flex>
-      <view wx:for="{{chips}}" wx:key="*this" class="chip-s" bindtap="tapChip" data-c="{{item}}">{{item}}</view>
-    </scroll-view>
     <view class="row">
       <view class="ib" bindtap="photo"><image src="/assets/icons/cam_sub.svg" class="ii" /></view>
       <block wx:if="{{typing || !hasVoice}}">

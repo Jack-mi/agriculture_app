@@ -46,6 +46,19 @@ const normAlloc = c => (Array.isArray(c.allocations) && c.allocations.length)
 // ---------- 工具实现（全部按 _openid 隔离） ----------
 async function impl(openid, name, args, drafts) {
   const a = args || {};
+  if (name === 'query_plots') {
+    const [plots, seasons] = await Promise.all([
+      db.collection('plots').where({ _openid: openid }).limit(50).get(),
+      db.collection('seasons').where({ _openid: openid, status: 'growing' }).limit(50).get()
+    ]);
+    const growing = {};
+    seasons.data.forEach(s => { growing[s.plotId] = s._id; });
+    return plots.data.map(p => ({
+      plotId: p._id, name: p.name, area: p.area, address: p.address || '',
+      located: p.lat !== undefined && p.lat !== '' && p.lat !== null,
+      growingSeasonId: growing[p._id] || ''
+    }));
+  }
   if (name === 'query_seasons') {
     const [seasons, plots] = await Promise.all([
       db.collection('seasons').where({ _openid: openid }).limit(50).get(),
@@ -63,11 +76,11 @@ async function impl(openid, name, args, drafts) {
     const where = { _openid: openid };
     if (a.seasonId) where.seasonId = a.seasonId;
     const r = await db.collection('logs').where(where).orderBy('date', 'desc').limit(20).get();
-    return r.data.map(l => ({ seasonId: l.seasonId, date: l.date, ops: l.ops || [], text: l.text || '', growth: l.growth || '', pest: l.pest || '', machine: l.machine || '', areaMu: l.areaMu || '', materials: l.materials || [], moisture: l.moisture || '' }));
+    return r.data.map(l => ({ id: l.id || l._id, seasonId: l.seasonId, date: l.date, ops: l.ops || [], text: l.text || '', growth: l.growth || '', pest: l.pest || '', machine: l.machine || '', areaMu: l.areaMu || '', materials: l.materials || [], moisture: l.moisture || '' }));
   }
   if (name === 'query_costs') {
     const r = await db.collection('costs').where({ _openid: openid }).orderBy('date', 'desc').limit(100).get();
-    return r.data.map(c => ({ seasonAllocations: normAlloc(c), date: c.date, cat: c.cat, sub: c.sub || '', total: normAlloc(c).reduce((s, x) => s + x.amount, 0), note: c.note || '' }));
+    return r.data.map(c => ({ id: c.id || c._id, seasonAllocations: normAlloc(c), date: c.date, cat: c.cat, sub: c.sub || '', total: normAlloc(c).reduce((s, x) => s + x.amount, 0), note: c.note || '' }));
   }
   if (name === 'query_tasks') {
     const where = { _openid: openid };
@@ -158,6 +171,99 @@ async function impl(openid, name, args, drafts) {
     drafts.push({ type: 'memory.add', text: String(a.text).slice(0, 40) });
     return { drafted: true };
   }
+  if (name === 'memory_forget') {
+    if (!a.id) return { error: '缺 id，先 memory_search' };
+    drafts.push({ type: 'memory.remove', id: String(a.id) });
+    return { drafted: true };
+  }
+  if (name === 'draft_plot') {
+    const plotName = String(a.name || '').trim().slice(0, 20);
+    if (!plotName || !(+a.area > 0)) return { error: '缺 name 和 area（亩）' };
+    drafts.push({ type: 'plot.create', name: plotName, area: +a.area, address: String(a.address || '').slice(0, 40) });
+    return { drafted: true };
+  }
+  if (name === 'draft_plot_update') {
+    if (!a.plotId || (!a.name && !(+a.area > 0))) return { error: '缺 plotId，以及要改的 name 或 area' };
+    drafts.push({ type: 'plot.update', plotId: a.plotId, name: String(a.name || '').trim().slice(0, 20), area: +a.area > 0 ? +a.area : '' });
+    return { drafted: true };
+  }
+  if (name === 'draft_plot_remove') {
+    if (!a.plotId) return { error: '缺 plotId' };
+    drafts.push({ type: 'plot.remove', plotId: a.plotId });
+    return { drafted: true };
+  }
+  if (name === 'draft_season') {
+    if (!a.plotId || (a.crop !== 'wheat' && a.crop !== 'corn') || !okDate(a.sowDate)) return { error: '缺 plotId / crop(wheat|corn) / sowDate' };
+    const growing = await db.collection('seasons').where({ _openid: openid, plotId: a.plotId, status: 'growing' }).limit(1).get();
+    if (growing.data.length) return { error: '这块地还有一季没收，先登记收获再开新季' };
+    drafts.push({ type: 'season.create', plotId: a.plotId, crop: a.crop, sowDate: a.sowDate, variety: String(a.variety || '').slice(0, 20), seedRate: +a.seedRate > 0 ? +a.seedRate : '' });
+    return { drafted: true };
+  }
+  if (name === 'draft_harvest') {
+    if (!a.seasonId || !okDate(a.date)) return { error: '缺 seasonId/date' };
+    drafts.push({ type: 'season.harvest', seasonId: a.seasonId, date: a.date, yieldJin: +a.yieldJin > 0 ? +a.yieldJin : '', note: String(a.note || '').slice(0, 80) });
+    return { drafted: true };
+  }
+  if (name === 'draft_season_remove') {
+    if (!a.seasonId) return { error: '缺 seasonId' };
+    drafts.push({ type: 'season.remove', seasonId: a.seasonId });
+    return { drafted: true };
+  }
+  if (name === 'draft_task_move') {
+    if (!a.taskId || !okDate(a.date)) return { error: '缺 taskId/date' };
+    drafts.push({ type: 'task.update', taskId: a.taskId, date: a.date });
+    return { drafted: true };
+  }
+  if (name === 'draft_task_skip') {
+    if (!a.taskId) return { error: '缺 taskId' };
+    drafts.push({ type: 'task.dismiss', taskId: a.taskId, reason: String(a.reason || '').slice(0, 30), remember: !!a.remember });
+    return { drafted: true };
+  }
+  if (name === 'draft_task_done') {
+    if (!a.taskId) return { error: '缺 taskId' };
+    drafts.push({ type: 'task.complete', taskId: a.taskId, date: okDate(a.date) ? a.date : '' });
+    return { drafted: true };
+  }
+  if (name === 'draft_variety') {
+    if (!a.seasonId || !String(a.variety || '').trim()) return { error: '缺 seasonId/variety' };
+    drafts.push({ type: 'season.variety', seasonId: a.seasonId, variety: String(a.variety).trim().slice(0, 20) });
+    return { drafted: true };
+  }
+  if (name === 'draft_log_remove') {
+    if (!a.logId) return { error: '缺 logId，先 query_logs' };
+    drafts.push({ type: 'log.remove', logId: String(a.logId) });
+    return { drafted: true };
+  }
+  if (name === 'draft_cost_remove') {
+    if (!a.costId) return { error: '缺 costId，先 query_costs' };
+    drafts.push({ type: 'cost.remove', costId: String(a.costId) });
+    return { drafted: true };
+  }
+  if (name === 'draft_stage') {
+    if (!a.seasonId || !a.stage) return { error: '缺 seasonId/stage' };
+    drafts.push({ type: 'stage.calibrate', seasonId: a.seasonId, stage: String(a.stage).slice(0, 20) });
+    return { drafted: true };
+  }
+  if (name === 'draft_locate') {
+    if (!a.plotId) return { error: '缺 plotId' };
+    drafts.push({ type: 'plot.locate', plotId: a.plotId });
+    return { drafted: true };
+  }
+  if (name === 'draft_cost_tag') {
+    if (COST_CATS.indexOf(a.cat) < 0 || !String(a.name || '').trim()) return { error: '缺 cat/name，cat 只能是 ' + COST_CATS.join('/') };
+    drafts.push({ type: 'tag.cost', cat: a.cat, name: String(a.name).trim().slice(0, 12) });
+    return { drafted: true };
+  }
+  if (name === 'draft_log_tag') {
+    if (!String(a.name || '').trim()) return { error: '缺 name' };
+    drafts.push({ type: 'tag.log', name: String(a.name).trim().slice(0, 12) });
+    return { drafted: true };
+  }
+  if (name === 'draft_weather') {
+    if (!a.plotId || !okDate(a.date) || a.t === undefined || a.t === '' || a.p === undefined || a.p === '') return { error: '缺 plotId/date/t/p' };
+    drafts.push({ type: 'weather.set', plotId: a.plotId, date: a.date, t: +a.t, p: +a.p, wind: a.wind === undefined || a.wind === '' ? '' : +a.wind });
+    return { drafted: true };
+  }
   return { error: 'unknown tool: ' + name };
 }
 
@@ -167,6 +273,7 @@ const T = (name, description, properties, required) => ({
   function: { name, description, parameters: { type: 'object', properties, required: required || [] } }
 });
 const TOOLS = [
+  T('query_plots', '查农户的地块（名称、亩数、有没有在种的季、有没有定位）。新建地、开季、问"我有几块地"之前先调', {}),
   T('query_seasons', '查农户的种植季列表（地块、作物、品种、播种日、在种/已收获、产量）。回答"我种了什么/哪块地"类问题前先调', {}),
   T('query_logs', '查农事日志（最近 20 条）。"上次啥时候打的药/施的肥"类问题先调', { seasonId: { type: 'string', description: '可选，限定某个种植季' } }),
   T('query_costs', '查成本流水（最近 100 条，含分季分摊金额）。"这季/今年花了多少"类问题先调', {}),
@@ -190,29 +297,130 @@ const TOOLS = [
     sub: { type: 'string' }, amount: { type: 'number' }, mode: { type: 'string', description: 'perMu = 单价×亩数，可省略' },
     unitPrice: { type: 'number' }, mu: { type: 'number' }, date: { type: 'string' }, note: { type: 'string' }
   }, ['seasonIds', 'cat', 'amount', 'date']),
-  T('memory_save', '起草一条参谋要记住的偏好/情况（如"河边地不用 2,4-D"）', { text: { type: 'string' } }, ['text'])
+  T('memory_save', '起草一条参谋要记住的偏好/情况（如"河边地不用 2,4-D"）', { text: { type: 'string' } }, ['text']),
+  T('memory_forget', '起草忘掉一条已记住的偏好。先 memory_search 拿 id', { id: { type: 'string' } }, ['id']),
+  T('draft_plot', '起草新建地块（农户确认后才落库）。农户说"帮我新建一块地"时用。定位先空着，之后在地块页补', { name: { type: 'string' }, area: { type: 'number', description: '亩' }, address: { type: 'string' } }, ['name', 'area']),
+  T('draft_plot_update', '起草修改地块名称或亩数（确认后才改）', { plotId: { type: 'string' }, name: { type: 'string' }, area: { type: 'number' } }, ['plotId']),
+  T('draft_plot_remove', '起草删除地块。会连带删掉该地下的季、账、记事，确认卡上必须说清不能恢复', { plotId: { type: 'string' } }, ['plotId']),
+  T('draft_season', '起草开一个种植季（确认后才落库）。crop 只能 wheat 或 corn。这块地已有在种季时不要调，先收获', {
+    plotId: { type: 'string' }, crop: { type: 'string', description: 'wheat 或 corn' }, sowDate: { type: 'string' },
+    variety: { type: 'string' }, seedRate: { type: 'number', description: '斤/亩，可省略' }
+  }, ['plotId', 'crop', 'sowDate']),
+  T('draft_harvest', '起草登记收获、结束这一季（确认后才落库）', { seasonId: { type: 'string' }, date: { type: 'string' }, yieldJin: { type: 'number', description: '总产量斤，可省略' }, note: { type: 'string' } }, ['seasonId', 'date']),
+  T('draft_season_remove', '起草删除一整季（账、记事、任务一起删，不能恢复）', { seasonId: { type: 'string' } }, ['seasonId']),
+  T('draft_task_move', '起草把某条待办改到新日期（确认后才改）', { taskId: { type: 'string' }, date: { type: 'string' } }, ['taskId', 'date']),
+  T('draft_task_skip', '起草"这条不做了"。remember=true 表示以后这块地不再推同类任务', { taskId: { type: 'string' }, reason: { type: 'string' }, remember: { type: 'boolean' } }, ['taskId']),
+  T('draft_task_done', '起草把待办标成已完成（没有要记的农事明细时用；有明细用 draft_log 并带 taskId）', { taskId: { type: 'string' }, date: { type: 'string' } }, ['taskId']),
+  T('draft_stage', '起草生育期校准。农户说地里实际已经到某阶段时用。stage 用中文，如出苗期、三叶期、分蘖期、返青期、拔节期、抽穗期、灌浆期、成熟期、大喇叭口期、抽雄期、吐丝期', { seasonId: { type: 'string' }, stage: { type: 'string' } }, ['seasonId', 'stage']),
+  T('draft_variety', '起草修改某一季的品种（确认后才改）', { seasonId: { type: 'string' }, variety: { type: 'string' } }, ['seasonId', 'variety']),
+  T('draft_log_remove', '起草删除一条已有农事日志。先 query_logs 拿 id，确认卡上说明不能恢复', { logId: { type: 'string' } }, ['logId']),
+  T('draft_cost_remove', '起草删除一笔已有账。先 query_costs 拿 id，确认卡上说明不能恢复', { costId: { type: 'string' } }, ['costId']),
+  T('draft_locate', '起草给某块地选位置。确认后手机会打开地图，农户点一下才保存经纬度。云函数自己拿不到定位', { plotId: { type: 'string' } }, ['plotId']),
+  T('draft_cost_tag', '起草一个新的记账细分类型（确认后才加入类型列表）', { cat: { type: 'string', description: 'agri/mach/trans/labor/asset' }, name: { type: 'string' } }, ['cat', 'name']),
+  T('draft_log_tag', '起草一个新的记事类型（确认后才加入）', { name: { type: 'string' } }, ['name']),
+  T('draft_weather', '起草手工改正某一天的天气（气温℃、降雨 mm，风速 m/s 可省略）。确认后才覆盖这一天', { plotId: { type: 'string' }, date: { type: 'string' }, t: { type: 'number' }, p: { type: 'number' }, wind: { type: 'number' } }, ['plotId', 'date', 't', 'p'])
 ];
 
-function sysPrompt(context) {
+function pickTools(names) {
+  const set = {};
+  names.forEach(n => { set[n] = true; });
+  return TOOLS.filter(t => set[t.function.name]);
+}
+const BOOK_TOOLS = pickTools(['query_costs', 'query_plots', 'query_seasons', 'draft_cost', 'draft_cost_remove', 'draft_cost_tag', 'memory_search', 'memory_save']);
+const LOG_TOOLS = pickTools(['query_logs', 'query_plots', 'query_seasons', 'query_tasks', 'draft_log', 'draft_log_remove', 'draft_log_tag', 'draft_task', 'draft_task_move', 'draft_task_skip', 'draft_task_done']);
+const AGRI_TOOLS = pickTools(['kb_search', 'pesticide_check', 'query_plots', 'query_seasons', 'query_weather', 'weather_forecast', 'draft_stage', 'draft_season', 'draft_harvest', 'draft_variety', 'draft_season_remove', 'draft_plot', 'draft_plot_update', 'draft_plot_remove', 'draft_locate', 'draft_weather', 'memory_search', 'memory_save', 'memory_forget']);
+const ORCH_TOOLS = [
+  T('ask_bookkeeper', '交给记账子代理。花了多少、记一笔钱、删一笔账、新增记账细分类型', { request: { type: 'string', description: '用农户的原话说明要查或要记的账' } }, ['request']),
+  T('ask_logger', '交给记事子代理。记一笔农活、删记事、新增记事类型、设提醒、改日期、这条不做了、标完成', { request: { type: 'string' } }, ['request']),
+  T('ask_agronomist', '交给农事决策子代理。能不能打药浇水、生育期、技术依据、开季收获改品种、地块、地图选点、改正某一天天气', { request: { type: 'string' } }, ['request'])
+];
+
+function todayOf(context) {
+  return (context && context.today) || new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+}
+function orchPrompt(context) {
+  const c = context || {};
+  const plots = (c.plots || []).map(p => (p.name || '') + (p.area ? p.area + '亩' : '')).filter(Boolean).join('、');
+  return '你是「田祖记」的农事参谋总管。你不自己查账、不自己记活、不自己下农事结论。\n' +
+    '【今天】' + todayOf(c) + '\n' +
+    '【地块】' + (plots || '还没有') + '\n' +
+    '记账、花了多少、记账类型 → ask_bookkeeper。记农活、删记事、提醒和待办 → ask_logger。能不能打药、技术依据、生育期、开季收获、地块、选位置、改某一天天气 → ask_agronomist。\n' +
+    '闲聊可以直接答。要干活或要查农户自己的数据，必须先叫对应子代理，再用它的结论用口语回复。需要强调用 **加粗**。不要输出 JSON。';
+}
+function expertPrompt(role, context) {
+  const today = todayOf(context);
   const stageLine = ['wheat', 'corn'].map(c => (c === 'wheat' ? '小麦' : '玉米') + '：' + STAGES[c].map(s => s.name).join('→')).join('\n');
-  const today = context.today || new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
-  return '你是「田祖记」的农事参谋，服务对象是胶东种粮大户（冬小麦、夏玉米）。你是庄稼把式 + 合规农技员，说话口语化、说人话。\n' +
-    '【今天】' + today + '（农户说"今天/昨天/明天"都按这个日子换算成具体日期）\n' +
-    '【铁律】\n' +
-    '1. 涉及农户自己的数据（种了啥、干了啥、花了多少、天气、任务），必须先调对应工具拿真实数据再回答，禁止凭印象编。\n' +
-    '2. 农业专业问题先 kb_search 拿技术依据再答；拿不准就明说，别编药名和剂量。农药只推登记药剂，剂量按登记区间并提醒看标签。\n' +
-    '3. 问答和闲聊不调 draft 工具；只有农户明确要记活/记账/设提醒/让你记住什么，才用 draft_* 起草，并在回复里用一句话说清"给你准备了什么，确认就记上"。\n' +
-    '4. 回答直接说话，不要输出 JSON、不要复述工具原始返回。可以说好几句，需要分段用换行。\n' +
-    '【生育期顺序】\n' + stageLine + '\n' +
-    '【当前上下文】' + JSON.stringify(context);
+  const common = '【今天】' + today + '。农户说今天/昨天/明天按这个日子换算。查数据必须先调工具，禁止编。要改数据只能 draft_* 起草，确认后才落库。删除要说明不能恢复。回复给总管：一两句结论，加上你起草了什么。\n【上下文】' + JSON.stringify(context || {}) + '\n';
+  if (role === 'bookkeeper') return '你是记账子代理。只处理钱和记账类型。\n' + common;
+  if (role === 'logger') return '你是记事子代理。只处理农事日志、记事类型和待办提醒。\n' + common;
+  return '你是农事决策子代理。处理种植、植保、天气、地块和生育期。农药先 kb_search / pesticide_check，只推登记药剂。地图选点用 draft_locate，你拿不到经纬度。改正某一天天气用 draft_weather。\n【生育期】\n' + stageLine + '\n' + common;
 }
 
-async function callDS(cfg, messages) {
+function prepMessages(messages) {
+  return messages.map(m => {
+    if (!m || m.role !== 'assistant' || !m.tool_calls) return m;
+    if (m.reasoning_content && String(m.reasoning_content).trim()) return m;
+    return Object.assign({}, m, { reasoning_content: ' ' });
+  });
+}
+function takeReason(msg, reasons) {
+  const t = String((msg && (msg.reasoning_content || msg.reasoning)) || '').trim();
+  if (t) reasons.push(t);
+}
+async function callDS(cfg, messages, tools) {
   const base = (cfg.baseUrl || 'https://api.deepseek.com').replace(/\/+$/, '');
-  const body = { model: cfg.model || 'deepseek-flash', messages, tools: TOOLS, tool_choice: 'auto', stream: false };
+  const body = {
+    model: cfg.model || 'deepseek-flash',
+    messages: prepMessages(messages),
+    tools: tools,
+    tool_choice: 'auto',
+    stream: false,
+    thinking: { type: 'enabled' },
+    reasoning_effort: 'high'
+  };
   const r = await postJSON(base + '/chat/completions', { authorization: 'Bearer ' + cfg.apiKey }, JSON.stringify(body));
-  if (r.status !== 200) throw new Error('upstream ' + r.status + ': ' + (r.body || '').slice(0, 200));
+  if (r.status !== 200) throw new Error('upstream ' + r.status + ': ' + (r.body || '').slice(0, 300));
   return JSON.parse(r.body);
+}
+
+// 一次请求里，总管和子代理加起来最多 20 次模型调用。
+// 原来写死 8 轮，是怕云函数 60 秒超时；这个 20 是调用次数上限，不是业务上只能问 20 句。
+// 云函数墙钟仍大约 60 秒，轮次多、模型慢时，可能在用满 20 次之前就被平台掐掉。
+const MODEL_BUDGET = 20;
+const EXPERTS = {
+  ask_bookkeeper: { label: '记账', tools: BOOK_TOOLS, role: 'bookkeeper' },
+  ask_logger: { label: '记事', tools: LOG_TOOLS, role: 'logger' },
+  ask_agronomist: { label: '农事决策', tools: AGRI_TOOLS, role: 'agronomist' }
+};
+
+async function runExpert(cfg, spec, request, context, openid, drafts, budget, reasons, toolTrace) {
+  const messages = [
+    { role: 'system', content: expertPrompt(spec.role, context) },
+    { role: 'user', content: String(request || '').slice(0, 800) }
+  ];
+  let last = '';
+  for (let i = 0; i < MODEL_BUDGET && budget.n > 0; i++) {
+    budget.n -= 1;
+    const r = await callDS(cfg, messages, spec.tools);
+    const msg = r.choices && r.choices[0] && r.choices[0].message;
+    if (!msg) return { error: 'empty' };
+    takeReason(msg, reasons);
+    const calls = msg.tool_calls || [];
+    if (!calls.length) return { answer: String(msg.content || last || '没有更多结论') };
+    messages.push(msg);
+    last = String(msg.content || last);
+    for (const tc of calls) {
+      const fn = tc.function || {};
+      toolTrace.push(spec.label + ':' + (fn.name || ''));
+      let args = {};
+      try { args = JSON.parse(fn.arguments || '{}'); } catch (e) { args = {}; }
+      let res;
+      try { res = await impl(openid, fn.name, args, drafts); }
+      catch (e) { res = { error: String(e.message || e).slice(0, 200) }; }
+      messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(res).slice(0, 4000) });
+    }
+  }
+  return { answer: last || '这轮工具用完了，先按已经查到的说', drafted: true };
 }
 
 exports.main = async (event) => {
@@ -224,7 +432,7 @@ exports.main = async (event) => {
   const message = String(event.message || '').trim();
   if (!message && !event.image) return { ok: false, reason: 'badargs' };
 
-  const messages = [{ role: 'system', content: sysPrompt(event.context || {}) }];
+  const messages = [{ role: 'system', content: orchPrompt(event.context || {}) }];
   (Array.isArray(event.history) ? event.history : []).slice(-12).forEach(h => {
     if (h && h.content && (h.role === 'user' || h.role === 'assistant')) messages.push({ role: h.role, content: String(h.content).slice(0, 800) });
   });
@@ -235,31 +443,46 @@ exports.main = async (event) => {
 
   const drafts = [];
   const toolTrace = [];
+  const reasons = [];
+  const budget = { n: MODEL_BUDGET };
   try {
-    for (let i = 0; i < 8; i++) {
-      const r = await callDS(cfg, messages);
+    for (let i = 0; i < MODEL_BUDGET && budget.n > 0; i++) {
+      budget.n -= 1;
+      const r = await callDS(cfg, messages, ORCH_TOOLS);
       const msg = r.choices && r.choices[0] && r.choices[0].message;
       if (!msg) return { ok: false, reason: 'empty' };
+      takeReason(msg, reasons);
       const calls = msg.tool_calls || [];
+      const reasoning = reasons.filter(Boolean).join('\n\n').slice(0, 4000);
       if (!calls.length) {
-        return { ok: true, reply: String(msg.content || ''), actions: drafts, toolTrace };
+        return { ok: true, reply: String(msg.content || ''), reasoning, actions: drafts, toolTrace };
       }
       messages.push(msg);
       for (const tc of calls) {
         const fn = tc.function || {};
-        toolTrace.push(fn.name);
+        toolTrace.push(fn.name || '');
         let args = {};
         try { args = JSON.parse(fn.arguments || '{}'); } catch (e) { args = {}; }
+        const spec = EXPERTS[fn.name];
         let res;
-        try {
-          res = await impl(openid, fn.name, args, drafts);
-        } catch (e) {
-          res = { error: String(e.message || e).slice(0, 200) };
+        if (!spec) res = { error: '总管只能调用三个子代理' };
+        else {
+          try { res = await runExpert(cfg, spec, args.request, event.context || {}, openid, drafts, budget, reasons, toolTrace); }
+          catch (e) { res = { error: String(e.message || e).slice(0, 200) }; }
         }
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(res).slice(0, 4000) });
       }
     }
-    return { ok: true, reply: '想了好几圈没理清楚，换个说法再问一次？', actions: drafts, toolTrace };
+    const notes = [];
+    messages.forEach(m => {
+      if (m.role !== 'tool') return;
+      try {
+        const j = JSON.parse(m.content);
+        if (j && j.answer) notes.push(String(j.answer));
+      } catch (e) {}
+    });
+    const reply = notes.length ? notes.join('\n') : (drafts.length ? '给你准备好了，确认就记上。' : '想了好几圈没理清楚，换个说法再问一次？');
+    return { ok: true, reply, reasoning: reasons.filter(Boolean).join('\n\n').slice(0, 4000), actions: drafts, toolTrace };
   } catch (e) {
     return { ok: false, reason: 'model', message: String(e.message || e).slice(0, 300), actions: drafts, toolTrace };
   }
