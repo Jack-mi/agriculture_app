@@ -29,7 +29,8 @@
    - 顺带修掉：`pages/ledger/ledger.wxss` 尾部混入了两行 shell 残留（`JSEOF` / `echo written`），导致整包 WXSS 编译失败；已删除并补齐账本页缺失样式。另把 `.flow/.fic/.f-t/.f-a/.tabs/.tab/.kv/.sheet-lb/.link/.stack` 提到 `app.wxss` 统一，欠款/报表/库存页的分段控件原来没有样式（竖着堆）。
    - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 25 页 + keypad 全通过；模拟器逐页截图存 `docs/design/verify/`
    - **上传记录**：2026-10-05 `upload --upload-version 0.7.0`，代码包 517,578 B（TOTAL 1 个包），`taskId=confirmation_upload_572b3961…` 经 IDE 确认后 `execution_success`
-   - **待办**：官方体验版二维码待取（mp.weixin.qq.com 登录已超时，需扫一次微信登录码后从「管理 → 版本管理 → 开发版本 → 体验版二维码」保存到 `docs/`）；真机回归待扫码
+   - **官方体验版二维码**：`docs/trial-qr-0.7.0.png`（mp.weixin.qq.com → 管理 → 版本管理 → 开发版本 → 体验版 → 下载二维码；路径 `pages/index/index`，**该二维码 10 月 12 日前有效**）
+   - **待办**：真机扫码回归（体验版 0.7.0）
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
