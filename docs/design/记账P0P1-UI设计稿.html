@@ -229,7 +229,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 
 <div class="wrap">
 <h1>谷雨记 · 记账 P0+P1 UI 设计稿<small>随手记对齐版 · 全量落地（无 MVP）</small></h1>
-<div class="meta">2026-10-05 · 覆盖：收入侧 / 债权债务 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 操作留痕与误删恢复<br>
+<div class="meta">2026-10-05 · 覆盖：收入侧 / 债权债务 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 误删恢复（回收站）<br>
 共 <b>28 屏</b>。视觉与当前线上版本 <b>1:1 对齐</b>（沿用 <code>app.wxss</code> 的色板 / 圆角 / 字号 / 组件尺寸，1px = 2rpx），<b>不引入任何新色相</b>——收支与欠款只用既有色值。<b>导出模块已按你的要求删除。</b></div>
 
 <h2 class="sec">0. 设计系统（与当前线上版本 1:1 对齐）</h2>
@@ -285,7 +285,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>P1-9</td><td>附件 / 拍照留证：多张、缩略图、九宫格查看</td><td>F5 F8</td></tr>
 <tr><td>P1-10</td><td>周期账 / 分期：每次/每月/每季自动待记、分 N 期</td><td>F4</td></tr>
 <tr><td>P1-11</td><td>全部地块统一流水页（跨季跨地块）</td><td>F6</td></tr>
-<tr><td>P1-12</td><td>操作留痕 + 误删恢复（回收站）</td><td>F8 F21</td></tr>
+<tr><td>P1-12</td><td>误删恢复（回收站）；操作留痕只写数据、界面不展示（用户要求）</td><td>F21</td></tr>
 <tr><td>P1-13</td><td>预算：按季总预算 / 每亩目标 / 分类预算、进度与超支提醒</td><td>F25</td></tr>
 <tr><td>P1-14</td><td>资金账户：现金 / 微信 / 银行卡，期初 + 实收 − 实付 = 余额，按账户筛流水</td><td>F26</td></tr>
 <tr><td>P1-15</td><td>资产负债总览：账户余额 + 库存估值 + 应收 − 应付 = 净资产</td><td>F27</td></tr>
@@ -637,22 +637,16 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
     <div class="row" style="gap:9px">
       <div class="thumb">收据</div><div class="thumb">过磅单</div><div class="thumb">化肥袋</div><div class="thumb" style="border-style:dashed">＋</div>
     </div>
-    <h3 class="sect">操作留痕</h3>
-    <div class="c2 flat">
-      <div class="kv"><span class="muted">10-05 14:22 创建</span><span class="tiny">本机</span></div>
-      <div class="kv"><span class="muted">10-05 14:31 改金额 2,080 → 2,180</span><span class="tiny">本机</span></div>
-      <div class="kv"><span class="muted">10-05 14:40 加附件 收据.jpg</span><span class="tiny">本机</span></div>
-    </div>
     <div class="row" style="gap:9px">
       <div class="btn ghost grow sm">删除（进回收站）</div><div class="btn g grow sm">编辑</div>
     </div>
   </div>
 </div>
-<div class="cap"><h4>F8 · 流水详情（含留痕）<span class="tagline">P1-9 / P1-12</span></h4>
+<div class="cap"><h4>F8 · 流水详情<span class="tagline">P1-9</span></h4>
 <ul>
 <li>把「怎么算出来的 / 分摊到哪 / 结款状态 / 备注」四件事一次说清，替代现在只有一行的列表信息量。</li>
 <li>附件在详情里可补加、可删。</li>
-<li><b>操作留痕</b>只记关键动作（创建 / 改金额 / 改分类 / 加删附件 / 销账），每条带时间戳与来源（本机 / 云端），不记打开、滚动这类噪音。</li>
+<li><b>操作留痕不在界面上展示</b>（用户要求，别占版面）：<code>costs[i].audit</code> 仍在写「谁在什么时候改了什么」，供回收站/对账口径用，但详情页只显示「怎么算的 / 分摊 / 结款 / 备注 / 附件」。</li>
 <li>删除走软删 → 回收站（F21），文案明确写「进回收站」而不是「删除」，减少误操作恐惧。</li>
 </ul></div></div></div>
 <h2 class="sec">5. 日历（P1-8）</h2>
@@ -1268,21 +1262,15 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
       <div class="flow"><div class="fic b">记</div><div class="grow"><div style="font-weight:700">记事：施肥 复合肥 20 袋</div><div class="tiny">10-04 删除 · 剩 28 天</div></div><span class="chip hl">恢复</span></div>
       <div class="flow"><div class="fic d">欠</div><div class="grow"><div style="font-weight:700">应付 · 老王（机手）¥1,500</div><div class="tiny">10-02 删除 · 剩 26 天</div></div><span class="chip hl">恢复</span></div>
     </div>
-    <div class="c2 flat">
-      <div class="tiny" style="margin-bottom:5px">这一季的操作记录</div>
-      <div class="kv"><span class="muted">10-05 14:40 删除一笔账</span><span class="tiny">本机</span></div>
-      <div class="kv"><span class="muted">10-05 14:31 改金额 2,080 → 2,180</span><span class="tiny">本机</span></div>
-      <div class="kv"><span class="muted">10-05 14:22 新建一笔账</span><span class="tiny">本机</span></div>
-    </div>
     <div class="muted" style="text-align:center;font-size:12px">删除不弹二次确认，因为可以恢复——比现在的「confirm 后硬删」更安全</div>
   </div>
 </div>
-<div class="cap"><h4>F21 · 回收站 + 操作留痕<span class="tagline">P1-12</span></h4>
+<div class="cap"><h4>F21 · 回收站<span class="tagline">P1-12</span></h4>
 <ul>
 <li>所有删除改为软删（账目 / 记事 / 欠款 / 库存动账 / 附件），保留 30 天，可一键恢复。</li>
 <li>「清空」需二次确认；到期自动清理在启动时本机做，不依赖云函数。</li>
 <li>恢复会把关联关系一并还原（账↔记事、账↔附件、欠款↔账）。</li>
-<li>下半页是操作留痕：只记关键动作 + 时间戳 + 来源，和 F8 详情里的留痕同一份数据。</li>
+<li>操作留痕只留在数据里（<code>costs[i].audit</code>），不在这页展示，避免版面被审计信息占满。</li>
 <li>有了回收站，各处删除不再需要 confirm 弹窗——少一步点击，误删也不怕。</li>
 </ul></div></div>
 
@@ -1420,7 +1408,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>周期账</td><td><code>tags.recurring=[{id,name,cat,sub,mode,freq,day|dueTag,amount,startAt,endAt,lastFiredAt,enabled}]</code>；到期只生成待记，不自动落账</td></tr>
 <tr><td>分期</td><td>同上，加 <code>installment:{total,periods,index}</code>；每期金额 = 总额/期数，尾差进最后一期（复用现有 <code>splitBy</code>）</td></tr>
 <tr><td>回收站</td><td><code>costs/logs</code> 加 <code>deletedAt</code>；所有列表过滤掉带 <code>deletedAt</code> 的；30 天后启动时本机清理</td></tr>
-<tr><td>留痕</td><td><code>costs[i].audit=[{at,action,from,to,src:'local'|'cloud'}]</code>，只记关键动作</td></tr>
+<tr><td>留痕</td><td><code>costs[i].audit=[{at,action,from,to,src:'local'|'cloud'}]</code>，只记关键动作；<b>只写不展示</b>（用户在真机上要求删掉「操作留痕」版块）</td></tr>
 <tr><td>日历</td><td>月/周共用 <code>stats.costMonth</code>；周视图新增 <code>stats.costWeek</code>，输出与月一致的格结构</td></tr>
 <tr><td>连续补账</td><td>由「季内日历缺记日」派生，纯前端状态机，每保存一天立即落库</td></tr>
 <tr><td>筛选</td><td>纯前端过滤（数据量在千级以内），条件对象 <code>{dir,cats[],subs[],amtMin,amtMax,from,to,onlyDebt,onlyAttach,onlyLinked,q}</code></td></tr>
@@ -1441,7 +1429,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <div class="note done" style="margin-top:12px"><b>5. 导出模块 —— 已删除，不做。</b><br>
 <code>utils/export.js</code>、报表页与我的页的导出入口、以及本稿原来的 F14 全部移除；<code>miniprogram/README.md</code> 里「mine 有导出为文字」的描述也一并改成实际能力。账目对外分享只保留小程序原生「推荐给朋友」。</div>
 <div class="note" style="margin-top:12px"><b>6. 全量落地，不拆 MVP。</b><br>
-收入侧 / 欠款 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 操作留痕与回收站，一起做完再回归真机。</div>
+收入侧 / 欠款 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 回收站，一起做完再回归真机。</div>
 <div class="note done" style="margin-top:12px"><b>7. 补齐 3 个记账缺口 —— 已确认：全做（预算 / 资金账户 / 资产负债）。</b><br>
 对照随手记最新能力清单，补掉「预算与超支提醒」「多账户与余额」「资产负债总览」；见第 14 节 F25 / F26 / F27。</div>
 <div class="note done" style="margin-top:12px"><b>8. 收获「加一块地」—— 已确认：保持开放。</b><br>

@@ -53,15 +53,6 @@
     </block>
   </view>
 
-  <view class="sec-title">操作留痕</view>
-  <view class="card">
-    <view wx:if="{{!audit.length}}" class="muted">没有改动记录</view>
-    <view wx:for="{{audit}}" wx:key="at" class="kv">
-      <text class="muted">{{item.when}} {{item.text}}</text>
-      <text class="tiny muted">{{item.srcText}}</text>
-    </view>
-  </view>
-
   <view class="row" style="margin-top:24rpx">
     <view class="btn ghost" style="flex:1" bindtap="del">删除（进回收站）</view>
     <view class="btn" style="flex:1;margin-left:20rpx" bindtap="edit">编辑</view>
