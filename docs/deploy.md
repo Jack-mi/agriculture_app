@@ -41,6 +41,11 @@
 >   - 根因：弹层内容比屏幕高时，`.mask` 的 `align-items: flex-end` 会把 sheet 顶出屏幕上方——右上角 ✕ 看不见、上方遮罩也点不到，于是「没法返回」
 >   - 修法：`.sheet` 统一加 `max-height: 88vh` + 内部滚动（内容再多也不会顶出屏幕，✕ 和遮罩始终可点）；账本筛选抽屉底部另加「取消」按钮
 >   - 自检：51/51 + 25 页静态检查；模拟器验证 `docs/design/verify/ledger-filter.jpg`（✕ 可见、遮罩可点、sheet 高度 590px ≈ 88vh），`outerWxml` 复核 `.sheet` 内确有 `sh-close` 与「取消」
+> - **2026-10-05：体验版 `0.7.3` 已上传**（三条真机反馈）
+>   - ✕ / 取消 点不动：根因是 `closeSheet()` 里还挂着「欠款没填名字就不许关」的校验，✕ 和遮罩都走同一个 handler → 弹 toast 且不关闭。改为关闭即关闭（同时清 `debtPending`），分摊校验也一并去掉
+>   - 库存页卡片下面漏出半个「初」：期初按钮文案 9 字放不下 → 换行到框外。`.btn` 统一加 `overflow: hidden`，文案缩短为「按现在剩的填期初」
+>   - 每笔账的备注：从「地块 · 算法」那行拆出来，单独一行 + 麦色竖线（账本流水 / 当日明细 / 季详情流水三处统一）
+>   - 自检：51/51 + 25 页静态检查；模拟器实测：`.sh-close` 点击后 `.sheet` 消失（no such element）、无 toast；库存页「初」不再漏出；给 2026-10-03 农药那笔加备注后 `docs/design/verify/ledger-note.jpg` 可见独立备注行（验证完已清掉该测试备注）
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
