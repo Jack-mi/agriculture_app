@@ -101,7 +101,7 @@
       <view class="meta">{{dateText}} ▾</view>
     </picker>
     <view class="meta alloc {{picked.length > 1 ? 'hl' : ''}} {{allocErr ? 'err' : ''}}" bindtap="openAlloc">⇆ {{allocText}}{{allocErr ? ' · ' + allocErr : ''}}</view>
-    <view class="meta" bindtap="openNote">✎ {{note || '备注'}}</view>
+    <view class="meta note" bindtap="openNote">✎ {{note || '备注'}}</view>
     <view class="meta {{attachments.length ? 'hl' : ''}}" bindtap="openAtt">▣ 附件{{attachments.length ? ' ' + attachments.length : ''}}</view>
     <view class="meta" bindtap="openRec">⟳ 周期</view>
     <view class="meta {{debt ? 'debt' : ''}}" bindtap="openDebt">{{debt ? (dir === 'in' ? '应收 ' : '应付 ') + debt.party : (dir === 'in' ? '未结款' : '赊账')}}</view>

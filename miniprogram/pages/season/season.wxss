@@ -159,3 +159,6 @@
 .pbar { height: 22rpx; border-radius: 12rpx; background: #E9E3D3; overflow: hidden; margin: 20rpx 0 12rpx; }
 .pfill { height: 100%; background: var(--green); border-radius: 12rpx; }
 .pfill.over { background: var(--heat); }
+
+/* 每笔账的备注：单独一行、带竖线，跟算法那行区分开 */
+.f-note { margin-top: 6rpx; padding: 2rpx 0 2rpx 14rpx; border-left: 6rpx solid var(--wheat); color: var(--ink); font-size: 26rpx; line-height: 1.35; }

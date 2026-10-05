@@ -311,9 +311,8 @@ Page({
   },
   onManual(e) { this.setData({ ['manual.' + e.currentTarget.dataset.id]: e.detail.value }); this.recalcAlloc(); },
   closeSheet() {
-    if (this.data.sheet === 'alloc' && this.data.allocErr) return U.toast('分摊合计要等于总额：' + this.data.allocErr);
-    if (this.data.sheet === 'debt' && this.data.party.trim() === '' && this.data.debtPending) return U.toast('填一下欠给谁 / 谁欠');
-    this.setData({ sheet: '' });
+    // 关闭就是关闭：不再拦着校验（✕ / 取消 / 点遮罩 都必须能退出）
+    this.setData({ sheet: '', debtPending: null });
   },
   noop() {},
 

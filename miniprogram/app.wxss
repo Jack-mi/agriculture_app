@@ -51,6 +51,7 @@ page {
 .btn {
   height: 108rpx; line-height: 108rpx; border-radius: 18rpx; text-align: center;
   font-size: 38rpx; font-weight: 700; background: var(--green); color: #fff; letter-spacing: 4rpx;
+  overflow: hidden;   /* 文字放不下时裁掉，不许漏到框外（之前「填期初」的「初」就漏到卡片下面去了） */
 }
 .btn.wheat { background: var(--wheat); }
 .btn.ghost { background: transparent; color: var(--green); border: 3rpx solid var(--green); line-height: 102rpx; }

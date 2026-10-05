@@ -8,7 +8,7 @@
     <view style="font-weight:800;color:#7A5210">先定个起点</view>
     <view class="muted" style="margin-top:8rpx">老账没有库存起点，直接自动扣减会扣成负数。你可以先按现在家里剩的填一次期初，或者只记录不扣减。</view>
     <view class="row" style="margin-top:20rpx">
-      <view class="btn small" style="flex:1" bindtap="initStock">我按现在剩的填期初</view>
+      <view class="btn small" style="flex:1" bindtap="initStock">按现在剩的填期初</view>
       <view class="btn ghost small" style="flex:1;margin-left:16rpx" bindtap="initLogOnly">只记录不扣减</view>
     </view>
   </view>

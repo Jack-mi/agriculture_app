@@ -65,6 +65,7 @@
           <view class="f-main">
             <view class="f-t">{{item.sub || item.catName}}<text wx:if="{{item.shared}}" class="tag">共用</text><text wx:if="{{item.linked}}" class="tag">记事</text><text wx:if="{{item.debt}}" class="tag debt">{{item.debt.open ? item.debt.text : '已结'}}</text></view>
             <view class="f-s ellipsis">{{item.subline}}</view>
+            <view wx:if="{{item.note}}" class="f-note">{{item.note}}</view>
             <view wx:if="{{item.thumbs.length}}" class="thumbs">
               <view wx:for="{{item.thumbs}}" wx:for-item="t" wx:key="name" class="thumb">票</view>
             </view>
@@ -157,7 +158,11 @@
     <view wx:else class="card" style="padding:0 28rpx">
       <view wx:for="{{dayRows}}" wx:key="id" class="flow" bindtap="editFromDay" data-id="{{item.id}}" hover-class="btn-hover">
         <view class="fic {{item.inc ? 'in' : 'out'}}"><image class="fic-img" src="{{item.icon}}" mode="aspectFit" /></view>
-        <view class="f-main"><view class="f-t">{{item.sub || item.catName}}</view><view class="f-s ellipsis">{{item.calc || item.note || item.plot}}</view></view>
+        <view class="f-main">
+          <view class="f-t">{{item.sub || item.catName}}</view>
+          <view class="f-s ellipsis">{{item.plot}}{{item.calc ? ' · ' + item.calc : ''}}</view>
+          <view wx:if="{{item.note}}" class="f-note">{{item.note}}</view>
+        </view>
         <text class="f-a {{item.inc ? 'in' : 'out'}}">{{item.inc ? '＋' : '−'}}{{item.amountText}}</text>
       </view>
     </view>

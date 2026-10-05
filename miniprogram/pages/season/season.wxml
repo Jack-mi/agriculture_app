@@ -163,7 +163,8 @@
             <view class="cf-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="cf-img" /></view>
             <view class="flex1" style="min-width:0">
               <view class="cf-t">{{item.sub || item.catName}}<text wx:if="{{item.shared}}" class="tag share">共用</text><text wx:if="{{item.linked}}" class="tag">记事</text></view>
-              <view wx:if="{{item.calc || item.note}}" class="muted ellipsis">{{item.calc}}{{item.calc && item.note ? ' · ' : ''}}{{item.note}}</view>
+              <view wx:if="{{item.calc}}" class="muted ellipsis">{{item.calc}}</view>
+              <view wx:if="{{item.note}}" class="f-note">{{item.note}}</view>
             </view>
             <view class="num cf-a" style="color:{{item.inc ? 'var(--green)' : 'var(--heat)'}}">{{item.inc ? '＋' : '−'}}¥{{item.amount}}</view>
           </view>

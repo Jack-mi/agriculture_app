@@ -53,10 +53,10 @@ Page({
     if (acct) bits.push(acct);
     const calcText = stats.calcText(c);
     if (calcText) bits.push(calcText);
-    if (c.note) bits.push(c.note);
     return {
       id: c.id, date: c.date, catName: C.catOf(c.cat).name, sub: c.sub || '', inc,
       subline: bits.join(' · '),
+      note: c.note || '',
       icon: C.iconOf(c.sub, c.cat, 'w'),
       amountText: U.money(store.allocTotal(c)),
       calc: stats.calcText(c), note: c.note || '',
