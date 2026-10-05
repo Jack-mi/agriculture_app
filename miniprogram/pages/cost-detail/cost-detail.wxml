@@ -25,7 +25,11 @@
       <text class="muted">结款</text>
       <text style="color:var(--debt)">{{debt.party}} · {{debt.settled ? '已结清' : '未结'}}{{debt.paidText ? '（已结 ¥' + debt.paidText + '）' : ''}} · 约定 {{debt.dueText}} ›</text>
     </view>
-    <view wx:if="{{c.note}}" class="kv"><text class="muted">备注</text><text>{{c.note}}</text></view>
+    <view class="kv" bindtap="edit">
+      <text class="muted">备注</text>
+      <text wx:if="{{c.note}}">{{c.note}}</text>
+      <text wx:else class="link">没写备注 · 点这里去补 ›</text>
+    </view>
     <view wx:if="{{log}}" class="kv" bindtap="goLog">
       <text class="muted">关联记事</text><text class="link">{{log.date}} {{log.text}} ›</text>
     </view>

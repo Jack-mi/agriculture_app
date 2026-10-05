@@ -3,10 +3,11 @@
   <!-- ① 进度 + 日期 + 方向 -->
   <view class="head">
     <view class="row between">
-      <text class="muted">{{total ? '第 ' + (idx + 1) + ' / ' + total + ' 天' : '没有缺记的日子'}}</text>
+      <text class="muted">{{total ? '第 ' + (idx + 1) + ' / ' + total + ' 天' : '已记齐，没有要补的'}}</text>
       <text class="muted" style="font-size:24rpx">{{scopeLabel}}</text>
     </view>
-    <view class="track"><view class="fill" style="width:{{total ? (idx + 1) / total * 100 : 0}}%"></view></view>
+    <view wx:if="{{total}}" class="track"><view class="fill" style="width:{{total ? (idx + 1) / total * 100 : 0}}%"></view></view>
+    <view wx:else class="muted none-hint">这个范围里每天都记过了，不用补；要单独补某一天，点下面的日期选。</view>
 
     <view class="daterow">
       <text class="cal-nav {{idx > 0 ? '' : 'dis'}}" bindtap="prev">‹</text>

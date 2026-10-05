@@ -74,7 +74,7 @@ Page({
   },
   prev() { if (this.data.idx > 0) { this.setData({ idx: this.data.idx - 1 }); this.refresh(); } },
   next() {
-    if (!this.data.days.length) { U.toast('这段没有缺记的日子'); return; }
+    if (!this.data.days.length) return;   // 没有缺记的日子：箭头是灰的，点了什么都不做（不再弹莫名其妙的提示）
     if (this.data.idx + 1 >= this.data.days.length) {
       U.toast('这批都补完了', 'success');
       setTimeout(() => wx.navigateBack(), 600);

@@ -28,3 +28,5 @@ page { height: 100%; overflow: hidden; }
 .big.in { color: var(--green); }
 .big.out { color: var(--heat); }
 .big.zero { color: #B9B3A2; }
+
+.none-hint { margin-top: 10rpx; font-size: 24rpx; line-height: 1.45; }
