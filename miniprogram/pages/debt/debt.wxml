@@ -51,6 +51,7 @@
 
 <view wx:if="{{sheet === 'detail' && detail}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="row between">
       <view class="sheet-title" style="margin:0">{{detail.party}}</view>
       <view class="tag {{detail.settled ? 'done' : 'debt'}}">{{detail.settled ? '已结清' : '未结清'}}</view>

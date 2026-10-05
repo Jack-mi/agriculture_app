@@ -11,6 +11,7 @@
 .k.sm { font-size: 30rpx; font-family: inherit; font-weight: 700; }
 .k.ok { background: #C98B1E; color: #fff; font-size: 38rpx; font-weight: 700; letter-spacing: 4rpx; font-family: inherit; }
 .k.dis { opacity: .45; }
-.k-on { filter: brightness(.9); transform: translateY(2rpx); }
+/* 按压反馈：只改透明度。不用 filter/transform——iOS 上 filter 会让整个键盘重绘，看起来在抖 */
+.k-on { opacity: .62; }
 
 .k.ok.in { background: var(--green); border-color: var(--green); }

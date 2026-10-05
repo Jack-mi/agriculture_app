@@ -96,11 +96,11 @@
   </scroll-view>
 
   <!-- ③ 附加信息 chip 行 -->
-  <scroll-view scroll-x class="meta-row" enable-flex>
+  <view class="meta-row">
     <picker mode="date" value="{{date}}" end="{{today}}" bindchange="onDate">
       <view class="meta">{{dateText}} ▾</view>
     </picker>
-    <view class="meta {{picked.length > 1 ? 'hl' : ''}} {{allocErr ? 'err' : ''}}" bindtap="openAlloc">⇆ {{allocText}}{{allocErr ? ' · ' + allocErr : ''}}</view>
+    <view class="meta alloc {{picked.length > 1 ? 'hl' : ''}} {{allocErr ? 'err' : ''}}" bindtap="openAlloc">⇆ {{allocText}}{{allocErr ? ' · ' + allocErr : ''}}</view>
     <view class="meta" bindtap="openNote">✎ {{note || '备注'}}</view>
     <view class="meta {{attachments.length ? 'hl' : ''}}" bindtap="openAtt">▣ 附件{{attachments.length ? ' ' + attachments.length : ''}}</view>
     <view class="meta" bindtap="openRec">⟳ 周期</view>
@@ -108,7 +108,7 @@
     <view class="meta {{account ? 'hl' : ''}}" bindtap="openAcct">{{account ? acctName : '账户'}}</view>
     <view wx:if="{{logId}}" class="meta hl">已关联记事</view>
     <view class="meta" bindtap="openTpl">★ 常用账</view>
-  </scroll-view>
+  </view>
 
   <!-- ④ 键盘 -->
   <keypad expr="{{kpExpr}}" okText="{{isEdit ? '保存' : '完成'}}" tone="{{dir === 'in' ? 'in' : ''}}" showAgain="{{!isEdit}}" disabled="{{!(total > 0)}}"
@@ -118,6 +118,7 @@
 <!-- 分摊弹层 -->
 <view wx:if="{{sheet === 'alloc'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="row between" style="margin-bottom:20rpx">
       <view class="sheet-title" style="margin:0">分摊到哪几季</view>
       <view class="muted">总额 <text class="num" style="font-weight:800;color:var(--ink)">¥{{totalText}}</text></view>
@@ -149,6 +150,7 @@
 <!-- 备注弹层 -->
 <view wx:if="{{sheet === 'note'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">备注</view>
     <input class="input" focus value="{{noteDraft}}" bindinput="onNoteDraft" maxlength="60" placeholder="{{dir === 'in' ? '如：卖出小麦 12,600 斤' : cat === 'agri' ? '如：复合肥 20 袋' : cat === 'mach' ? '如：老王家的收割机' : '选填'}}" placeholder-class="ph" confirm-type="done" bindconfirm="saveNote" />
     <view class="btn" style="margin-top:32rpx" hover-class="btn-hover" bindtap="saveNote">好了</view>
@@ -158,6 +160,7 @@
 <!-- 附件弹层 -->
 <view wx:if="{{sheet === 'att'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">附件（留个凭证）</view>
     <view class="thumbs">
       <view wx:for="{{attachments}}" wx:key="localPath" class="thumb">
@@ -177,6 +180,7 @@
 <!-- 赊账弹层 -->
 <view wx:if="{{sheet === 'debt'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">{{dir === 'in' ? '挂成应收' : '挂成应付'}}</view>
     <view class="muted" style="font-size:24rpx">这笔不落现金，记成「{{dir === 'in' ? '别人欠我' : '我欠别人'}}」。结清时去「账本 → 欠款」销账。</view>
     <view class="card flat" style="margin:0">
@@ -196,6 +200,7 @@
       <view class="picker">{{dueDate || '选具体日期'}}</view>
     </picker>
     <view class="btn wheat" bindtap="confirmDebt">确认，记成{{dir === 'in' ? '应收' : '应付'}} ¥{{totalText}}</view>
+    <view class="btn ghost" style="margin-top:16rpx" bindtap="closeSheet">取消</view>
     <view wx:if="{{debt}}" class="btn ghost" bindtap="clearDebt">取消挂账</view>
   </view>
 </view>
@@ -204,6 +209,7 @@
 <!-- 资金账户弹层 -->
 <view wx:if="{{sheet === 'acct'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">钱走哪个账户</view>
     <view class="chips">
       <view wx:for="{{acctList}}" wx:key="key" class="chip {{account === item.key ? 'on' : ''}}" bindtap="pickAcct" data-k="{{item.key}}">{{item.name}}</view>
@@ -214,6 +220,7 @@
 
 <view wx:if="{{sheet === 'rec'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">存成周期账</view>
     <view class="muted" style="font-size:24rpx">到日子只生成一条「待记」，你确认后才落账——不会偷偷改你的账。</view>
     <view class="sheet-lb">多久一次</view>
@@ -241,6 +248,7 @@
 <!-- 常用账弹层 -->
 <view wx:if="{{sheet === 'tpl'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="row between" style="margin-bottom:16rpx">
       <view class="sheet-title" style="margin:0">常用账</view>
       <text class="muted" bindtap="goTplManage">管理 ›</text>

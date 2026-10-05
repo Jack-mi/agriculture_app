@@ -76,6 +76,7 @@
 
 <view wx:if="{{sheet === 'move'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">{{move.dir === 'in' ? '入库' : '出库'}}</view>
     <view class="chips" style="margin-bottom:24rpx">
       <view class="chip {{move.dir === 'in' ? 'on' : ''}}" bindtap="pickDir" data-k="in">入库</view>

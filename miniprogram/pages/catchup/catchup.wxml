@@ -1,46 +1,53 @@
-<view class="wrap">
-  <view class="card flat">
-    <view class="row between"><text class="muted">补账进度</text><text class="muted">第 {{idx + 1}} / {{total}} 天</text></view>
-    <view class="track" style="margin-top:14rpx"><view class="fill" style="width:{{total ? (idx + 1) / total * 100 : 0}}%"></view></view>
-    <view class="muted" style="margin-top:12rpx;font-size:24rpx">只补「没记事也没记账」的日子 · {{scopeLabel}}</view>
-  </view>
+<view class="page">
 
-  <view wx:if="{{!cur}}" class="card empty">
-    <view style="font-size:36rpx;font-weight:700;color:var(--ink);margin-bottom:12rpx">这段没缺的</view>
-    <view class="muted">{{scopeLabel}} 里每个日子都有记录，不用补。</view>
-  </view>
+  <!-- ① 进度 + 日期 + 方向 -->
+  <view class="head">
+    <view class="row between">
+      <text class="muted">{{total ? '第 ' + (idx + 1) + ' / ' + total + ' 天' : '没有缺记的日子'}}</text>
+      <text class="muted" style="font-size:24rpx">{{scopeLabel}}</text>
+    </view>
+    <view class="track"><view class="fill" style="width:{{total ? (idx + 1) / total * 100 : 0}}%"></view></view>
 
-  <block wx:else>
-    <view class="row between" style="margin:8rpx 8rpx 20rpx">
+    <view class="daterow">
       <text class="cal-nav {{idx > 0 ? '' : 'dis'}}" bindtap="prev">‹</text>
-      <view style="text-align:center">
-        <view style="font-size:38rpx;font-weight:800">{{cur.dateText}}</view>
-        <view class="muted" style="font-size:25rpx">{{cur.week}}{{cur.dayN ? ' · 第' + cur.dayN + '天' : ''}}{{cur.w ? ' · ' + cur.w.t + '℃ ' + cur.w.p + 'mm' : ''}}</view>
-      </view>
+      <picker class="dpick" mode="date" value="{{cur.date}}" start="{{from}}" end="{{to}}" bindchange="onDate">
+        <view class="dtext">{{cur.dateText}}</view>
+        <view class="dsub">点这里选年月日</view>
+      </picker>
       <text class="cal-nav {{idx + 1 < total ? '' : 'dis'}}" bindtap="next">›</text>
     </view>
 
+    <view class="dirs">
+      <view wx:for="{{dirs}}" wx:key="k" class="dir {{dir === item.k ? (item.k === 'in' ? 'on-in' : 'on') : ''}}" bindtap="pickDir" data-k="{{item.k}}">{{item.n}}</view>
+    </view>
+
+    <input class="notein" value="{{note}}" bindinput="onNote" placeholder="备注（选填）" placeholder-class="ph" />
+  </view>
+
+  <!-- ② 选类型 -->
+  <scroll-view scroll-y class="mid">
+    <view class="sec-title">常用</view>
     <view class="chips">
-      <view class="chip" bindtap="addOut">记支出</view>
-      <view class="chip" bindtap="addIn">记收入</view>
-      <view class="chip" bindtap="addLog">只写记事</view>
-      <view class="chip" bindtap="markNone">这天没事</view>
+      <view wx:for="{{quick}}" wx:key="*this" class="chip {{sub === item ? 'on' : ''}}" bindtap="pickQuick" data-s="{{item}}">{{item}}</view>
     </view>
 
-    <view class="sec-title">这天记了啥（点一下直接进记一笔，日期已填好）</view>
+    <view class="sec-title">{{dir === 'in' ? '收入类型' : '支出大类'}}</view>
     <view class="chips">
-      <view wx:for="{{quick}}" wx:key="*this" class="chip add" bindtap="addOut" data-s="{{item}}">{{item}}</view>
+      <view wx:for="{{cats}}" wx:key="key" class="chip {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}" data-n="{{item.name}}">{{item.name}}</view>
     </view>
 
-    <view wx:if="{{recent.length}}" class="card flat">
-      <view class="muted" style="margin-bottom:10rpx">最近记的（参考一下上回怎么记的）</view>
-      <view wx:for="{{recent}}" wx:key="id" class="kv"><text class="muted">{{item.date}}</text><text>{{item.text}}</text></view>
+    <view wx:if="{{subs.length}}" class="chips">
+      <view wx:for="{{subs}}" wx:key="*this" class="chip {{sub === item ? 'on' : ''}}" bindtap="pickSub" data-s="{{item}}">{{item}}</view>
     </view>
+  </scroll-view>
 
-    <view class="row" style="margin-top:24rpx">
-      <view class="btn ghost" style="flex:1" bindtap="markNone">这天没事</view>
-      <view class="btn" style="flex:1;margin-left:20rpx" bindtap="next">下一天 ›</view>
+  <!-- ③ 金额 + 键盘 -->
+  <view class="amountbar">
+    <text class="alabel">{{label}} · {{cur.dateText}}</text>
+    <view class="big num {{dir === 'in' ? 'in' : 'out'}} {{amt > 0 ? '' : 'zero'}}">
+      <text class="yen">{{dir === 'in' ? '＋' : '−'}}¥</text>{{amtText}}
     </view>
-    <view class="muted" style="text-align:center;margin-top:20rpx;font-size:24rpx">全部补完自动退出；中途退出已保存的不丢</view>
-  </block>
+  </view>
+  <keypad expr="{{expr}}" okText="保存" tone="{{dir === 'in' ? 'in' : ''}}" showAgain="{{false}}" disabled="{{!(amt > 0)}}"
+    bind:input="onKey" bind:done="onDone" />
 </view>

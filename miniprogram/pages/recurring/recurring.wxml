@@ -40,6 +40,7 @@
 
 <view wx:if="{{sheet === 'edit' && edit}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeSheet">✕</view>
     <view class="sheet-title">{{edit.id ? '编辑周期账' : '新建周期账'}}</view>
 
     <view class="sheet-lb">叫什么</view>

@@ -337,6 +337,7 @@
 <!-- 日历 · 当天弹层 -->
 <view wx:if="{{daySheet}}" class="mask" bindtap="closeDay">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeDay">✕</view>
     <view class="row" style="margin-bottom:16rpx;align-items:baseline">
       <text class="sheet-title" style="margin:0">{{daySheet.title}}</text>
       <text class="muted" style="margin-left:16rpx">第 {{daySheet.dayN}} 天 · {{daySheet.w}}</text>
@@ -366,6 +367,7 @@
 <!-- 天气修正弹层 -->
 <view wx:if="{{edit}}" class="mask" bindtap="closeEdit">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeEdit">✕</view>
     <view class="sheet-title">修正 {{edit.dateText}} 天气</view>
     <view class="row">
       <view class="field flex1" style="margin-right:20rpx">

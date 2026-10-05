@@ -1,5 +1,6 @@
-page { height: 100%; }
-.page { height: 100vh; display: flex; flex-direction: column; }
+page { height: 100%; overflow: hidden; }
+/* 固定占满可视区：用 100vh 在 iOS 上会被底部安全区撑高，页面能微滚 → 点键盘时整页晃 */
+.page { position: fixed; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; overflow: hidden; }
 
 /* 金额头 */
 .head { background: var(--card); border-bottom: 2rpx solid var(--line); padding: 20rpx 32rpx 20rpx; flex-shrink: 0; }
@@ -38,9 +39,11 @@ page { height: 100%; }
 .mng { text-align: right; padding: 8rpx 32rpx 16rpx; font-size: 26rpx; color: var(--sub); }
 .delbox { padding: 0 28rpx 24rpx; }
 
-/* chip 行 */
-.meta-row { flex-shrink: 0; white-space: nowrap; background: var(--card); border-top: 2rpx solid var(--line); padding: 14rpx 16rpx; box-sizing: border-box; display: flex; }
-.meta { display: inline-flex; align-items: center; height: 68rpx; padding: 0 24rpx; margin-right: 12rpx; border-radius: 34rpx; background: #FBF8EF; border: 2rpx solid var(--line); font-size: 28rpx; max-width: 440rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* chip 行：换行铺满，每个 chip 自己撑开（原来挤在 scroll-view 里被压扁，字全糊了） */
+.meta-row { flex-shrink: 0; background: var(--card); border-top: 2rpx solid var(--line); padding: 12rpx 20rpx 2rpx; box-sizing: border-box; display: flex; flex-wrap: wrap; }
+.meta { display: inline-flex; align-items: center; height: 66rpx; padding: 0 24rpx; margin: 0 12rpx 8rpx 0; border-radius: 33rpx; background: #FBF8EF; border: 2rpx solid var(--line); font-size: 27rpx; white-space: nowrap; flex-shrink: 0; }
+/* 只有「分摊到哪几季」可能很长，给它单独限宽 + 省略号 */
+.meta.alloc { max-width: 460rpx; overflow: hidden; text-overflow: ellipsis; }
 .meta.hl { background: var(--wheat-l); border-color: #E8CC8E; color: #7A5210; font-weight: 600; }
 .meta.err { background: #F8E1D6; border-color: #E5B3A4; color: var(--danger); }
 

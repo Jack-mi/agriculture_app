@@ -102,7 +102,11 @@ page {
 
 /* 弹层 */
 .mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(20, 24, 18, .5); z-index: 50; display: flex; align-items: flex-end; }
-.sheet { width: 100%; background: var(--card); border-radius: 28rpx 28rpx 0 0; padding: 40rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.sheet { position: relative; width: 100%; background: var(--card); border-radius: 28rpx 28rpx 0 0; padding: 40rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.sheet-title { padding-right: 90rpx; }
+/* 弹层统一右上角关闭：每个 sheet 都能一键退出，不用猜点哪儿 */
+.sh-close { position: absolute; right: 24rpx; top: 24rpx; width: 64rpx; height: 64rpx; border-radius: 50%; background: #EDE7D8; color: var(--sub); display: flex; align-items: center; justify-content: center; font-size: 34rpx; line-height: 1; z-index: 3; }
+.sh-close:active { opacity: .6; }
 .sheet-title { font-size: 38rpx; font-weight: 700; margin-bottom: 32rpx; }
 
 /* ---------- 账目流水行（账本 / 欠款 / 报表 / 库存 / 周期账 / 回收站共用） ---------- */

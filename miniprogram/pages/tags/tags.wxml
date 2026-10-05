@@ -91,6 +91,7 @@
 <!-- 常用账编辑弹层 -->
 <view wx:if="{{tpl}}" class="mask" bindtap="closeTpl">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeTpl">✕</view>
     <view class="sheet-title">{{tpl.id ? '编辑常用账' : '新建常用账'}}</view>
     <scroll-view scroll-y style="max-height:880rpx">
       <view class="field"><view class="label">名称</view><input class="input" value="{{tpl.name}}" bindinput="onTplName" placeholder="如：无人机飞防" placeholder-class="ph" maxlength="10" /></view>
@@ -138,6 +139,7 @@
 <!-- 记事类型编辑弹层 -->
 <view wx:if="{{edit}}" class="mask" bindtap="closeEdit">
   <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeEdit">✕</view>
     <view class="sheet-title">{{edit.isNew ? '新增记事类型' : '编辑记事类型'}}</view>
     <view class="field">
       <view class="label">名称</view>
