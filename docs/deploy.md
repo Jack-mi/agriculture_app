@@ -37,6 +37,10 @@
 >   - 键盘按压反馈去掉 `filter: brightness()` / `transform`（iOS 上会整块重绘，看起来在抖）；记一笔 / 连续补账改 `position: fixed` + `overflow: hidden`，不再被底部安全区撑出可滚动高度
 >   - 连续补账重做：日期可点选年月日（`picker mode=date`）、页内直接记账（分类 + 键盘 + 保存，不再二次跳转）、删掉「只写记事 / 这天没事 / 最近记的 / 底部说明」
 >   - 自检：51/51 + 25 页静态检查；模拟器复核 `docs/design/verify/catchup.jpg`、`cost-edit.jpg`、`cost-edit-debt.jpg`
+> - **2026-10-05：体验版 `0.7.2` 已上传**（弹层返回问题）
+>   - 根因：弹层内容比屏幕高时，`.mask` 的 `align-items: flex-end` 会把 sheet 顶出屏幕上方——右上角 ✕ 看不见、上方遮罩也点不到，于是「没法返回」
+>   - 修法：`.sheet` 统一加 `max-height: 88vh` + 内部滚动（内容再多也不会顶出屏幕，✕ 和遮罩始终可点）；账本筛选抽屉底部另加「取消」按钮
+>   - 自检：51/51 + 25 页静态检查；模拟器验证 `docs/design/verify/ledger-filter.jpg`（✕ 可见、遮罩可点、sheet 高度 590px ≈ 88vh），`outerWxml` 复核 `.sheet` 内确有 `sh-close` 与「取消」
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
