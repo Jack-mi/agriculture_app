@@ -46,6 +46,10 @@
 >   - 库存页卡片下面漏出半个「初」：期初按钮文案 9 字放不下 → 换行到框外。`.btn` 统一加 `overflow: hidden`，文案缩短为「按现在剩的填期初」
 >   - 每笔账的备注：从「地块 · 算法」那行拆出来，单独一行 + 麦色竖线（账本流水 / 当日明细 / 季详情流水三处统一）
 >   - 自检：51/51 + 25 页静态检查；模拟器实测：`.sh-close` 点击后 `.sheet` 消失（no such element）、无 toast；库存页「初」不再漏出；给 2026-10-03 农药那笔加备注后 `docs/design/verify/ledger-note.jpg` 可见独立备注行（验证完已清掉该测试备注）
+> - **2026-10-05：体验版 `0.7.4` 已上传**（两条真机反馈）
+>   - 「这笔账」详情页：备注行原来是 `wx:if`，没备注就整行不显示 → 用户以为这页没有备注。改成**常显**：有备注显示内容，没备注显示「没写备注 · 点这里去补 ›」并可点进编辑
+>   - 连续补账：没有缺记日子时点 `›` 会弹「这段没有缺记的日子」，看不懂。改为**点了什么都不做**（箭头本就是灰的），并把头部改成「已记齐，没有要补的」+ 一行说明「这个范围里每天都记过了，不用补；要单独补某一天，点下面的日期选」，同时隐藏 0% 进度条
+>   - 自检：51/51 + 25 页静态检查；模拟器复核 `docs/design/verify/cost-detail.jpg`、`catchup.jpg`
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
