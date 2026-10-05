@@ -239,8 +239,9 @@
     </view>
 
     <view class="row">
-      <view class="btn ghost" style="flex:1" bindtap="fClear">清空</view>
-      <view class="btn wheat" style="flex:2;margin-left:20rpx" bindtap="fApply">看这 {{itemCount}} 笔</view>
+      <view class="btn ghost" style="flex:1;margin-right:16rpx" bindtap="fClear">清空</view>
+      <view class="btn ghost" style="flex:1;margin-right:16rpx" bindtap="closeSheet">取消</view>
+      <view class="btn wheat" style="flex:1.6" bindtap="fApply">看这 {{itemCount}} 笔</view>
     </view>
   </view>
 </view>
