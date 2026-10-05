@@ -31,6 +31,12 @@
    - **上传记录**：2026-10-05 `upload --upload-version 0.7.0`，代码包 517,578 B（TOTAL 1 个包），`taskId=confirmation_upload_572b3961…` 经 IDE 确认后 `execution_success`
    - **官方体验版二维码**：`docs/trial-qr-0.7.0.png`（mp.weixin.qq.com → 管理 → 版本管理 → 开发版本 → 体验版 → 下载二维码；路径 `pages/index/index`，**该二维码 10 月 12 日前有效**）
    - **待办**：真机扫码回归（体验版 0.7.0）
+> - **2026-10-05：体验版 `0.7.1` 已上传**（真机反馈修复，二维码同 `docs/trial-qr-0.7.0.png`，体验版二维码指向最新上传，无需换码）
+>   - 记一笔：chip 行原来挤在 `scroll-view` 里被压扁 → 字全糊；改成换行铺满、每个 chip 自己撑开（只有「分摊」限宽省略）
+>   - 所有弹层加右上角 ✕（7 个页面 16 处）；赊账弹层另补「取消」按钮
+>   - 键盘按压反馈去掉 `filter: brightness()` / `transform`（iOS 上会整块重绘，看起来在抖）；记一笔 / 连续补账改 `position: fixed` + `overflow: hidden`，不再被底部安全区撑出可滚动高度
+>   - 连续补账重做：日期可点选年月日（`picker mode=date`）、页内直接记账（分类 + 键盘 + 保存，不再二次跳转）、删掉「只写记事 / 这天没事 / 最近记的 / 底部说明」
+>   - 自检：51/51 + 25 页静态检查；模拟器复核 `docs/design/verify/catchup.jpg`、`cost-edit.jpg`、`cost-edit-debt.jpg`
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
