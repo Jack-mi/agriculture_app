@@ -1,0 +1,65 @@
+<view class="wrap">
+  <view class="card">
+    <view class="row" style="gap:20rpx">
+      <view class="fic {{c.inc ? 'in' : 'out'}}"><image class="fic-img" src="{{c.icon}}" mode="aspectFit" /></view>
+      <view class="flex1" style="min-width:0">
+        <view class="hd-t">{{c.catName}}{{c.sub ? ' · ' + c.sub : ''}}</view>
+        <view class="muted" style="font-size:26rpx">{{c.dateText}}{{c.shared ? ' · 多季共用' : ''}}</view>
+      </view>
+      <text class="num hd-a" style="color:{{c.inc ? 'var(--green)' : 'var(--heat)'}}">{{c.inc ? '＋' : '−'}}¥{{c.amount}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view wx:if="{{c.calc}}" class="kv"><text class="muted">算出来的</text><text>{{c.calc}}</text></view>
+    <view wx:if="{{c.expr}}" class="kv"><text class="muted">键盘算式</text><text class="num">{{c.expr}}</text></view>
+    <view class="kv">
+      <text class="muted">分摊到</text>
+      <text>{{allocs.length}} 季{{allocText ? ' · ' + allocText : ''}}</text>
+    </view>
+    <view wx:for="{{allocs}}" wx:key="seasonId" class="kv sub">
+      <text class="muted">{{item.name}}{{item.crop ? ' · ' + item.crop : ''}}{{item.year ? ' · ' + item.year : ''}}</text>
+      <text class="num">¥{{item.amount}}</text>
+    </view>
+    <view wx:if="{{debt}}" class="kv" bindtap="goDebt">
+      <text class="muted">结款</text>
+      <text style="color:var(--debt)">{{debt.party}} · {{debt.settled ? '已结清' : '未结'}}{{debt.paidText ? '（已结 ¥' + debt.paidText + '）' : ''}} · 约定 {{debt.dueText}} ›</text>
+    </view>
+    <view wx:if="{{c.note}}" class="kv"><text class="muted">备注</text><text>{{c.note}}</text></view>
+    <view wx:if="{{log}}" class="kv" bindtap="goLog">
+      <text class="muted">关联记事</text><text class="link">{{log.date}} {{log.text}} ›</text>
+    </view>
+  </view>
+
+  <view class="sec-title">附件{{atts.length ? '（' + atts.length + '）' : ''}}</view>
+  <view class="card">
+    <view wx:if="{{!atts.length}}" class="muted">这笔没传凭证。收据、过磅单、化肥袋都可以拍到「记一笔 → 附件」里。</view>
+    <block wx:else>
+      <view class="thumbs">
+        <view wx:for="{{atts}}" wx:key="name" class="thumb" bindtap="openAtt" data-i="{{index}}">
+          <image wx:if="{{item.src}}" src="{{item.src}}" mode="aspectFill" class="thumb-img" />
+          <view wx:else class="thumb-ph">图</view>
+          <view wx:if="{{item.pending}}" class="thumb-badge">待传</view>
+        </view>
+      </view>
+      <view wx:if="{{pending}}" class="row between" style="margin-top:16rpx">
+        <text class="muted" style="font-size:24rpx">有 {{pending}} 张还没传上去，原图在本机，联网后自动传</text>
+        <text class="link" bindtap="retryUpload">重试</text>
+      </view>
+    </block>
+  </view>
+
+  <view class="sec-title">操作留痕</view>
+  <view class="card">
+    <view wx:if="{{!audit.length}}" class="muted">没有改动记录</view>
+    <view wx:for="{{audit}}" wx:key="at" class="kv">
+      <text class="muted">{{item.when}} {{item.text}}</text>
+      <text class="tiny muted">{{item.srcText}}</text>
+    </view>
+  </view>
+
+  <view class="row" style="margin-top:24rpx">
+    <view class="btn ghost" style="flex:1" bindtap="del">删除（进回收站）</view>
+    <view class="btn" style="flex:1;margin-left:20rpx" bindtap="edit">编辑</view>
+  </view>
+</view>

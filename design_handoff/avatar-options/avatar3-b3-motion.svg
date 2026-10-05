@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- B3 动感：算盘斜放，一粒谷飞出，活泼有梗 -->
+  <rect width="1024" height="1024" rx="220" fill="#2E5B34"/>
+  <g transform="rotate(-9 512 560)">
+    <!-- 算盘框 -->
+    <rect x="246" y="330" width="540" height="440" rx="40" fill="none" stroke="#F6E7C6" stroke-width="32"/>
+    <line x1="246" y1="478" x2="786" y2="478" stroke="#F6E7C6" stroke-width="24"/>
+    <g stroke="#F6E7C6" stroke-width="11" opacity="0.55">
+      <line x1="390" y1="362" x2="390" y2="738"/>
+      <line x1="516" y1="362" x2="516" y2="738"/>
+      <line x1="642" y1="362" x2="642" y2="738"/>
+    </g>
+    <defs>
+      <path id="g3" d="M0 -52 Q 32 -20 32 4 Q 32 32 0 52 Q -32 32 -32 4 Q -32 -20 0 -52 Z"/>
+    </defs>
+    <g fill="#C98B1E">
+      <use href="#g3" x="390" y="434"/>
+      <use href="#g3" x="516" y="382"/>
+      <!-- 642 档的上珠飞走了 -->
+      <use href="#g3" x="390" y="540"/>
+      <use href="#g3" x="390" y="646"/>
+      <use href="#g3" x="516" y="592"/>
+      <use href="#g3" x="516" y="700"/>
+      <use href="#g3" x="642" y="646"/>
+    </g>
+  </g>
+  <!-- 飞出的那粒谷 + 轨迹 -->
+  <g stroke="#F3EBA8" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.85">
+    <path d="M660 300 q 60 -40 96 -96" stroke-dasharray="2 26"/>
+  </g>
+  <use href="#g3" x="772" y="180" fill="#F3EBA8" transform="rotate(38 772 180)"/>
+  <!-- 小太阳/谷仓红点呼应 -->
+  <circle cx="222" cy="222" r="40" fill="#C4532B"/>
+</svg>

@@ -1,0 +1,7 @@
+.flow { display: flex; align-items: center; padding: 24rpx 0; border-bottom: 2rpx solid var(--line); }
+.flow:last-child { border-bottom: none; }
+.fic2 { width: 72rpx; height: 72rpx; border-radius: 20rpx; background: var(--green-l); color: var(--green-d); font-weight: 800; font-size: 30rpx; display: flex; align-items: center; justify-content: center; margin-right: 20rpx; flex-shrink: 0; }
+.f-t { font-size: 32rpx; font-weight: 700; }
+.f-a { font-size: 34rpx; font-weight: 800; }
+.f-a.low { color: var(--heat); }
+.col { flex: 1; }

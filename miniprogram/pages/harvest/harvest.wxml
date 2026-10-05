@@ -6,16 +6,91 @@
     </view>
     <view class="field">
       <view class="label">总产量<text class="req">*</text></view>
-      <view class="input-unit">
-        <input class="input" type="digit" placeholder="0" placeholder-class="ph" value="{{yieldJin}}" bindinput="onYield" />
-        <text class="unit">斤</text>
-      </view>
-      <view wx:if="{{perMu}}" class="muted" style="margin-top:10rpx">折合亩产 <text class="num" style="font-weight:800;color:var(--ink)">{{perMu}}</text> 斤/亩</view>
+      <block wx:if="{{!rows.length}}">
+        <view class="input-unit">
+          <input class="input" type="digit" placeholder="0" placeholder-class="ph" value="{{yieldJin}}" bindinput="onYield" />
+          <text class="unit">斤</text>
+        </view>
+        <view wx:if="{{perMu}}" class="muted" style="margin-top:10rpx">折合亩产 <text class="num" style="font-weight:800;color:var(--ink)">{{perMu}}</text> 斤/亩（{{plotName}} {{area}} 亩）</view>
+      </block>
+      <block wx:else>
+        <view class="row between" style="background:#FBF8EF;border-radius:16rpx;padding:24rpx">
+          <text class="muted">按下面分行合计</text>
+          <text class="num" style="font-size:44rpx;font-weight:800">{{rowTotalText}} 斤</text>
+        </view>
+      </block>
     </view>
     <view class="field" style="margin-bottom:0">
       <view class="label">备注</view>
-      <input class="input" placeholder="如：卖给粮站，1.2元/斤" placeholder-class="ph" value="{{note}}" bindinput="onNote" />
+      <input class="input" placeholder="如：天气好，籽粒饱满" placeholder-class="ph" value="{{note}}" bindinput="onNote" />
     </view>
+  </view>
+
+  <!-- 按地块分行（选填，两种都留） -->
+  <view class="sec-title">按地块分行（选填）</view>
+  <view class="card" style="padding:0 28rpx">
+    <view wx:if="{{!rows.length}}" class="muted" style="padding:24rpx 0;text-align:center">
+      只想记一个总数就不用管这里；想让每块地各算亩产，点下面「加一块地」
+    </view>
+    <view wx:for="{{rows}}" wx:key="plotId" class="hrow">
+      <view class="flex1" style="min-width:0">
+        <view class="f-t">{{item.name}}</view>
+        <view class="muted" style="font-size:25rpx">{{item.area}} 亩<text wx:if="{{item.perMu}}"> · {{item.perMu}} 斤/亩</text></view>
+      </view>
+      <view class="input-unit" style="width:240rpx">
+        <input class="input num" style="min-height:84rpx;font-size:34rpx" type="digit" value="{{item.jin}}" bindinput="onRowJin" data-i="{{index}}" placeholder="0" placeholder-class="ph" />
+        <text class="unit" style="height:84rpx;line-height:84rpx">斤</text>
+      </view>
+      <text class="del" catchtap="delRow" data-i="{{index}}">✕</text>
+    </view>
+    <view wx:if="{{rows.length}}" class="row between" style="padding:20rpx 0;border-top:2rpx solid var(--line)">
+      <text style="font-weight:700">合计</text>
+      <text class="num" style="font-size:38rpx;font-weight:800;color:var(--green)">{{rowTotalText}} 斤</text>
+    </view>
+  </view>
+  <view class="row" style="margin:0 8rpx 8rpx">
+    <view class="chip add" bindtap="addRow">＋ 加一块地</view>
+    <view wx:if="{{rows.length}}" class="chip" bindtap="useManual">改回只记总数</view>
+  </view>
+
+  <!-- 顺手收入账 -->
+  <view class="sec-title">顺手收入账</view>
+  <view class="card" style="padding:28rpx">
+    <view class="row between">
+      <view>
+        <view style="font-weight:700;font-size:32rpx">把卖粮收入一起记了</view>
+        <view class="muted" style="font-size:25rpx">不用再去记一笔，收获时一次填完</view>
+      </view>
+      <view class="chip {{withIncome ? 'on' : ''}}" bindtap="toggleIncome">{{withIncome ? '开' : '关'}}</view>
+    </view>
+    <block wx:if="{{withIncome}}">
+      <view class="row" style="margin-top:24rpx">
+        <view class="col">
+          <view class="label">卖了多少斤</view>
+          <view class="unitbox"><text class="num">{{rows.length ? rowTotalText : (yieldJin || '0')}}</text><text class="u">斤</text></view>
+        </view>
+        <view class="col" style="margin-left:20rpx">
+          <view class="label">卖价</view>
+          <view class="input-unit">
+            <input class="input num" type="digit" value="{{price}}" bindinput="onPrice" placeholder="0" placeholder-class="ph" />
+            <text class="unit">元/斤</text>
+          </view>
+        </view>
+      </view>
+      <view class="row between" style="margin-top:20rpx">
+        <text class="muted">收入</text>
+        <text class="num" style="font-size:44rpx;font-weight:800;color:var(--green)">＋¥{{incomeText}}</text>
+      </view>
+      <view class="label" style="margin-top:24rpx">粮款结了吗</view>
+      <view class="chips">
+        <view wx:for="{{settleOpts}}" wx:key="k" class="chip small {{settle === item.k ? 'on' : ''}}" bindtap="pickSettle" data-k="{{item.k}}">{{item.n}}</view>
+      </view>
+      <view class="chips" style="margin-top:16rpx">
+        <view wx:for="{{partyList}}" wx:key="*this" class="chip small {{party === item ? 'on' : ''}}" bindtap="pickParty" data-n="{{item}}">{{item}}</view>
+      </view>
+      <input class="input" style="margin-top:16rpx" value="{{party}}" bindinput="onParty" placeholder="{{settle === 'due' ? '谁欠：粮站 / 收粮人' : '卖给谁（选填）'}}" placeholder-class="ph" />
+      <view wx:if="{{settle === 'due'}}" class="muted" style="font-size:24rpx;margin-top:12rpx">未结款会挂成「应收」，去「账本 → 欠款」销账。</view>
+    </block>
   </view>
 
   <view class="sec-title">全周期汇总</view>
@@ -24,7 +99,11 @@
     <view class="sum-cell"><view class="muted">积温总和</view><view class="num v heat">{{preview.gdd}}<text class="u">℃·天</text></view></view>
     <view class="sum-cell"><view class="muted">降雨总量</view><view class="num v rain">{{preview.rain}}<text class="u">mm</text></view></view>
     <view class="sum-cell"><view class="muted">总投入</view><view class="num v">¥{{preview.cost}}</view></view>
-    <view wx:if="{{preview.costPerJin}}" class="sum-cell full"><view class="muted">每斤粮成本</view><view class="num v wheat-t">{{preview.costPerJin}}<text class="u">元/斤</text></view></view>
+    <view wx:if="{{preview.costPerJin}}" class="sum-cell"><view class="muted">每斤粮成本</view><view class="num v wheat-t">{{preview.costPerJin}}<text class="u">元/斤</text></view></view>
+    <view wx:if="{{withIncome && price}}" class="sum-cell full">
+      <view class="muted">净收益（收入 − 投入）</view>
+      <view class="num v" style="color:{{preview.netPos ? 'var(--green)' : 'var(--heat)'}}">{{preview.netPos ? '＋' : '−'}}¥{{preview.netText}}</view>
+    </view>
   </view>
   <view wx:if="{{preview.missing}}" class="muted" style="font-size:26rpx;margin:0 8rpx">有 {{preview.missing}} 天天气未获取，可在「天气」页补齐或手工修正</view>
 </view>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- 方案B 稻谷算盘：算珠全是一粒粒稻谷，记账的终极双关 -->
+  <rect width="1024" height="1024" rx="220" fill="#1F4024"/>
+  <!-- 算盘框 -->
+  <rect x="226" y="252" width="572" height="520" rx="44" fill="none" stroke="#F6E7C6" stroke-width="34"/>
+  <line x1="226" y1="436" x2="798" y2="436" stroke="#F6E7C6" stroke-width="26"/>
+  <!-- 档杆 -->
+  <g stroke="#F6E7C6" stroke-width="12" opacity="0.55">
+    <line x1="380" y1="286" x2="380" y2="738"/>
+    <line x1="512" y1="286" x2="512" y2="738"/>
+    <line x1="644" y1="286" x2="644" y2="738"/>
+  </g>
+  <!-- 谷粒：尖头椭圆 -->
+  <defs>
+    <path id="grain" d="M0 -56 Q 34 -22 34 4 Q 34 34 0 56 Q -34 34 -34 4 Q -34 -22 0 -56 Z"/>
+  </defs>
+  <g fill="#C98B1E">
+    <!-- 上珠区：一档拨下一粒（已计），其余靠顶 -->
+    <use href="#grain" x="380" y="386"/>
+    <use href="#grain" x="512" y="316"/>
+    <use href="#grain" x="644" y="316"/>
+    <!-- 下珠区：自然堆叠，有拨上有靠底 -->
+    <use href="#grain" x="380" y="500"/>
+    <use href="#grain" x="380" y="612"/>
+    <use href="#grain" x="512" y="556"/>
+    <use href="#grain" x="512" y="668"/>
+    <use href="#grain" x="644" y="612"/>
+  </g>
+  <!-- 一粒拨上去贴梁的 -->
+  <use href="#grain" x="644" y="500" fill="#F3EBA8"/>
+  <use href="#grain" x="512" y="724" fill="#F3EBA8" transform="rotate(90 512 724)"/>
+</svg>

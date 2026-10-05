@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- 方案C 字标：绿底 + 田祖宋体字 + 金色笔触 -->
+  <rect x="0" y="0" width="1024" height="1024" rx="220" fill="#2E5B34"/>
+  <rect x="72" y="72" width="880" height="880" rx="168" fill="none" stroke="#F6E7C6" stroke-width="14" opacity="0.55"/>
+  <text x="512" y="560" text-anchor="middle" font-family="Songti SC, STSong, serif" font-weight="700" font-size="360" fill="#FFFDF7" letter-spacing="24">田祖</text>
+  <path d="M312 664 q 200 44 400 0" stroke="#C98B1E" stroke-width="30" stroke-linecap="round" fill="none"/>
+  <!-- 笔触末端小叶 -->
+  <path d="M712 664 c 40 -8 62 -30 70 -64 c -40 8 -62 30 -70 64 Z" fill="#C98B1E"/>
+  <text x="512" y="800" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="72" fill="#F6E7C6" letter-spacing="18">农田电子账本</text>
+</svg>

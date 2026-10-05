@@ -1,0 +1,5 @@
+.cal-nav { font-size: 44rpx; color: var(--green); padding: 0 24rpx; }
+.cal-nav.dis { color: #C9C3B2; }
+.track { height: 10rpx; border-radius: 5rpx; background: var(--line); overflow: hidden; }
+.track .fill { height: 100%; background: var(--wheat); border-radius: 5rpx; }
+.kv { display: flex; justify-content: space-between; padding: 10rpx 0; font-size: 28rpx; }

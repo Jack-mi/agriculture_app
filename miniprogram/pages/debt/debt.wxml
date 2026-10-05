@@ -1,0 +1,88 @@
+<view class="wrap">
+  <view class="tabs">
+    <view wx:for="{{tabs}}" wx:key="k" class="tab {{tab === item.k ? 'on' : ''}}" bindtap="setTab" data-k="{{item.k}}">{{item.n}}</view>
+  </view>
+
+  <view class="card flat" style="margin-top:24rpx">
+    <view class="row between"><text class="muted">未结清合计</text><text class="muted">{{sum.count}} 笔</text></view>
+    <view class="num" style="font-size:64rpx;font-weight:800;color:var(--debt)">¥{{sum.total}}</view>
+    <view wx:if="{{sum.overdue}}" class="row between" style="margin-top:8rpx">
+      <text class="muted" style="color:var(--heat)">逾期未结 {{sum.overdue}} 笔</text>
+      <text class="tag warn">该催了</text>
+    </view>
+  </view>
+
+  <view class="sec-title">未结</view>
+  <view class="card" style="padding:0 28rpx">
+    <view wx:if="{{!open.length}}" class="empty">没有未结的{{sum.dirName}}</view>
+    <view wx:for="{{open}}" wx:key="id" class="flow" bindtap="openDetail" data-id="{{item.id}}" hover-class="btn-hover">
+      <view class="fic debt">欠</view>
+      <view class="flex1" style="min-width:0">
+        <view class="f-t">{{item.party}}<text wx:if="{{item.overdue}}" class="tag warn">逾期</text></view>
+        <view class="muted" style="font-size:25rpx">{{item.kindText}} · 约定 {{item.dueText}}{{item.paidText ? ' · 已结 ¥' + item.paidText : ''}}</view>
+      </view>
+      <view style="text-align:right">
+        <view class="num f-a">¥{{item.remainText}}</view>
+        <view class="link" style="font-size:25rpx">销账 ›</view>
+      </view>
+    </view>
+  </view>
+
+  <block wx:if="{{closed.length}}">
+    <view class="sec-title">已结清</view>
+    <view class="card" style="padding:0 28rpx">
+      <view wx:for="{{closed}}" wx:key="id" class="flow" bindtap="openDetail" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="fic">✓</view>
+        <view class="flex1" style="min-width:0">
+          <view class="f-t" style="color:var(--sub)">{{item.party}}</view>
+          <view class="muted" style="font-size:25rpx">{{item.kindText}} · {{item.dateText}} 已结</view>
+        </view>
+        <view class="num" style="color:var(--sub)">¥{{item.amountText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="muted" style="font-size:24rpx;margin:8rpx">赊账的那笔账本身仍计入成本/收入，这里只管「钱收没收到 / 付没付出」。</view>
+</view>
+
+<view class="fixed-bar">
+  <view class="btn ghost" bindtap="addDebt">＋ 记一笔赊账</view>
+</view>
+
+<view wx:if="{{sheet === 'detail' && detail}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="row between">
+      <view class="sheet-title" style="margin:0">{{detail.party}}</view>
+      <view class="tag {{detail.settled ? 'done' : 'debt'}}">{{detail.settled ? '已结清' : '未结清'}}</view>
+    </view>
+    <view class="card flat" style="margin:0">
+      <view class="num" style="font-size:48rpx;font-weight:800;color:var(--debt)">¥{{detail.settled ? detail.amountText : detail.remainText}}</view>
+      <view class="muted" style="margin-top:6rpx">
+        <text wx:if="{{detail.paidText}}">已结 ¥{{detail.paidText}} · </text>约定 {{detail.dueText}}<text wx:if="{{detail.overdue}}"> · 已逾期</text>
+      </view>
+    </view>
+    <view class="card" style="margin:0">
+      <view class="kv"><text class="muted">事由</text><text>{{detail.kindText}}</text></view>
+      <view class="kv"><text class="muted">记账日期</text><text>{{detail.dateText}}</text></view>
+      <view wx:if="{{detail.plot}}" class="kv"><text class="muted">地块 / 季</text><text>{{detail.plot}}</text></view>
+      <view wx:if="{{detail.note}}" class="kv"><text class="muted">备注</text><text>{{detail.note}}</text></view>
+      <view class="kv" bindtap="goCost" data-id="{{detail.id}}"><text class="muted">关联</text><text class="link">看那笔账 ›</text></view>
+    </view>
+
+    <block wx:if="{{!detail.settled}}">
+      <view class="sheet-lb" style="margin:0 8rpx 12rpx">销账金额（可以少于应结，剩下的继续挂着）</view>
+      <input class="input num" type="digit" value="{{settle.amount}}" bindinput="onSettleAmt" />
+      <view class="row" style="margin-top:20rpx">
+        <picker mode="date" value="{{settle.date}}" end="{{today}}" bindchange="onSettleDate" style="flex:1"><view class="picker">{{settle.date}}</view></picker>
+        <view class="chips" style="flex:1;margin-left:20rpx">
+          <view wx:for="{{methods}}" wx:key="*this" class="chip {{settle.method === item ? 'on' : ''}}" bindtap="pickMethod" data-m="{{item}}">{{item}}</view>
+        </view>
+      </view>
+      <view class="row" style="margin-top:8rpx">
+        <view class="btn ghost small" style="flex:1" bindtap="urge">复制催款文案</view>
+      </view>
+      <view class="btn wheat" bindtap="doSettle">确认销账</view>
+    </block>
+    <view wx:else class="muted" style="text-align:center">这笔已经结清了</view>
+  </view>
+</view>

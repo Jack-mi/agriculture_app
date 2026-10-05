@@ -1,5 +1,6 @@
 <view class="tabs">
-  <view class="tab {{tab === 'cost' ? 'on' : ''}}" bindtap="setTab" data-t="cost">记账类型</view>
+  <view class="tab {{tab === 'cost' ? 'on' : ''}}" bindtap="setTab" data-t="cost">支出类型</view>
+  <view class="tab {{tab === 'income' ? 'on' : ''}}" bindtap="setTab" data-t="income">收入类型</view>
   <view class="tab {{tab === 'log' ? 'on' : ''}}" bindtap="setTab" data-t="log">记事类型</view>
   <view class="tab {{tab === 'tpl' ? 'on' : ''}}" bindtap="setTab" data-t="tpl">常用账</view>
 </view>
@@ -24,9 +25,34 @@
     <view class="btn ghost" hover-class="btn-hover" bindtap="addCost">＋ 新增细分类型</view>
   </block>
 
+  <!-- 收入类型 -->
+  <block wx:if="{{tab === 'income'}}">
+    <view class="muted" style="margin:0 8rpx 16rpx">收入类型是平的：卖粮、补贴、土地租金……点一个就记一笔。卖粮默认按斤×价，其余默认直接填。</view>
+    <view class="card" style="padding:0 32rpx">
+      <view wx:for="{{incomeList}}" wx:key="name" class="trow" bindtap="incomeAction" data-n="{{item.name}}" hover-class="btn-hover">
+        <view class="flex1">
+          <view class="tname">{{item.name}}</view>
+          <view class="muted" style="font-size:26rpx">{{item.modeText}}{{item.count ? ' · ' + item.count + ' 笔' : ''}}</view>
+        </view>
+        <text class="more">···</text>
+      </view>
+    </view>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="addIncome">＋ 新增收入类型</view>
+    <view class="muted" style="font-size:24rpx;margin:8rpx">改名会把历史流水的类型一起改；删掉类型不影响已经记过的账。</view>
+  </block>
+
   <!-- 记事类型 -->
   <block wx:if="{{tab === 'log'}}">
     <view class="muted" style="margin:0 8rpx 16rpx">可设置颜色、选中后要填哪些内容，以及「保存并记花费」默认记到哪一类账</view>
+    <view class="card flat" style="margin-bottom:16rpx">
+      <view class="row between">
+        <view class="flex1">
+          <view style="font-size:31rpx;font-weight:700">农资用量联动库存</view>
+          <view class="muted" style="font-size:24rpx">开后，记事里填了农资用量就自动从库存里扣；库存里没有同名品名就跳过。</view>
+        </view>
+        <view class="chip {{logStock ? 'on' : ''}}" bindtap="toggleLogStock">{{logStock ? '开' : '关'}}</view>
+      </view>
+    </view>
     <view class="card" style="padding:0 32rpx">
       <view wx:for="{{logList}}" wx:key="name" class="trow" bindtap="editLog" data-n="{{item.name}}" hover-class="btn-hover">
         <view class="tdot" style="background:{{item.color}}"></view>
@@ -50,7 +76,7 @@
       <view wx:for="{{tplList}}" wx:key="id" class="trow" bindtap="editTpl" data-id="{{item.id}}" hover-class="btn-hover">
         <view class="tic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="tic-img" /></view>
         <view class="flex1" style="min-width:0">
-          <view class="tname">{{item.name}}</view>
+          <view class="tname">{{item.name}}<text class="tag {{item.dir === 'in' ? '' : 'done'}}">{{item.dir === 'in' ? '收入' : '支出'}}</text></view>
           <view class="muted" style="font-size:26rpx">{{item.catName}} · {{item.sub}} · {{item.desc}}</view>
         </view>
         <text class="more">›</text>
@@ -68,15 +94,26 @@
     <view class="sheet-title">{{tpl.id ? '编辑常用账' : '新建常用账'}}</view>
     <scroll-view scroll-y style="max-height:880rpx">
       <view class="field"><view class="label">名称</view><input class="input" value="{{tpl.name}}" bindinput="onTplName" placeholder="如：无人机飞防" placeholder-class="ph" maxlength="10" /></view>
+      <view class="field"><view class="label">收还是支</view>
+        <view class="chips">
+          <view class="chip {{tpl.dir !== 'in' ? 'on' : ''}}" bindtap="pickTplDir" data-k="out">支出</view>
+          <view class="chip {{tpl.dir === 'in' ? 'on' : ''}}" bindtap="pickTplDir" data-k="in">收入</view>
+        </view>
+      </view>
       <view class="field"><view class="label">类别</view>
-        <view class="chips"><view wx:for="{{cats}}" wx:key="key" class="chip {{tpl.cat === item.key ? 'on' : ''}}" bindtap="pickTplCat" data-k="{{item.key}}">{{item.name}}</view></view>
-        <view class="chips" style="margin-top:12rpx"><view wx:for="{{tpl.subs}}" wx:key="*this" class="chip small-chip {{tpl.sub === item ? 'on' : ''}}" bindtap="pickTplSub" data-s="{{item}}">{{item}}</view></view>
+        <block wx:if="{{tpl.dir === 'in'}}">
+          <view class="chips"><view wx:for="{{incomeCats}}" wx:key="key" class="chip {{tpl.sub === item.name ? 'on' : ''}}" bindtap="pickTplCat" data-n="{{item.name}}">{{item.name}}</view></view>
+        </block>
+        <block wx:else>
+          <view class="chips"><view wx:for="{{cats}}" wx:key="key" class="chip {{tpl.cat === item.key ? 'on' : ''}}" bindtap="pickTplCat" data-k="{{item.key}}">{{item.name}}</view></view>
+          <view class="chips" style="margin-top:12rpx"><view wx:for="{{tpl.subs}}" wx:key="*this" class="chip small-chip {{tpl.sub === item ? 'on' : ''}}" bindtap="pickTplSub" data-s="{{item}}">{{item}}</view></view>
+        </block>
       </view>
       <view class="field"><view class="label">怎么算</view>
-        <view class="chips"><view wx:for="{{modes}}" wx:key="key" class="chip {{tpl.mode === item.key ? 'on' : ''}}" bindtap="pickTplMode" data-m="{{item.key}}">{{item.name}}</view></view>
+        <view class="chips"><view wx:for="{{tpl.modeList}}" wx:key="key" class="chip {{tpl.mode === item.key ? 'on' : ''}}" bindtap="pickTplMode" data-m="{{item.key}}">{{item.name}}</view></view>
       </view>
       <view class="field" wx:if="{{tpl.mode === 'fixed'}}"><view class="label">金额</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.amount}}" bindinput="onTplNum" data-k="amount" /><text class="unit">元</text></view></view>
-      <view class="field" wx:if="{{tpl.mode === 'perMu'}}"><view class="label">单价</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.unitPrice}}" bindinput="onTplNum" data-k="unitPrice" /><text class="unit">元/亩</text></view></view>
+      <view class="field" wx:if="{{tpl.mode === 'perMu' || tpl.mode === 'perJin' || tpl.mode === 'perMuPrice'}}"><view class="label">单价</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.unitPrice}}" bindinput="onTplNum" data-k="unitPrice" /><text class="unit">{{tpl.priceLabel}}</text></view></view>
       <view class="row" wx:if="{{tpl.mode === 'perDay'}}">
         <view class="field flex1" style="margin-right:20rpx"><view class="label">日工价</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.unitPrice}}" bindinput="onTplNum" data-k="unitPrice" /><text class="unit">元</text></view></view>
         <view class="field flex1"><view class="label">常用人数</view><view class="input-unit"><input class="input num" type="digit" value="{{tpl.people}}" bindinput="onTplNum" data-k="people" /><text class="unit">人</text></view></view>

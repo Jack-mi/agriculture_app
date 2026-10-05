@@ -1,0 +1,3 @@
+.f-t { font-size: 32rpx; font-weight: 700; }
+.f-a { font-size: 34rpx; font-weight: 800; color: var(--ink); }
+.fic { width: 72rpx; height: 72rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; font-size: 30rpx; font-weight: 800; background: #EDE9F4; color: var(--debt); margin-right: 20rpx; flex-shrink: 0; }

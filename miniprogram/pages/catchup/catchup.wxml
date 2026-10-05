@@ -1,0 +1,46 @@
+<view class="wrap">
+  <view class="card flat">
+    <view class="row between"><text class="muted">补账进度</text><text class="muted">第 {{idx + 1}} / {{total}} 天</text></view>
+    <view class="track" style="margin-top:14rpx"><view class="fill" style="width:{{total ? (idx + 1) / total * 100 : 0}}%"></view></view>
+    <view class="muted" style="margin-top:12rpx;font-size:24rpx">只补「没记事也没记账」的日子 · {{scopeLabel}}</view>
+  </view>
+
+  <view wx:if="{{!cur}}" class="card empty">
+    <view style="font-size:36rpx;font-weight:700;color:var(--ink);margin-bottom:12rpx">这段没缺的</view>
+    <view class="muted">{{scopeLabel}} 里每个日子都有记录，不用补。</view>
+  </view>
+
+  <block wx:else>
+    <view class="row between" style="margin:8rpx 8rpx 20rpx">
+      <text class="cal-nav {{idx > 0 ? '' : 'dis'}}" bindtap="prev">‹</text>
+      <view style="text-align:center">
+        <view style="font-size:38rpx;font-weight:800">{{cur.dateText}}</view>
+        <view class="muted" style="font-size:25rpx">{{cur.week}}{{cur.dayN ? ' · 第' + cur.dayN + '天' : ''}}{{cur.w ? ' · ' + cur.w.t + '℃ ' + cur.w.p + 'mm' : ''}}</view>
+      </view>
+      <text class="cal-nav {{idx + 1 < total ? '' : 'dis'}}" bindtap="next">›</text>
+    </view>
+
+    <view class="chips">
+      <view class="chip" bindtap="addOut">记支出</view>
+      <view class="chip" bindtap="addIn">记收入</view>
+      <view class="chip" bindtap="addLog">只写记事</view>
+      <view class="chip" bindtap="markNone">这天没事</view>
+    </view>
+
+    <view class="sec-title">这天记了啥（点一下直接进记一笔，日期已填好）</view>
+    <view class="chips">
+      <view wx:for="{{quick}}" wx:key="*this" class="chip add" bindtap="addOut" data-s="{{item}}">{{item}}</view>
+    </view>
+
+    <view wx:if="{{recent.length}}" class="card flat">
+      <view class="muted" style="margin-bottom:10rpx">最近记的（参考一下上回怎么记的）</view>
+      <view wx:for="{{recent}}" wx:key="id" class="kv"><text class="muted">{{item.date}}</text><text>{{item.text}}</text></view>
+    </view>
+
+    <view class="row" style="margin-top:24rpx">
+      <view class="btn ghost" style="flex:1" bindtap="markNone">这天没事</view>
+      <view class="btn" style="flex:1;margin-left:20rpx" bindtap="next">下一天 ›</view>
+    </view>
+    <view class="muted" style="text-align:center;margin-top:20rpx;font-size:24rpx">全部补完自动退出；中途退出已保存的不丢</view>
+  </block>
+</view>

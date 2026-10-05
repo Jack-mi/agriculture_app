@@ -206,19 +206,34 @@ Page({
   },
 
   save() {
-    const l = this.collect();
-    if (!l) return;
-    const saved = store.logs.save(l);
+    const saved = this.persist();
+    if (!saved) return;
     advisor.onLogSaved(saved, this.data.isEdit ? '' : this.data.taskId);
     U.toast(this.data.taskId && !this.data.isEdit ? '记好了，任务完成' : '记好了', 'success');
     setTimeout(() => wx.navigateBack(), 450);
   },
 
+  // 农资用量 → 库存扣减（可在「类型管理 → 记事类型」关掉）
+  // 编辑时先把上次扣的加回来，再按新值扣，避免重复扣
+  applyStock(l, prevApplied) {
+    return store.stock.applyLog(l, prevApplied);
+  },
+
+  // 统一落库（记事本身 + 库存扣减）
+  persist() {
+    const l = this.collect();
+    if (!l) return null;
+    const prev = l.id ? (store.logs.get(l.id) || {}).stockApplied : null;
+    const applied = this.applyStock(l, prev);
+    l.stockApplied = applied;
+    return store.logs.save(l);
+  },
+
   // 保存并关联一笔花费：按第一个设置了"默认记账类别"的记事类型带入
   saveWithCost() {
-    const l = this.collect();
-    if (!l) return;
-    const saved = store.logs.save(l);
+    const saved = this.persist();
+    if (!saved) return;
+    const l = saved;
     advisor.onLogSaved(saved, this.data.isEdit ? '' : this.data.taskId);
     const tag = l.ops.map(o => store.tags.logTag(o)).find(t => t && t.costCat);
     const cat = tag ? tag.costCat : 'agri';

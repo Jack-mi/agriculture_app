@@ -1,13 +1,18 @@
-// 类型管理：记账细分类型（5 大类下自定义）+ 记事类型（名称 / 颜色 / 默认记账类别）
+// 类型管理：支出细分类型（5 大类下自定义）+ 收入类型 + 记事类型（名称/颜色/默认记账类别）+ 常用账
 const store = require('../../utils/store.js');
 const C = require('../../utils/const.js');
 const U = require('../../utils/util.js');
 const stats = require('../../utils/stats.js');
 
+// 模板里单价输入框的单位提示
+function priceLabel(mode) {
+  return mode === 'perMu' ? '元/亩' : mode === 'perJin' ? '元/斤' : mode === 'perMuPrice' ? '元/亩' : mode === 'perDay' ? '元/人·天' : '元';
+}
+
 Page({
   data: {
-    tab: 'cost', cats: C.COST_CATS, cat: 'agri', costList: [], logList: [],
-    colors: C.TAG_COLORS, logFields: C.LOG_FIELDS, matTypes: C.MATERIAL_TYPES, edit: null, costCatOpts: [], tplList: [], tpl: null, modes: C.CALC_MODES, tplSplits: [{ key: 'current', name: '只记当前季' }, { key: 'area', name: '按亩均摊' }, { key: 'even', name: '平均分' }]
+    tab: 'cost', cats: C.COST_CATS, incomeCats: C.INCOME_CATS, cat: 'agri', costList: [], logList: [], incomeList: [],
+    colors: C.TAG_COLORS, logFields: C.LOG_FIELDS, matTypes: C.MATERIAL_TYPES, edit: null, costCatOpts: [], tplList: [], tpl: null, modes: C.CALC_MODES, tplModes: C.INCOME_CALC_MODES.concat(C.CALC_MODES), tplSplits: [{ key: 'current', name: '只记当前季' }, { key: 'area', name: '按亩均摊' }, { key: 'even', name: '平均分' }], logStock: true
   },
 
   onLoad(q) {
@@ -25,11 +30,54 @@ Page({
       fieldText: (t.fields || []).map(k => (C.LOG_FIELDS.find(f => f.key === k) || {}).name).filter(Boolean).join('、') || '只填具体情况'
     }));
     const tplList = store.tags.templates().map(t => ({ id: t.id, name: t.name, icon: C.iconOf(t.sub, t.cat), color: C.catOf(t.cat).color, catName: C.catOf(t.cat).name, sub: t.sub, desc: stats.tplDesc(t) }));
-    this.setData({ costList, logList, tplList });
+    const incomeList = store.tags.income().map(n => ({
+      name: n, key: C.incomeKeyOf(n),
+      count: d.costs.filter(c => !c.deletedAt && c.dir === 'in' && c.sub === n).length,
+      modeText: ((C.INCOME_CATS.find(x => x.key === C.incomeKeyOf(n)) || {}).mode === 'perJin' ? '默认按斤×价' : '默认直接填')
+    }));
+    this.setData({ costList, logList, tplList, incomeList, logStock: store.tags.logStock() });
   },
 
   setTab(e) { this.setData({ tab: e.currentTarget.dataset.t }); },
   pickCat(e) { this.setData({ cat: e.currentTarget.dataset.k }); this.render(); },
+  toggleLogStock() { store.tags.setLogStock(!this.data.logStock); this.render(); U.toast(this.data.logStock ? '已开：填农资用量会自动扣库存' : '已关：只记录不扣库存'); },
+
+  // ---- 收入类型 ----
+  addIncome() {
+    wx.showModal({
+      title: '新增收入类型', editable: true, placeholderText: '如：青贮、农机服务',
+      success: r => {
+        if (!r.confirm) return;
+        if (!store.tags.addIncome(r.content)) return U.toast('名称为空或已存在');
+        this.render();
+      }
+    });
+  },
+  incomeAction(e) {
+    const name = e.currentTarget.dataset.n;
+    wx.showActionSheet({
+      itemList: ['改名', '删除'],
+      success: r => {
+        if (r.tapIndex === 0) {
+          wx.showModal({
+            title: '改名', editable: true, content: name,
+            success: m => {
+              if (!m.confirm) return;
+              if (!store.tags.renameIncome(name, m.content)) return U.toast('改名失败：重名或为空');
+              this.render(); U.toast('改好了，历史流水也一起改了');
+            }
+          });
+        } else {
+          const used = this.data.incomeList.find(x => x.name === name);
+          wx.showModal({
+            title: '删除收入类型', content: used && used.count ? '有 ' + used.count + ' 笔账用了它，删掉类型不影响那些账，只是以后不再出现。' : '',
+            confirmText: '删掉', confirmColor: '#B3372B',
+            success: m => { if (m.confirm) { store.tags.removeIncome(name); this.render(); } }
+          });
+        }
+      }
+    });
+  },
 
   // ---- 记账细分类型 ----
   addCost() {
@@ -119,15 +167,44 @@ Page({
   },
 
   // ---- 常用账 ----
-  addTpl() { this.openTpl({ name: '', cat: 'mach', sub: store.tags.cost('mach')[0] || '', mode: 'perMu', unitPrice: '', amount: '', people: '', split: 'current', note: '' }); },
+  addTpl() { this.openTpl({ dir: 'out', name: '', cat: 'mach', sub: store.tags.cost('mach')[0] || '', mode: 'perMu', unitPrice: '', amount: '', people: '', split: 'current', note: '' }); },
   editTpl(e) { const t = store.tags.template(e.currentTarget.dataset.id); if (t) this.openTpl(Object.assign({}, t, { unitPrice: t.unitPrice ? String(t.unitPrice) : '', amount: t.amount ? String(t.amount) : '', people: t.people ? String(t.people) : '' })); },
-  openTpl(t) { t.subs = store.tags.cost(t.cat); this.setData({ tpl: t }); },
+  openTpl(t) {
+    if (!t.dir) t.dir = 'out';
+    t.subs = t.dir === 'in' ? store.tags.income() : store.tags.cost(t.cat);
+    t.modeList = t.dir === 'in' ? C.INCOME_CALC_MODES : C.CALC_MODES;
+    t.priceLabel = priceLabel(t.mode);
+    this.setData({ tpl: t });
+  },
+  pickTplDir(e) {
+    const dir = e.currentTarget.dataset.k;
+    const cat = dir === 'in' ? 'grain' : 'mach';
+    const subs = dir === 'in' ? store.tags.income() : store.tags.cost(cat);
+    this.setData({
+      'tpl.dir': dir, 'tpl.cat': cat, 'tpl.subs': subs, 'tpl.sub': subs[0] || '',
+      'tpl.mode': dir === 'in' ? 'fixed' : 'perMu', 'tpl.people': '',
+      'tpl.modeList': dir === 'in' ? C.INCOME_CALC_MODES : C.CALC_MODES, 'tpl.priceLabel': dir === 'in' ? '元' : '元/亩'
+    });
+  },
   onTplName(e) { this.setData({ 'tpl.name': e.detail.value }); },
   onTplNum(e) { this.setData({ ['tpl.' + e.currentTarget.dataset.k]: e.detail.value }); },
   onTplNote(e) { this.setData({ 'tpl.note': e.detail.value }); },
-  pickTplCat(e) { const cat = e.currentTarget.dataset.k; const subs = store.tags.cost(cat); this.setData({ 'tpl.cat': cat, 'tpl.subs': subs, 'tpl.sub': subs[0] || '', 'tpl.mode': cat === 'labor' ? 'perDay' : this.data.tpl.mode }); },
-  pickTplSub(e) { this.setData({ 'tpl.sub': e.currentTarget.dataset.s }); },
-  pickTplMode(e) { this.setData({ 'tpl.mode': e.currentTarget.dataset.m }); },
+  pickTplCat(e) {
+    if (this.data.tpl.dir === 'in') {
+      const name = e.currentTarget.dataset.n;
+      const key = C.incomeKeyOf(name);
+      const mode = (C.INCOME_CATS.find(x => x.key === key) || {}).mode || 'fixed';
+      return this.setData({ 'tpl.cat': key, 'tpl.sub': name, 'tpl.mode': mode, 'tpl.priceLabel': priceLabel(mode) });
+    }
+    const cat = e.currentTarget.dataset.k; const subs = store.tags.cost(cat);
+    this.setData({ 'tpl.cat': cat, 'tpl.subs': subs, 'tpl.sub': subs[0] || '', 'tpl.mode': cat === 'labor' ? 'perDay' : this.data.tpl.mode });
+  },
+  pickTplSub(e) {
+    const s = e.currentTarget.dataset.s;
+    if (this.data.tpl.dir === 'in') return this.setData({ 'tpl.sub': s, 'tpl.cat': C.incomeKeyOf(s) });
+    this.setData({ 'tpl.sub': s });
+  },
+  pickTplMode(e) { const m = e.currentTarget.dataset.m; this.setData({ 'tpl.mode': m, 'tpl.priceLabel': priceLabel(m) }); },
   pickTplSplit(e) { this.setData({ 'tpl.split': e.currentTarget.dataset.k }); },
   closeTpl() { this.setData({ tpl: null }); },
   saveTpl() {

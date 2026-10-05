@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- B1 特写：一根档杆一串谷粒，极简大特写，小尺寸最清晰 -->
+  <rect width="1024" height="1024" rx="220" fill="#1F4024"/>
+  <!-- 梁 -->
+  <line x1="120" y1="330" x2="904" y2="330" stroke="#F6E7C6" stroke-width="34" stroke-linecap="round"/>
+  <!-- 档杆 -->
+  <line x1="512" y1="180" x2="512" y2="880" stroke="#F6E7C6" stroke-width="16" opacity="0.6"/>
+  <defs>
+    <path id="g1" d="M0 -72 Q 44 -28 44 6 Q 44 44 0 72 Q -44 44 -44 6 Q -44 -28 0 -72 Z"/>
+  </defs>
+  <!-- 上珠：一粒拨下贴梁（已入账） -->
+  <use href="#g1" x="512" y="240" fill="#C98B1E"/>
+  <!-- 下珠：两粒拨上（计入），两粒靠底（未计） -->
+  <use href="#g1" x="512" y="420" fill="#C98B1E"/>
+  <use href="#g1" x="512" y="556" fill="#C98B1E"/>
+  <use href="#g1" x="512" y="732" fill="#F6E7C6" opacity="0.9"/>
+  <use href="#g1" x="512" y="846" fill="#F6E7C6" opacity="0.55" transform="scale(0.92) translate(44 70)"/>
+  <!-- 谷粒尖芒细节 -->
+  <g stroke="#1F4024" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.65">
+    <path d="M512 196 v-26"/>
+    <path d="M512 376 v-26"/>
+    <path d="M512 512 v-26"/>
+  </g>
+</svg>

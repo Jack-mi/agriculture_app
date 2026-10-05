@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- A1 梯田：等高线式波浪田垄，金色一垄熟田 -->
+  <rect width="1024" height="1024" rx="220" fill="#1F4024"/>
+  <defs>
+    <clipPath id="plot"><rect x="192" y="242" width="640" height="540" rx="60"/></clipPath>
+  </defs>
+  <g clip-path="url(#plot)">
+    <rect x="192" y="242" width="640" height="540" fill="#2E5B34"/>
+    <path d="M192 380 Q 380 340 512 380 Q 644 420 832 380 L832 242 L192 242 Z" fill="#24492A"/>
+    <path d="M192 500 Q 380 460 512 500 Q 644 540 832 500 L832 620 Q 644 660 512 620 Q 380 580 192 620 Z" fill="#C98B1E"/>
+    <path d="M192 660 Q 380 620 512 660 Q 644 700 832 660 L832 782 L192 782 Z" fill="#24492A"/>
+    <g stroke="#F6E7C6" stroke-width="10" fill="none" opacity="0.8">
+      <path d="M192 380 Q 380 340 512 380 Q 644 420 832 380"/>
+      <path d="M192 500 Q 380 460 512 500 Q 644 540 832 500"/>
+      <path d="M192 620 Q 380 580 512 620 Q 644 660 832 620"/>
+      <path d="M192 660 Q 380 620 512 660 Q 644 700 832 660"/>
+    </g>
+    <!-- 金色垄上的两株苗 -->
+    <g stroke="#1F4024" stroke-width="14" stroke-linecap="round" fill="none">
+      <path d="M420 590 v-44 m0 12 c-18 -4 -28 -18 -30 -36 m30 22 c18 -4 28 -18 30 -36"/>
+      <path d="M604 596 v-44 m0 12 c-18 -4 -28 -18 -30 -36 m30 22 c18 -4 28 -18 30 -36"/>
+    </g>
+  </g>
+  <rect x="192" y="242" width="640" height="540" rx="60" fill="none" stroke="#FFFDF7" stroke-width="20"/>
+</svg>

@@ -10,6 +10,7 @@ Page({
     id: '', tab: 'advisor', adv: null, brief: {}, season: {}, plot: {},
     cost: { cats: [], total: 0 }, costList: [], openCat: '',
     logGroups: [], costView: 'list', costDays: [], calYm: '', cal: null, daySheet: null, costFilter: '', logFilter: '', costSubs: [], logTags: [], met: {}, bars: [], seasonInfo: {}, wxRows: [], wxLoading: false, wxMsg: '',
+    wkStart: '', wk: null, nv: {}, sd: {},
     edit: null
   },
 
@@ -38,7 +39,7 @@ Page({
       id: c.id, date: c.date, dateText: U.cnDate(c.date), cat: c.cat, catName: C.catOf(c.cat).name,
       color: C.catOf(c.cat).color, sub: c.sub, icon: C.iconOf(c.sub, c.cat), note: c.note,
       calc: stats.calcText(c), people: c.people, amount: U.money(store.costs.amountFor(c, s.id)),
-      shared: store.costs.allocOf(c).length > 1, linked: !!c.logId
+      shared: store.costs.allocOf(c).length > 1, linked: !!(c.logId && store.logs.get(c.logId)), inc: store.isIncome(c)
     });
     const costList = allCosts.filter(c => !cf || (c.cat + '|' + c.sub) === cf).map(costRow);
     // 按日分组（随手记式）：组头 = 日期 · 第几天 · 当天合计（本季分摊口径）
@@ -58,7 +59,7 @@ Page({
     const matText = l => store.logs.materialsOf(l).map(m => (m.type !== '化肥' || !m.name ? m.type + (m.name ? '·' + m.name : '') : m.name) + (m.rate !== '' && m.rate !== undefined ? ' ' + m.rate + m.unit : '')).join('、');
     const logGroups = stats.logCalendar(s).reverse().map(day => {
       const items = day.logs.filter(l => !lf || (l.ops || []).indexOf(lf) >= 0).map(l => {
-        const cost = store.db().costs.filter(c => c.logId === l.id).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0);
+        const cost = store.db().costs.filter(c => !c.deletedAt && !store.isIncome(c) && c.logId === l.id).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0);
         return {
           id: l.id, opTags: (l.ops || []).map(o => ({ name: o, color: store.tags.colorOf(o) })), text: l.text,
           growth: l.growth || '', pest: l.pest || '', machine: l.machine || '',
@@ -85,9 +86,27 @@ Page({
     const last = ws.rows.slice(-30);
     const maxP = Math.max(5, ...last.map(r => r.p || 0));
     const bars = last.map(r => ({ d: r.date.slice(5), h: r.p ? Math.max(4, Math.round(r.p / maxP * 100)) : 0, p: r.p }));
+    // 本季净收益 / 待收待付
+    const ns = stats.netOf(s.id);
+    const nv = {
+      income: ns.incomeText, expense: ns.expenseText, net: ns.netText, netPos: ns.net >= 0,
+      hasIncome: ns.hasIncome, inPct: ns.income + ns.expense ? Math.round(ns.income / (ns.income + ns.expense) * 100) : 0,
+      catText: ns.hasIncome && plot.area ? '¥' + Math.round(ns.net / plot.area) + '/亩' : ''
+    };
+    const myDebts = store.costs.bySeason(s.id).filter(c => c.debt);
+    const sd = {
+      recv: U.money(myDebts.filter(c => store.isIncome(c) && !c.debt.settled).reduce((a, c) => a + store.allocTotal(c) - (+c.debt.paidAmount || 0), 0)),
+      pay: U.money(myDebts.filter(c => !store.isIncome(c) && !c.debt.settled).reduce((a, c) => a + store.allocTotal(c) - (+c.debt.paidAmount || 0), 0)),
+      has: myDebts.some(c => !c.debt.settled)
+    };
+    // 周历
+    const wkStart = this.data.wkStart || stats.weekStartOf(calYm === U.today().slice(0, 7) ? U.today() : store.seasons.endDate(s));
+    const wk = stats.costWeek(s, wkStart);
 
     this.setData({
       season: s, plot, brief, cost, costList, costDays, calYm, cal, logGroups, costSubs, logTags, costTotalCount: allCosts.length,
+      budget: (b => (b ? Object.assign(b, { barW: Math.min(100, b.pct), totalText2: U.money(b.total) }) : null))(stats.budgetProgress(s.id)),
+      nv, sd, wkStart, wk,
       costFilterSum: cf ? U.money(allCosts.filter(c => (c.cat + '|' + c.sub) === cf).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0)) : '',
       met: { gdd: ws.gdd, gdd0: ws.gdd0, rain: ws.rain, days: ws.days, known: ws.known, missing: ws.missing, manual: ws.manual, maxWind: ws.maxWind, hasLoc: plot.lat !== undefined && plot.lat !== '' },
       wxRows, bars,
@@ -118,9 +137,15 @@ Page({
   setCostView(e) { this.setData({ costView: e.currentTarget.dataset.v }); },
   calPrev() { if (this.data.cal.canPrev) { this.setData({ calYm: stats.shiftYm(this.data.calYm, -1) }); this.render(); } },
   calNext() { if (this.data.cal.canNext) { this.setData({ calYm: stats.shiftYm(this.data.calYm, 1) }); this.render(); } },
+  weekPrev() { this.setData({ wkStart: U.addDays(this.data.wkStart, -7) }); this.render(); },
+  weekNext() { this.setData({ wkStart: U.addDays(this.data.wkStart, 7) }); this.render(); },
+  goCatchup() { wx.navigateTo({ url: '/pages/catchup/catchup?seasonId=' + this.data.id }); },
+  goDebt() { wx.navigateTo({ url: '/pages/debt/debt' }); },
+  goBudget() { wx.navigateTo({ url: '/pages/budget/budget?seasonId=' + this.data.id }); },
   // 点日历某天：弹出当天记事 + 账目，可按该日期补记
   openDay(e) {
-    const cell = this.data.cal.cells[e.currentTarget.dataset.i];
+    const src = this.data.costView === 'week' ? this.data.wk : this.data.cal;
+    const cell = src && src.cells[e.currentTarget.dataset.i];
     if (!cell || !cell.inSeason || cell.future) return;
     const s = this.data.season;
     const w = store.weather.get(s.plotId, cell.date);
@@ -137,7 +162,7 @@ Page({
   closeDay() { this.setData({ daySheet: null }); },
   addCostAt(e) { const d = e.currentTarget.dataset.date; this.setData({ daySheet: null }); wx.navigateTo({ url: '/pages/cost-edit/cost-edit?seasonId=' + this.data.id + '&date=' + d }); },
   addLogAtDay(e) { const d = e.currentTarget.dataset.date; this.setData({ daySheet: null }); wx.navigateTo({ url: '/pages/log-edit/log-edit?seasonId=' + this.data.id + '&date=' + d }); },
-  editCostFromDay(e) { this.setData({ daySheet: null }); this.editCost(e); },
+  editCostFromDay(e) { this.setData({ daySheet: null }); this.openCost(e); },
   editLogFromDay(e) { this.setData({ daySheet: null }); this.editLog(e); },
   setCostFilter(e) { const k = e.currentTarget.dataset.k || ''; this.setData({ costFilter: this.data.costFilter === k ? '' : k }); this.render(); },
   setLogFilter(e) { const k = e.currentTarget.dataset.k || ''; this.setData({ logFilter: this.data.logFilter === k ? '' : k }); this.render(); },
@@ -150,6 +175,7 @@ Page({
   toggleCat(e) { const k = e.currentTarget.dataset.k; this.setData({ openCat: this.data.openCat === k ? '' : k }); },
 
   addCost() { wx.navigateTo({ url: '/pages/cost-edit/cost-edit?seasonId=' + this.data.id }); },
+  openCost(e) { wx.navigateTo({ url: '/pages/cost-detail/cost-detail?id=' + e.currentTarget.dataset.id }); },
   editCost(e) { wx.navigateTo({ url: '/pages/cost-edit/cost-edit?id=' + e.currentTarget.dataset.id }); },
   addLog() { wx.navigateTo({ url: '/pages/log-edit/log-edit?seasonId=' + this.data.id }); },
   addLogAt(e) { wx.navigateTo({ url: '/pages/log-edit/log-edit?seasonId=' + this.data.id + '&date=' + e.currentTarget.dataset.date }); },

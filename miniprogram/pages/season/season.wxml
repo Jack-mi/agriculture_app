@@ -10,22 +10,28 @@
     </view>
   </view>
   <view class="kpis">
-    <view class="kpi">
+    <view class="kpi" bindtap="setTab" data-t="cost">
       <view class="k">总投入</view>
       <view class="v num">¥{{brief.costText}}</view>
       <view class="s" wx:if="{{brief.perMuText}}">¥{{brief.perMuText}}/亩</view>
     </view>
-    <view class="kpi">
+    <view class="kpi" bindtap="setTab" data-t="cost">
+      <view class="k">已收</view>
+      <view class="v num">{{nv.hasIncome ? '¥' + nv.income : '—'}}</view>
+      <view class="s">{{nv.hasIncome ? '已结/含未结' : '未收粮'}}</view>
+    </view>
+    <view class="kpi" bindtap="setTab" data-t="cost">
+      <view class="k">净收益</view>
+      <view class="v num">{{nv.hasIncome ? (nv.netPos ? '＋' : '−') + '¥' + nv.net : '—'}}</view>
+      <view class="s">{{nv.catText || '收了才有'}}</view>
+    </view>
+    <view class="kpi" bindtap="setTab" data-t="wx">
       <view class="k">累计积温</view>
       <view class="v num">{{met.gdd}}</view>
-      <view class="s">℃·天</view>
-    </view>
-    <view class="kpi">
-      <view class="k">累计降雨</view>
-      <view class="v num">{{met.rain}}</view>
-      <view class="s">毫米</view>
+      <view class="s">℃·天 · 雨 {{met.rain}}mm</view>
     </view>
   </view>
+  <view wx:if="{{sd.has}}" class="topdebt" bindtap="goDebt">待收 ¥{{sd.recv}} · 待付 ¥{{sd.pay}}<text style="opacity:.9"> ›</text></view>
 </view>
 
 <!-- Tab -->
@@ -85,6 +91,22 @@
 
   <!-- ===== 账本 ===== -->
   <block wx:if="{{tab === 'cost'}}">
+    <view class="card">
+      <view class="row between">
+        <text class="sec-title" style="margin:0">本季预算</text>
+        <text class="tag {{budget && budget.over ? 'warn' : ''}}">{{budget && budget.hasBudget ? (budget.over ? '已超支' : budget.pct + '%') : '还没设'}}</text>
+      </view>
+      <block wx:if="{{budget && budget.hasBudget}}">
+        <view class="pbar"><view class="pfill {{budget.over ? 'over' : ''}}" style="width:{{budget.barW}}%"></view></view>
+        <view class="row between">
+          <text class="muted">已花 ¥{{budget.spentText}} / 预算 ¥{{budget.totalText2}}</text>
+          <text class="muted">{{budget.over ? '超支 ¥' : '还剩 ¥'}}{{budget.remainText}}</text>
+        </view>
+      </block>
+      <view wx:else class="muted">设个预算，花超了首页和账本都会提醒。</view>
+      <view class="btn ghost small" style="margin-top:20rpx" bindtap="goBudget">设预算 / 看进度</view>
+    </view>
+
     <view class="card" style="padding:12rpx 32rpx">
       <view wx:if="{{cost.total > 0}}" class="stack">
         <view wx:for="{{cost.cats}}" wx:key="key" wx:if="{{item.total > 0}}" style="width:{{item.pct}}%;background:{{item.color}}"></view>
@@ -102,9 +124,17 @@
           </view>
         </view>
       </view>
-      <view class="row between sum-row">
-        <text style="font-weight:800">本季合计</text>
-        <text class="num" style="font-size:44rpx;font-weight:800">¥{{cost.totalText}}</text>
+      <view class="row between" style="padding:22rpx 0 0;border-top:2rpx solid var(--line);margin-top:12rpx">
+        <text style="font-weight:700">本季支出</text>
+        <text class="num" style="font-size:36rpx;font-weight:800;color:var(--heat)">−¥{{nv.expense}}</text>
+      </view>
+      <view class="row between" style="padding:14rpx 0 0">
+        <text style="font-weight:700">本季收入</text>
+        <text class="num" style="font-size:36rpx;font-weight:800;color:var(--green)">{{nv.hasIncome ? '＋¥' + nv.income : '—'}}</text>
+      </view>
+      <view class="row between sum-row" style="padding:14rpx 0 20rpx">
+        <text style="font-weight:800">净收益</text>
+        <text class="num" style="font-size:44rpx;font-weight:800;color:{{nv.netPos ? 'var(--green)' : 'var(--heat)'}}">{{nv.hasIncome ? (nv.netPos ? '＋' : '−') + '¥' + nv.net : '—'}}</text>
       </view>
     </view>
 
@@ -112,7 +142,8 @@
       <view class="sec-title" style="margin:0">流水（{{costList.length}}{{costFilter ? ' / ' + costTotalCount : ''}}）{{costFilter ? ' · 小计 ¥' + costFilterSum : ''}}</view>
       <view class="vsw">
         <view class="{{costView === 'list' ? 'on' : ''}}" bindtap="setCostView" data-v="list">列表</view>
-        <view class="{{costView === 'cal' ? 'on' : ''}}" bindtap="setCostView" data-v="cal">日历</view>
+        <view class="{{costView === 'cal' ? 'on' : ''}}" bindtap="setCostView" data-v="cal">月历</view>
+        <view class="{{costView === 'week' ? 'on' : ''}}" bindtap="setCostView" data-v="week">周历</view>
       </view>
     </view>
     <scroll-view wx:if="{{costView === 'list' && costSubs.length > 1}}" scroll-x class="fscroll">
@@ -125,23 +156,23 @@
       <view wx:for="{{costDays}}" wx:for-item="g" wx:key="date" class="cday">
         <view class="cday-h">
           <text class="cday-d">{{g.dateText}}</text><text class="muted"> {{g.week}} · 第{{g.dayN}}天</text>
-          <text class="cday-s num">¥{{g.totalText}}</text>
+          <text class="cday-s"><text wx:if="{{g.incomeText}}" class="num" style="color:var(--green)">＋{{g.incomeText}}</text><text wx:if="{{g.incomeText && g.expenseText}}"> · </text><text wx:if="{{g.expenseText}}" class="num" style="color:var(--heat)">−{{g.expenseText}}</text></text>
         </view>
         <view class="card" style="padding:0 28rpx">
-          <view wx:for="{{g.items}}" wx:key="id" class="cf" bindtap="editCost" data-id="{{item.id}}" hover-class="btn-hover">
+          <view wx:for="{{g.items}}" wx:key="id" class="cf" bindtap="openCost" data-id="{{item.id}}" hover-class="btn-hover">
             <view class="cf-ic" style="background:{{item.color}}1F"><image src="{{item.icon}}" class="cf-img" /></view>
             <view class="flex1" style="min-width:0">
               <view class="cf-t">{{item.sub || item.catName}}<text wx:if="{{item.shared}}" class="tag share">共用</text><text wx:if="{{item.linked}}" class="tag">记事</text></view>
               <view wx:if="{{item.calc || item.note}}" class="muted ellipsis">{{item.calc}}{{item.calc && item.note ? ' · ' : ''}}{{item.note}}</view>
             </view>
-            <view class="num cf-a">¥{{item.amount}}</view>
+            <view class="num cf-a" style="color:{{item.inc ? 'var(--green)' : 'var(--heat)'}}">{{item.inc ? '＋' : '−'}}¥{{item.amount}}</view>
           </view>
         </view>
       </view>
     </block>
 
-    <!-- 日历：补账 -->
-    <view wx:else class="card cal">
+    <!-- 月历：补账 -->
+    <view wx:elif="{{costView === 'cal'}}" class="card cal">
       <view class="cal-h">
         <view class="cal-nav {{cal.canPrev ? '' : 'dis'}}" bindtap="calPrev">‹</view>
         <view class="cal-t">{{cal.title}} · 本月 <text class="num" style="color:var(--wheat)">¥{{cal.monthTotalText}}</text></view>
@@ -151,14 +182,47 @@
       <view class="cal-g">
         <view wx:for="{{cal.cells}}" wx:key="date" class="cc {{item.inMonth ? '' : 'om'}} {{!item.inSeason || item.future ? 'out' : ''}} {{item.spend ? (item.big ? 'big' : 'sp') : ''}} {{item.isToday ? 'today' : ''}}" bindtap="openDay" data-i="{{index}}">
           <text class="cc-d">{{item.isToday ? '今' : item.day}}</text>
-          <text wx:if="{{item.spendText && item.inMonth}}" class="cc-m num">{{item.spendText}}</text>
-          <text wx:elif="{{item.unrecorded}}" class="cc-u">未记</text>
+          <text wx:if="{{item.incomeText && item.inMonth}}" class="cc-m num" style="color:var(--green)">+{{item.incomeText}}</text>
+          <text wx:if="{{item.spendText && item.inMonth}}" class="cc-m num" style="color:var(--heat)">-{{item.spendText}}</text>
+          <text wx:elif="{{!item.incomeText && item.unrecorded}}" class="cc-u">未记</text>
           <view wx:if="{{item.rain && item.inMonth && item.inSeason}}" class="cc-r"></view>
           <view wx:if="{{item.hasLog && item.inMonth}}" class="cc-l"></view>
         </view>
       </view>
       <view class="cal-lg">
-        <text><text class="lg sp"></text>有花费</text><text><text class="lg big"></text>≥ ¥2,000</text><text><text class="lg rd"></text>下雨</text><text><text class="lg lgl"></text>有记事</text><text class="muted">未记 = 当天没记事也没记账</text>
+        <text><text class="lg in2"></text>有收入</text><text><text class="lg sp"></text>有支出</text><text><text class="lg rd"></text>下雨</text><text><text class="lg lgl"></text>有记事</text><text class="muted">未记 = 当天没记事也没记账</text>
+      </view>
+      <view class="row between" style="margin-top:20rpx;border-top:2rpx solid var(--line);padding-top:20rpx">
+        <text class="muted">本月 收 ¥{{cal.monthIncomeText}} · 支 ¥{{cal.monthTotalText}}</text>
+        <text class="num" style="color:{{cal.monthNet >= 0 ? 'var(--green)' : 'var(--heat)'}}">净 {{cal.monthNet >= 0 ? '＋' : '−'}}¥{{cal.monthNetText}}</text>
+      </view>
+      <view class="btn ghost small" style="margin-top:20rpx" bindtap="goCatchup">连续补账 ›</view>
+    </view>
+
+    <!-- 周历 -->
+    <view wx:else class="card cal">
+      <view class="cal-h">
+        <view class="cal-nav" bindtap="weekPrev">‹</view>
+        <view class="cal-t">{{wk.title}}</view>
+        <view class="cal-nav" bindtap="weekNext">›</view>
+      </view>
+      <view class="cal-w"><text>日</text><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text></view>
+      <view class="cal-g ccw">
+        <view wx:for="{{wk.cells}}" wx:key="date" class="cc {{!item.inSeason || item.future ? 'out' : ''}} {{item.isToday ? 'today' : ''}}" bindtap="openDay" data-i="{{index}}">
+          <text class="cc-d">{{item.isToday ? '今' : item.day}}</text>
+          <text wx:if="{{item.incomeText}}" class="cc-m num" style="color:var(--green)">+{{item.incomeText}}</text>
+          <text wx:if="{{item.spendText}}" class="cc-m num" style="color:var(--heat)">-{{item.spendText}}</text>
+          <text wx:elif="{{!item.incomeText && item.unrecorded}}" class="cc-u">未记</text>
+          <view wx:if="{{item.rain && item.inSeason}}" class="cc-r"></view>
+          <view wx:if="{{item.hasLog}}" class="cc-l"></view>
+        </view>
+      </view>
+      <view class="row between" style="margin-top:20rpx">
+        <text class="muted">本周 收 ¥{{wk.incomeText}} · 支 ¥{{wk.expenseText}}</text>
+        <text class="num" style="color:{{wk.net >= 0 ? 'var(--green)' : 'var(--heat)'}}">净 {{wk.net >= 0 ? '＋' : '−'}}¥{{wk.netText}}</text>
+      </view>
+      <view class="row" style="margin-top:20rpx">
+        <view class="btn ghost small" style="flex:1" bindtap="goCatchup">连续补账</view>
       </view>
     </view>
   </block>

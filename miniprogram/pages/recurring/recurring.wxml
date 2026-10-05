@@ -1,0 +1,123 @@
+<view class="wrap">
+  <view wx:if="{{due.length}}" class="card" style="background:#FBF3DE;border-color:#E7CF9A">
+    <view style="font-weight:800;color:#7A5210">{{due.length}} 个到期待记</view>
+    <view wx:for="{{due}}" wx:key="id" class="drow">
+      <view class="flex1">
+        <view class="f-t">{{item.name}}</view>
+        <view class="muted" style="font-size:25rpx">{{item.freqName}} · {{item.dirName}} · {{item.amountText}}</view>
+      </view>
+      <view class="chip on" catchtap="record" data-id="{{item.id}}">去记 ›</view>
+    </view>
+    <view class="muted" style="font-size:24rpx;margin-top:12rpx">点「去记」会把金额和分类填好，确认一下才落账——不会偷偷改你的账。</view>
+  </view>
+
+  <view class="sec-title">全部周期账</view>
+  <view class="card" style="padding:0 28rpx">
+    <view wx:if="{{empty}}" class="empty">
+      <view style="font-size:36rpx;font-weight:700;color:var(--ink);margin-bottom:12rpx">还没有周期账</view>
+      <view class="muted">土地流转年付、农资贷款按月还、每周固定开支，都可以存成周期账</view>
+    </view>
+    <view wx:for="{{list}}" wx:key="id" class="flow" bindtap="openEdit" data-id="{{item.id}}" hover-class="btn-hover">
+      <view class="fic2" style="background:{{item.dir === 'in' ? 'var(--green-l)' : '#F8E1D6'}};color:{{item.dir === 'in' ? 'var(--green-d)' : 'var(--heat)'}}">{{item.dirName}}</view>
+      <view class="flex1" style="min-width:0">
+        <view class="f-t">{{item.name}}<text wx:if="{{item.enabled === false}}" class="tag done">已停</text></view>
+        <view class="muted" style="font-size:25rpx">{{item.freqName}} · {{item.dayText}} · {{item.catName}}{{item.sub ? ' · ' + item.sub : ''}}</view>
+        <view class="muted" style="font-size:23rpx">{{item.dueText}}</view>
+      </view>
+      <view style="text-align:right">
+        <view class="num f-a">¥{{item.amountText}}</view>
+        <view class="link" style="font-size:24rpx" catchtap="recordNow" data-id="{{item.id}}">记一笔 ›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="muted" style="font-size:24rpx;margin:8rpx">周期账存在本机并随类型一起云备份，不新增云端集合；到期判断也在本机做，不依赖定时任务。</view>
+</view>
+
+<view class="fixed-bar">
+  <view class="btn wheat" bindtap="openNew">＋ 新建周期账</view>
+</view>
+
+<view wx:if="{{sheet === 'edit' && edit}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">{{edit.id ? '编辑周期账' : '新建周期账'}}</view>
+
+    <view class="sheet-lb">叫什么</view>
+    <input class="input" value="{{edit.name}}" bindinput="onField" data-k="name" placeholder="如：土地流转、农资贷款" placeholder-class="ph" />
+
+    <view class="sheet-lb" style="margin-top:24rpx">收还是支</view>
+    <view class="chips">
+      <view wx:for="{{dirs}}" wx:key="k" class="chip {{edit.dir === item.k ? 'on' : ''}}" bindtap="pickDir" data-k="{{item.k}}">{{item.n}}</view>
+    </view>
+
+    <view class="sheet-lb" style="margin-top:24rpx">科目</view>
+    <view class="chips">
+      <block wx:if="{{edit.dir === 'in'}}">
+        <view wx:for="{{incomeCats}}" wx:key="key" class="chip {{edit.cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">{{item.name}}</view>
+      </block>
+      <block wx:else>
+        <view wx:for="{{costCats}}" wx:key="key" class="chip {{edit.cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">{{item.name}}</view>
+      </block>
+    </view>
+    <view wx:if="{{subList.length}}" class="chips" style="margin-top:16rpx">
+      <view wx:for="{{subList}}" wx:key="*this" class="chip {{edit.sub === item ? 'on' : ''}}" bindtap="pickSub" data-n="{{item}}">{{item}}</view>
+    </view>
+
+    <view class="sheet-lb" style="margin-top:24rpx">怎么算</view>
+    <view class="chips">
+      <view class="chip {{edit.mode === 'fixed' ? 'on' : ''}}" bindtap="pickMode" data-k="fixed">固定金额</view>
+      <view wx:if="{{edit.dir !== 'in'}}" class="chip {{edit.mode === 'perMu' ? 'on' : ''}}" bindtap="pickMode" data-k="perMu">按亩</view>
+    </view>
+    <view class="row" style="margin-top:16rpx">
+      <view class="col">
+        <view class="sheet-lb">每期金额</view>
+        <input class="input num" type="digit" value="{{edit.amount}}" bindinput="onField" data-k="amount" placeholder="0" placeholder-class="ph" />
+      </view>
+      <view wx:if="{{edit.mode !== 'fixed'}}" class="col" style="margin-left:20rpx">
+        <view class="sheet-lb">单价（元/亩）</view>
+        <input class="input num" type="digit" value="{{edit.unitPrice}}" bindinput="onField" data-k="unitPrice" placeholder="0" placeholder-class="ph" />
+      </view>
+    </view>
+
+    <view class="sheet-lb" style="margin-top:24rpx">多久一次</view>
+    <view class="chips">
+      <view wx:for="{{freqs}}" wx:key="k" class="chip {{edit.freq === item.k ? 'on' : ''}}" bindtap="pickFreq" data-k="{{item.k}}">{{item.n}}</view>
+    </view>
+    <view class="sheet-lb" style="margin-top:16rpx">哪天</view>
+    <view class="chips">
+      <block wx:if="{{edit.freq === 'week'}}">
+        <view wx:for="{{weekDays}}" wx:key="d" class="chip {{edit.day === item.d ? 'on' : ''}}" bindtap="pickDay" data-d="{{item.d}}">周{{item.n}}</view>
+      </block>
+      <block wx:else>
+        <view wx:for="{{monthDays}}" wx:key="*this" class="chip {{edit.day === item ? 'on' : ''}}" bindtap="pickDay" data-d="{{item}}">{{item}} 号</view>
+      </block>
+    </view>
+
+    <view class="sheet-lb" style="margin-top:24rpx">起止</view>
+    <view class="row">
+      <picker mode="date" value="{{edit.startAt}}" bindchange="onDate" data-k="startAt" style="flex:1"><view class="picker">{{edit.startAt || '开始日期'}}</view></picker>
+      <text class="muted" style="margin:0 12rpx">至</text>
+      <picker mode="date" value="{{edit.endAt}}" bindchange="onDate" data-k="endAt" style="flex:1"><view class="picker">{{edit.endAt || '不设终点'}}</view></picker>
+    </view>
+
+    <view class="sheet-lb" style="margin-top:24rpx">分期（选填，填了就按总额分 N 期）</view>
+    <view class="row">
+      <view class="col">
+        <input class="input num" type="digit" value="{{edit.installTotal}}" bindinput="onField" data-k="installTotal" placeholder="总额" placeholder-class="ph" />
+      </view>
+      <view class="col" style="margin-left:20rpx">
+        <input class="input num" type="digit" value="{{edit.installPeriods}}" bindinput="onField" data-k="installPeriods" placeholder="分几期" placeholder-class="ph" />
+      </view>
+    </view>
+
+    <view class="row between" style="margin-top:24rpx">
+      <text>到期提醒</text>
+      <view class="chip {{edit.enabled !== false ? 'on' : ''}}" bindtap="toggleEnabled">{{edit.enabled !== false ? '开' : '关'}}</view>
+    </view>
+
+    <view class="row" style="margin-top:8rpx">
+      <view wx:if="{{edit.id}}" class="btn danger" style="flex:1" bindtap="remove" data-id="{{edit.id}}">删掉</view>
+      <view class="btn wheat" style="flex:2;margin-left:20rpx" bindtap="save">{{edit.id ? '保存' : '建好'}}</view>
+    </view>
+  </view>
+</view>

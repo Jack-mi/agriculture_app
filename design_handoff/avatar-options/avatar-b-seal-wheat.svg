@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- 方案B 麦穗印章：米白底 + 朱砂印章 + 白麦穗 -->
+  <rect x="0" y="0" width="1024" height="1024" rx="220" fill="#FFFDF7"/>
+  <rect x="182" y="182" width="660" height="660" rx="120" fill="#B3372B"/>
+  <!-- 茎 -->
+  <line x1="512" y1="752" x2="512" y2="310" stroke="#FFFDF7" stroke-width="30" stroke-linecap="round"/>
+  <!-- 麦粒：左右各三对饱满籽粒 -->
+  <g fill="#FFFDF7">
+    <ellipse cx="452" cy="392" rx="34" ry="72" transform="rotate(38 452 392)"/>
+    <ellipse cx="572" cy="392" rx="34" ry="72" transform="rotate(-38 572 392)"/>
+    <ellipse cx="442" cy="512" rx="34" ry="76" transform="rotate(42 442 512)"/>
+    <ellipse cx="582" cy="512" rx="34" ry="76" transform="rotate(-42 582 512)"/>
+    <ellipse cx="446" cy="632" rx="32" ry="72" transform="rotate(46 446 632)"/>
+    <ellipse cx="578" cy="632" rx="32" ry="72" transform="rotate(-46 578 632)"/>
+    <!-- 顶部一粒朝上的 -->
+    <ellipse cx="512" cy="284" rx="32" ry="70"/>
+  </g>
+  <!-- 底部缎带 -->
+  <path d="M368 764 h288" stroke="#F3EBA8" stroke-width="26" stroke-linecap="round"/>
+</svg>

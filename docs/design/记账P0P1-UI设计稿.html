@@ -1,0 +1,1547 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>谷雨记 · 记账 P0+P1 UI 设计稿</title>
+<style>
+/* ===== 谷雨记设计系统（与 miniprogram/app.wxss 1:1 对齐，1px = 2rpx） ===== */
+:root{
+  --green:#2E5B34; --green-d:#1F4024; --green-l:#E4ECDD;
+  --wheat:#C98B1E; --wheat-l:#F6E7C6;
+  --paper:#F5F0E4; --card:#FFFDF7; --ink:#1E241C; --sub:#5E6656; --line:#E3DCCB;
+  --rain:#2F6F9F; --heat:#C4532B; --danger:#B3372B;
+  /* 收支/欠款语义色：全部复用上表既有色值，不引入新色相 */
+  --in:#2E5B34;   --in-bg:#E4ECDD;
+  --out:#C4532B;  --out-bg:#F8E1D6;
+  --debt:#6B5B95; --debt-bg:#EDE9F4;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EDE7D9;color:var(--ink);line-height:1.5;
+  font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;font-size:14px}
+.wrap{max-width:1560px;margin:0 auto;padding:28px 22px 80px}
+h1{font-size:24px;margin:0 0 6px;font-weight:800}
+h1 small{font-size:13px;font-weight:400;color:var(--sub);margin-left:8px}
+.meta{color:var(--sub);font-size:13px;margin-bottom:22px}
+h2.sec{font-size:17px;margin:46px 0 6px;padding-left:12px;border-left:6px solid var(--green);font-weight:800}
+p.secnote{margin:0 0 18px;color:var(--sub);font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:left;vertical-align:top}
+th{background:#EFE9DA;font-weight:700;font-size:12.5px;color:var(--sub)}
+tr:last-child td{border-bottom:0}
+code{background:#EFE9DA;border-radius:4px;padding:1px 5px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(375px,1fr));gap:34px 24px;align-items:start}
+.frame{display:flex;flex-direction:column;gap:12px;break-inside:avoid}
+
+/* 手机框：直接按 app.wxss 的尺寸换算 */
+.dev{width:375px;background:var(--paper);border-radius:20px;border:1px solid #CFC6B2;
+  box-shadow:0 10px 26px rgba(30,36,28,.14);overflow:hidden}
+.sbar{display:flex;justify-content:space-between;padding:9px 20px 3px;font-size:11px;color:var(--sub)}
+.sbar b{font-weight:700}
+.nav{display:flex;align-items:center;background:var(--green);color:#fff;padding:11px 16px}
+.nav .grow{flex:1;text-align:center;font-size:17px;font-weight:700}
+.nav .ic{width:24px;font-size:18px;line-height:1;opacity:.92}
+.nav .ic.r{text-align:right;font-size:14px}
+.body{padding:14px;display:flex;flex-direction:column;gap:12px}
+
+/* TabBar（现版本无图标，纯文字） */
+.tabb{display:flex;background:var(--card);border-top:1px solid var(--line)}
+.tabb div{flex:1;text-align:center;padding:9px 0 11px;font-size:13px;color:var(--sub)}
+.tabb div.on{color:var(--green);font-weight:700}
+
+/* 卡片 / 文字（对应 .card .sec-title .muted .num） */
+.c2{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:0}
+.c2.pad0{padding:2px 16px}
+.c2.flat{background:#FBF8EF}
+.muted{color:var(--sub);font-size:14px}
+.tiny{font-size:12px;color:var(--sub)}
+.num{font-family:"DIN Alternate","Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.3px}
+.row{display:flex;align-items:center;gap:8px}
+.grow{flex:1;min-width:0}
+.between{justify-content:space-between}
+.right{text-align:right}
+h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;margin:4px 4px -4px}
+
+/* 分段：现版本没有独立分段控件，用 .tile.on / .chip.on 的选中语言做（浅绿底 + 绿描边 + 绿字） */
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg div{flex:1;text-align:center;padding:9px 0;font-size:15px;color:var(--sub);border-right:1px solid var(--line)}
+.seg div:last-child{border-right:0}
+.seg div.on{background:var(--green-l);color:var(--green-d);font-weight:700;box-shadow:inset 0 0 0 1.5px var(--green)}
+.seg.seg2 div.on{background:var(--green-l);color:var(--green-d)}
+
+/* 图标宫格（对应 cost-edit 的 .grid/.gi/.gic） */
+.gi4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 4px}
+.gi{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--ink);text-align:center}
+.gic{width:46px;height:46px;border-radius:13px;background:#fff;border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--sub)}
+.gi.on .gic{background:var(--green-l);border-color:var(--green);color:var(--green-d);box-shadow:inset 0 0 0 1.5px var(--green)}
+.gi.in .gic{color:var(--green-d)}
+.gi.in.on .gic{background:var(--green);border-color:var(--green);color:#fff;box-shadow:none}
+.gic.dash{border-style:dashed;color:var(--green);background:transparent;font-weight:400}
+
+/* chip（对应 app.wxss .chip：42px 高胶囊） */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--line);
+  border-radius:21px;padding:0 15px;height:42px;line-height:40px;font-size:16px;color:var(--ink)}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.chip.hl{background:var(--green-l);border-color:var(--green);color:var(--green-d);font-weight:600}
+.chip.warn{background:var(--out-bg);border-color:#EDBFAC;color:var(--heat);font-weight:600}
+.chip.debt{background:var(--debt-bg);border-color:#C7BCDC;color:var(--debt);font-weight:600}
+.chip.in{background:var(--in-bg);border-color:var(--green);color:var(--green-d);font-weight:600}
+/* 小号 filtering chip（对应 .fchip：34px 高，选中即墨底白字） */
+.fchip{display:inline-flex;align-items:center;gap:5px;height:34px;line-height:32px;padding:0 12px;
+  border-radius:17px;border:1px solid var(--line);background:#fff;font-size:14px;color:var(--ink)}
+.fchip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* 按钮（对应 .btn 54px 高 / 9px 圆角 / 19px 字） */
+.btn{background:var(--green);color:#fff;border-radius:9px;text-align:center;
+  height:54px;line-height:54px;font-size:19px;font-weight:700;letter-spacing:2px}
+.btn.wheat{background:var(--wheat)}
+.btn.line{background:transparent;border:1.5px solid var(--green);color:var(--green);line-height:51px}
+.btn.ghost{background:transparent;border:1.5px solid var(--green);color:var(--green);line-height:51px;font-weight:700}
+.btn.ghost.dash{border-style:dashed;color:var(--sub);border-color:#B9B09A}
+.btn.danger{background:transparent;color:var(--danger);border:1.5px solid #E5C2BD;line-height:51px;font-size:16px}
+.btn.sm{height:38px;line-height:38px;font-size:15px;letter-spacing:0;border-radius:8px}
+.dock{display:flex;gap:8px}
+.dock .btn{flex:1;height:46px;line-height:46px;font-size:16px;letter-spacing:0}
+.amt{font-size:38px;line-height:1.15}
+.amt .yen{font-size:21px;font-weight:700;opacity:.8;margin-right:2px}
+.amt.in{color:var(--in)} .amt.out{color:var(--out)}
+
+/* 记账键盘（对应 components/keypad：按键 60px 高、圆角 11px、右列功能键） */
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.key{background:#fff;border:1px solid var(--line);border-radius:11px;text-align:center;padding:14px 0;font-size:20px;font-weight:600}
+.key.fn{background:#F1EBDC;color:var(--sub);font-size:15px;font-weight:700}
+.key.ok{background:var(--wheat);border-color:var(--wheat);color:#fff;font-weight:800;font-size:16px;
+  grid-row:span 2;display:flex;align-items:center;justify-content:center}
+.key.ok.in{background:var(--green);border-color:var(--green)}
+
+/* 流水 / 列表 */
+.dayh{display:flex;justify-content:space-between;align-items:baseline;margin:2px 4px -2px}
+.dayh b{font-size:15px;font-weight:800}
+.flow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.flow:last-child{border-bottom:0}
+.fic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex:none}
+.fic.in{background:var(--in-bg);color:var(--in)}
+.fic.out{background:var(--out-bg);color:var(--out)}
+.fic.debt{background:var(--debt-bg);color:var(--debt)}
+.fic.gray{background:#F1EBDC;color:var(--green-d)}
+.thumb{width:44px;height:44px;border-radius:8px;background:#DCD5C4;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--sub);flex:none}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.kv:last-child{border-bottom:0}
+
+/* 弹层（对应 .mask / .sheet） */
+.dim{background:rgba(20,24,18,.5);border-radius:10px;padding:12px 0 0}
+.sheet{background:var(--card);border-radius:14px 14px 0 0;padding:20px 16px;display:flex;flex-direction:column;gap:12px}
+.sheet h4{margin:0;font-size:19px;font-weight:700}
+
+/* 图表：柱状 + 占比条（对应 .stack 10px 高） */
+.bars{display:flex;align-items:flex-end;gap:7px;height:104px;padding-top:6px}
+.bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%}
+.bars .b i{display:block;border-radius:4px 4px 2px 2px}
+.bars .b i.up{background:var(--in)} .bars .b i.dn{background:#E5A891}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.legend s{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;text-decoration:none}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
+.stack i{display:block}
+
+/* 日历（对应 season 的 .cal） */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cc{border-radius:8px;background:#FBF8EF;border:1px solid var(--line);min-height:52px;padding:5px 4px 4px;font-size:11px;position:relative}
+.cc .d{font-weight:800;font-size:12px}
+.cc.om{opacity:.35}
+.cc.out{background:#F1EDE2;color:#A9A292}
+.cc.today{border-color:var(--wheat);border-width:2px}
+.cc .in{color:var(--in);font-weight:800}
+.cc .ot{color:var(--out);font-weight:800}
+.cc .dot{position:absolute;right:4px;top:5px;width:5px;height:5px;border-radius:50%;background:var(--rain)}
+.cc .lg{position:absolute;right:4px;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--green)}
+.ccw{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.ccw .cc{min-height:96px}
+.calh{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;color:var(--sub)}
+
+/* 绿色页头（对应 .hero / .top / .kpis） */
+.top{background:var(--green);color:#fff;padding:16px}
+.hero{background:var(--green);color:#fff;padding:16px 16px 42px}
+.hero-date{font-size:27px;font-weight:800}
+.hero-sub{font-size:13.5px;opacity:.88;margin-top:3px}
+.lift{margin-top:-28px}
+.kpis{display:flex;background:rgba(0,0,0,.15);border-radius:9px;overflow:hidden;margin-top:12px}
+.kpis>div{flex:1;padding:10px 6px;text-align:center}
+.kpis>div+div{border-left:1px solid rgba(255,255,255,.15)}
+.kpis .k{font-size:12px;opacity:.8}
+.kpis .v{font-size:21px;font-weight:800;margin-top:2px}
+.kpis .s{font-size:11px;opacity:.75}
+.t-name{font-size:21px;font-weight:800}
+.t-sub{font-size:14px;opacity:.85}
+.top .tag{background:var(--wheat);color:#fff}
+.top .tag.done{background:rgba(255,255,255,.25);color:#fff}
+
+/* 其它现有组件 */
+.tag{display:inline-block;font-size:12px;padding:2px 7px;border-radius:4px;background:var(--green-l);color:var(--green-d);margin-left:6px;vertical-align:1px;font-weight:600}
+.tag.done{background:#ECE7DA;color:var(--sub)}
+.tag.warn{background:var(--out-bg);color:var(--heat)}
+.tag.debt{background:var(--debt-bg);color:var(--debt)}
+.search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:21px;padding:0 15px;height:42px;font-size:16px;color:var(--sub)}
+.hub{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.hub a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 10px;text-align:center;color:var(--ink);text-decoration:none}
+.hub .ic{font-size:17px;font-weight:800;color:var(--green)}
+.hub .n{font-size:15px;font-weight:700;margin-top:3px}
+.hub .s{font-size:11.5px;color:var(--sub);margin-top:2px}
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line)}
+.tab{flex:1;text-align:center;height:48px;line-height:48px;font-size:17px;color:var(--sub);position:relative}
+.tab.on{color:var(--green);font-weight:800}
+.tab.on::after{content:'';position:absolute;left:30%;right:30%;bottom:0;height:3px;border-radius:3px;background:var(--green)}
+.steps{display:flex;gap:5px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--wheat)}
+.empty{text-align:center;padding:40px 20px;color:var(--sub)}
+
+/* 说明区 */
+.cap h4{margin:0 0 4px;font-size:15px;font-weight:800}
+.cap ul{margin:0;padding-left:17px;color:var(--sub);font-size:12.5px}
+.cap li{margin-bottom:3px}
+.cap .tagline{display:inline-block;background:#EFE9DA;border-radius:5px;padding:1px 7px;font-size:11px;color:var(--sub);margin-left:6px;vertical-align:2px;font-weight:400}
+.note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13px}
+.note b{color:var(--green-d)}
+.note.done{background:var(--in-bg);border-color:#B7D3BC}
+.warnbox{background:var(--out-bg);border:1px solid #EDBFAC;border-radius:10px;padding:12px 14px;font-size:13px;color:#7D2E12}
+.ic-s{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.fic.g{background:var(--green-l);color:var(--green-d)}
+.fic.o{background:var(--out-bg);color:var(--out)}
+.srch{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:21px;padding:0 15px;height:42px;font-size:16px;color:var(--sub)}
+.link{color:var(--green);font-weight:600}
+@media print{.dev{box-shadow:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-cam" viewBox="0 0 22 22"><path d="M3 7.5h3l1.4-2h7.2L16 7.5h3a1 1 0 0 1 1 1V17a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1z"/><circle cx="11" cy="12.6" r="3.3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 22 22"><path d="M4 3.5V18h14"/><path d="M7 14.5l3.3-3.8 3 2.3L18 7"/></symbol>
+  <symbol id="i-box" viewBox="0 0 22 22"><path d="M11 3l8 4.2v7.6L11 19 3 14.8V7.2z"/><path d="M3 7.2L11 11l8-3.8M11 11v8"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 22 22"><path d="M6 3h10v16l-2.5-1.6L11 19l-2.5-1.6L6 19z"/><path d="M8.6 8h4.8M8.6 12h4.8"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 22 22"><path d="M4 6.5h14M9 6.5V4h4v2.5M6.5 6.5l1 12.5h7l1-12.5"/><path d="M9.6 10v6M12.4 10v6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 22 22"><circle cx="10" cy="10" r="5.6"/><path d="M14.3 14.3L19 19"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 22 22"><path d="M3 5.5h16M6.5 11h9M9.5 16.5h3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 22 22"><circle cx="11" cy="11" r="7.6"/><path d="M11 6.6V11l3 2"/></symbol>
+</svg>
+
+<div class="wrap">
+<h1>谷雨记 · 记账 P0+P1 UI 设计稿<small>随手记对齐版 · 全量落地（无 MVP）</small></h1>
+<div class="meta">2026-10-05 · 覆盖：收入侧 / 债权债务 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 操作留痕与误删恢复<br>
+共 <b>25 屏</b>。视觉与当前线上版本 <b>1:1 对齐</b>（沿用 <code>app.wxss</code> 的色板 / 圆角 / 字号 / 组件尺寸，1px = 2rpx），<b>不引入任何新色相</b>——收支与欠款只用既有色值。<b>导出模块已按你的要求删除。</b></div>
+
+<h2 class="sec">0. 设计系统（与当前线上版本 1:1 对齐）</h2>
+<p class="secnote">不换皮、不发明组件：所有尺寸都从 <code>miniprogram/app.wxss</code> 按 <b>1px = 2rpx</b> 换算过来，所有颜色都是文件里已有的变量。<b>本稿没有引入任何新色相。</b></p>
+<table>
+<tr><th style="width:210px">Token</th><th style="width:150px">色值</th><th>用途</th></tr>
+<tr><td><code>--green</code> / <code>--green-d</code> / <code>--green-l</code></td><td>#2E5B34 / #1F4024 / #E4ECDD</td><td>导航栏、主按钮、选中态、<b>收入</b>金额与图标底</td></tr>
+<tr><td><code>--wheat</code> / <code>--wheat-l</code></td><td>#C98B1E / #F6E7C6</td><td>麦金主按钮、收获、预警点</td></tr>
+<tr><td><code>--heat</code></td><td>#C4532B</td><td>积温、<b>支出</b>金额（配 #F8E1D6 底，即现有 <code>.tag.warn</code> 底色）</td></tr>
+<tr><td><code>--debt</code> 位置</td><td>#6B5B95</td><td>固定资产原色，兼作<b>欠款/赊账</b>（配 #EDE9F4 底）</td></tr>
+<tr><td><code>--paper</code> / <code>--card</code> / <code>--ink</code> / <code>--sub</code> / <code>--line</code></td><td>#F5F0E4 / #FFFDF7 / #1E241C / #5E6656 / #E3DCCB</td><td>纸色底、卡片、正文、次要文字、描边</td></tr>
+<tr><td><code>--rain</code> / <code>--danger</code></td><td>#2F6F9F / #B3372B</td><td>降雨 / 删除与报错</td></tr>
+</table>
+<h3 class="sect" style="margin-top:22px">尺寸与组件（全部照抄现版本）</h3>
+<table>
+<tr><th style="width:210px">组件</th><th>规格</th></tr>
+<tr><td>卡片 <code>.card</code></td><td>圆角 10px（20rpx）· 描边 1px（2rpx）· 内边距 16px（32rpx）· 底色 #FFFDF7 · 间距 12px</td></tr>
+<tr><td>主按钮 <code>.btn</code></td><td>高 54px（108rpx）· 圆角 9px（18rpx）· 字 19px/700 · 字距 2px · 绿底白字；<code>.wheat</code> 麦金、<code>.ghost</code> 绿描边透明底</td></tr>
+<tr><td>chip <code>.chip</code></td><td>高 42px 胶囊（84rpx）· 圆角 21px · 描边 1.5px · 字 16px；选中 = 绿底白字（<code>.on</code>）</td></tr>
+<tr><td>筛选 chip <code>.fchip</code></td><td>高 34px（68rpx）· 圆角 17px · 字 14px；选中 = <b>墨底白字</b>（现版本就是这样，不改成绿色）</td></tr>
+<tr><td>图标宫格 <code>.gi/.gic</code></td><td>46px 方块 · 圆角 13px · 未选中白底灰图标、<b>选中绿底白图标</b>（沿用记一笔现在的写法）</td></tr>
+<tr><td>记账键盘 <code>.key</code></td><td>按键高 60px · 圆角 11px · 字 20px；功能键浅麦底；右列「完成」麦金并占两格（收入态换绿）</td></tr>
+<tr><td>占比条 <code>.stack</code></td><td>高 10px（20rpx）· 圆角 5px · 槽底 #E3DCCB</td></tr>
+<tr><td>Tab <code>.tab</code></td><td>高 48px（96rpx）· 字 17px · 选中绿字 800 + 底部 3px（6rpx）绿短横</td></tr>
+<tr><td>弹层 <code>.mask/.sheet</code></td><td>遮罩 rgba(20,24,18,.5) · 面板圆角 14px 顶角 · 标题 19px/700</td></tr>
+<tr><td>绿页头 <code>.top/.hero/.kpis</code></td><td>绿底白字 · 内边距 16px · KPI 组底 rgba(0,0,0,.15) 圆角 9px · 数值 21px/800</td></tr>
+<tr><td>底部栏 <code>.dock/.fixed-bar</code></td><td>白底 · 上描边 1px · 按钮高 46–54px · 预留下安全区</td></tr>
+<tr><td>正文与数字</td><td>正文 17px（34rpx）· 次要 14px · 标签 12px · 数字一律 <code>.num</code>（DIN 等宽）</td></tr>
+</table>
+<h2 class="sec">1. 信息架构变更</h2>
+<p class="secnote">记账能力从「季详情里的一个 tab」升级成一级入口，所以底部 TabBar 从 3 个变 4 个。这是本稿唯一的破坏性改动，需要你点头。</p>
+<table>
+<tr><th style="width:150px">层级</th><th>原</th><th>改后</th></tr>
+<tr><td>TabBar</td><td>今天 / 地块 / 我的</td><td><b>今天 / 账本 / 地块 / 我的</b></td></tr>
+<tr><td>账本 tab</td><td>—</td><td>顶部三入口卡（报表 · 欠款 · 库存）+ 全部地块统一流水（可切列表/月历/周历）+ 搜索与筛选</td></tr>
+<tr><td>今天</td><td>本月花费 + 在种季 + 常用账 + recently + dock</td><td>本月<b>净收</b>（收入−支出）+ <b>待收/待付</b>条 + 在种季卡（卡上新增净收益）+ 常用账 + dock</td></tr>
+<tr><td>我的</td><td>计数 + 类型管理 + 分享 + 关于</td><td>年度收支与净收益 + 计数 + 报表/欠款/库存/回收站/周期账/键盘设置/类型管理/分享/关于</td></tr>
+<tr><td>季详情 · 账本 tab</td><td>分类占比 + 流水（列表/日历）</td><td>保留，并新增「本季净收益」「待收/待付」；日历升级为 月/周 切换 + 连续补账入口</td></tr>
+</table>
+
+<h2 class="sec">2. 覆盖清单（P0 + P1 全量）</h2>
+<p class="secnote">每一档能力对应的屏号，方便逐项核对没有漏设计。</p>
+<table>
+<tr><th style="width:56px">档</th><th>能力</th><th style="width:210px">设计稿屏号</th></tr>
+<tr><td>P0-1</td><td>收入侧（收支双向）：记一笔收入态、收入分类、收获自动生成售粮收入、净利润</td><td>F1 F2 F19 F23 F24</td></tr>
+<tr><td>P0-2</td><td>债权债务 / 应收应付：赊账记账、欠款台账、结清</td><td>F3 F15 F16 F23 F24</td></tr>
+<tr><td>P0-3</td><td>报表与趋势：收支总览、分类占比、月度趋势、¥/亩、每斤成本</td><td>F12 F13</td></tr>
+<tr><td>P0-4</td><td><s>导出：范围/格式选择、预览、分享与复制</s> — <b>已按你的要求删除，不做</b></td><td><b>—</b></td></tr>
+<tr><td>P0-5</td><td>库存：农资库存 / 粮食库存、入库出库、余量</td><td>F17 F18 F20</td></tr>
+<tr><td>P1-6</td><td>键盘可自定义 + 最近用过的分类置顶</td><td>F1 F22</td></tr>
+<tr><td>P1-7</td><td>流水多维筛选：类型多选、金额区间、时间、备注/对方搜索</td><td>F6 F7</td></tr>
+<tr><td>P1-8</td><td>日历 周/月 切换 + 连续补账</td><td>F9 F10 F11</td></tr>
+<tr><td>P1-9</td><td>附件 / 拍照留证：多张、缩略图、九宫格查看</td><td>F5 F8</td></tr>
+<tr><td>P1-10</td><td>周期账 / 分期：每次/每月/每季自动待记、分 N 期</td><td>F4</td></tr>
+<tr><td>P1-11</td><td>全部地块统一流水页（跨季跨地块）</td><td>F6</td></tr>
+<tr><td>P1-12</td><td>操作留痕 + 误删恢复（回收站）</td><td>F8 F21</td></tr>
+<tr><td>P1-13</td><td>预算：按季总预算 / 每亩目标 / 分类预算、进度与超支提醒</td><td>F25</td></tr>
+<tr><td>P1-14</td><td>资金账户：现金 / 微信 / 银行卡，期初 + 实收 − 实付 = 余额，按账户筛流水</td><td>F26</td></tr>
+<tr><td>P1-15</td><td>资产负债总览：账户余额 + 库存估值 + 应收 − 应付 = 净资产</td><td>F27</td></tr>
+</table>
+
+<h2 class="sec">3. 记一笔（P0-1 / P0-2 / P1-6 / P1-9 / P1-10）</h2>
+<p class="secnote">沿用现有的一屏三明治结构：金额头 → 分类 → chip 行 → 键盘。改动集中在：顶部加「支出/收入」分段、分类行上方加「最近」、chip 行加附件/赊账/周期。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">记一笔</span><span class="ic r">···</span></div>
+  <div class="body">
+    <div class="seg"><div class="on">支出</div><div>收入</div></div>
+    <h3 class="sect">最近用过</h3>
+    <div class="chips">
+      <span class="chip hl">化肥 · 复合肥</span><span class="chip">飞防</span><span class="chip">雇工</span><span class="chip">拉粮</span>
+    </div>
+    <div class="row" style="gap:10px;margin-top:2px">
+      <div class="fic o"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div>
+      <div class="grow"><div style="font-weight:800">农资投入 · 化肥</div><div class="tiny">东大块 · 小麦 · 第 104 天</div></div>
+      <div class="chip">分摊 ⇆</div>
+    </div>
+    <div class="row between" style="align-items:flex-end">
+      <div class="muted">复合肥 40kg×20 袋</div>
+      <div class="amt out"><span class="yen">−¥</span>2,180</div>
+    </div>
+    <div class="seg"><div class="on">直接填</div><div>按亩计</div><div>按人天</div></div>
+    <div class="c2 pad0">
+      <div class="gi4" style="padding:10px 0">
+        <div class="gi"><div class="gic">种</div>种子</div><div class="gi"><div class="gic">药</div>农药</div>
+        <div class="gi on"><div class="gic">肥</div>化肥</div><div class="gi"><div class="gic">其</div>其他</div>
+        <div class="gi"><div class="gic">有</div>有机肥</div><div class="gi"><div class="gic dash">＋</div>自定义</div>
+      </div>
+    </div>
+    <div class="chips">
+      <span class="chip">今天 ▾</span><span class="chip">⇆ 东大块</span><span class="chip">✎ 备注</span>
+      <span class="chip"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-cam"/></svg> 附件</span>
+      <span class="chip"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-clock"/></svg> 周期</span>
+      <span class="chip debt">赊账</span><span class="chip">★ 常用账</span>
+    </div>
+    <div class="keys">
+      <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">⌫</div>
+      <div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key fn">＋</div>
+      <div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key fn">－</div>
+      <div class="key fn">再记</div><div class="key">0</div><div class="key">.</div><div class="key ok">完成</div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F1 · 记一笔 · 支出态<span class="tagline">P0-1 / P1-6 / P1-9</span></h4>
+<ul>
+<li>顶部新增 <b>支出 / 收入</b> 分段（默认支出）。收入态见 F2，同一页双态，不另开页面。</li>
+<li>分类宫格上方新增 <b>「最近用过」</b> 4 个 chip：取最近 4 个 <code>cat+sub</code>（本机记录），点一下直接切到该分类，不再宫格翻找。原来的「记忆上次分类」保留为兜底默认。</li>
+<li>chip 行新增 <b>附件</b>（F5）、<b>周期</b>（F4）、<b>赊账</b>（F3）。行内可横滑，不够就滑。</li>
+<li>金额显示带方向：支出 <code>−¥</code> 橙红、收入 <code>＋¥</code> 收入绿。</li>
+<li>键盘默认是现有 4×4；自定义布局见 F22，本屏是默认布局。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">记一笔</span><span class="ic r">···</span></div>
+  <div class="body">
+    <div class="seg"><div>支出</div><div class="on">收入</div></div>
+    <div class="row" style="gap:10px">
+      <div class="fic g"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div>
+      <div class="grow"><div style="font-weight:800">卖粮 · 小麦</div><div class="tiny">东大块 · 小麦 · 第 104 天</div></div>
+      <div class="chip in">已结款</div>
+    </div>
+    <div class="row between" style="align-items:flex-end">
+      <div class="muted">粮站收购 · 12,600 斤 × 1.20 元/斤</div>
+      <div class="amt in"><span class="yen">＋¥</span>15,120</div>
+    </div>
+    <div class="seg"><div>直接填</div><div class="on">按斤×价</div><div>按亩×价</div></div>
+    <div class="c2 flat">
+      <div class="kv"><span class="muted">数量</span><span><b class="num">12,600</b> 斤</span></div>
+      <div class="kv"><span class="muted">单价</span><span><b class="num">1.20</b> 元/斤</span></div>
+      <div class="kv"><span class="muted">金额</span><span class="num" style="color:var(--in);font-size:17px">¥15,120</span></div>
+    </div>
+    <h3 class="sect">收入类型</h3>
+    <div class="c2 pad0">
+      <div class="gi4" style="padding:10px 0">
+        <div class="gi in on"><div class="gic">粮</div>卖粮</div><div class="gi in"><div class="gic">补</div>补贴</div>
+        <div class="gi in"><div class="gic">租</div>土地租金</div><div class="gi in"><div class="gic">机</div>农机服务</div>
+        <div class="gi in"><div class="gic">险</div>保险赔付</div><div class="gi in"><div class="gic dash">＋</div>自定义</div>
+      </div>
+    </div>
+    <div class="chips">
+      <span class="chip">今天 ▾</span><span class="chip">⇆ 东大块</span><span class="chip">✎ 备注</span>
+      <span class="chip"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-cam"/></svg> 附件</span>
+      <span class="chip warn">未结款 → 挂应收</span>
+    </div>
+    <div class="keys">
+      <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">⌫</div>
+      <div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key fn">＋</div>
+      <div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key fn">－</div>
+      <div class="key fn">再记</div><div class="key">0</div><div class="key">.</div><div class="key ok in">完成</div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F2 · 记一笔 · 收入态<span class="tagline">P0-1</span></h4>
+<ul>
+<li>收入分类独立（卖粮 / 补贴 / 土地租金 / 农机服务 / 保险赔付 / 自定义），不复用支出 5 大类；类型管理里新增「收入类型」tab。</li>
+<li>计算方式换成农业口径：<b>按斤×价</b>、<b>按亩×价</b>、<b>直接填</b>。按斤×价默认带出该季收获产量，改数量即改金额。</li>
+<li>chip 行出现 <b>未结款 → 挂应收</b>：勾上后这笔不落现金，而是生成一条应收（F15），并允许填「谁欠 + 约定日期」。</li>
+<li>主按钮在收入态变收入绿，键盘上「完成」随态变色。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">记一笔</span><span class="ic r">···</span></div>
+  <div class="body">
+    <div class="seg"><div class="on">支出</div><div>收入</div></div>
+    <div class="dim">
+      <div class="sheet">
+        <h4>赊账挂欠款</h4>
+        <div class="muted">这笔不落现金，记成「应付」。对方结清时在欠款台账里销账。</div>
+        <div class="c2 flat" style="margin:0">
+          <div class="kv"><span class="muted">这笔金额</span><span class="num">−¥2,180</span></div>
+          <div class="kv"><span class="muted">方向</span><span><b style="color:var(--debt)">应付（我欠别人）</b></span></div>
+        </div>
+        <div>
+          <div class="tiny" style="margin-bottom:5px">欠给谁</div>
+          <div class="chips"><span class="chip hl">县城农资店</span><span class="chip">老王（机手）</span><span class="chip">＋ 新增</span></div>
+        </div>
+        <div>
+          <div class="tiny" style="margin-bottom:5px">约定哪天结</div>
+          <div class="chips"><span class="chip">不约定</span><span class="chip hl">10-31</span><span class="chip">收粮后</span><span class="chip">选日期 ▾</span></div>
+        </div>
+        <div class="c2 flat" style="margin:0">
+          <div class="tiny">备注（自动带出）</div>
+          <div style="font-size:13.5px">复合肥 40kg×20 袋，先欠着</div>
+        </div>
+        <div class="btn g">确认，记成应付 ¥2,180</div>
+      </div>
+    </div>
+    <div class="keys">
+      <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">⌫</div>
+      <div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key fn">＋</div>
+      <div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key fn">－</div>
+      <div class="key fn">再记</div><div class="key">0</div><div class="key">.</div><div class="key ok">完成</div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F3 · 记一笔 · 赊账挂欠款<span class="tagline">P0-2</span></h4>
+<ul>
+<li>从 chip 行「赊账」进入，底部弹层。方向默认按当前态：支出→应付、收入→应收。</li>
+<li>对方用 chip 记忆历史对象（本机最近 8 个），避免每次打字。</li>
+<li>约定日期给三个快捷：不约定 / 收粮后 / 选日期。<b>收粮后</b>是一个相对标记，不写死日期，台账里显示「待收粮后」。</li>
+<li>金额与备注自动带出当前这笔，不用重填。确认后：这笔账仍然进成本统计（钱确实花了/收了），同时生成一条欠款记录，不计入现金。</li>
+<li>销账在 F16 做，销账后回写「已结清」标记，统计口径不变。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">记一笔</span><span class="ic r">···</span></div>
+  <div class="body">
+    <div class="dim">
+      <div class="sheet">
+        <h4>周期账 / 分期</h4>
+        <div class="seg"><div class="on">周期账</div><div>分期付款</div></div>
+        <div class="muted">周期账：到日子自动生成一条「待记」，你确认一下才落账——不偷偷改你的账。</div>
+        <div>
+          <div class="tiny" style="margin-bottom:5px">多久一次</div>
+          <div class="chips"><span class="chip">每周</span><span class="chip hl">每月</span><span class="chip">每季</span><span class="chip">每年</span></div>
+        </div>
+        <div>
+          <div class="tiny" style="margin-bottom:5px">每月哪天</div>
+          <div class="chips"><span class="chip hl">1 号</span><span class="chip">收粮后</span><span class="chip">选日期 ▾</span></div>
+        </div>
+        <div class="c2 flat" style="margin:0">
+          <div class="kv"><span class="muted">每期金额</span><span class="num">¥1,800</span></div>
+          <div class="kv"><span class="muted">科目</span><span>土地流转 · 村东大块</span></div>
+          <div class="kv"><span class="muted">起止</span><span>2026-10-01 起 · 不设终点</span></div>
+        </div>
+        <div class="c2 flat" style="margin:0">
+          <div class="tiny">到期提醒</div>
+          <div class="row between" style="margin-top:4px"><span>到期前 3 天在「今天」页提醒</span><span class="chip hl">开</span></div>
+        </div>
+        <div class="btn g">存为周期账</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F4 · 周期账 / 分期<span class="tagline">P1-10</span></h4>
+<ul>
+<li><b>周期账</b>：每周/每月/每季/每年 + 固定日或「收粮后」相对标记。到期只生成待记提醒（今天页 + 账本页红点），<b>不自动落账</b>，避免金额猜错污染统计。</li>
+<li><b>分期付款</b>：填总额 + 期数 → 自动按每期均分（尾差进最后一期），每期到期生成一条待记，沿用现有「分摊尾差」的算法口径。</li>
+<li>周期账挂在 <code>tags</code> 单文档里（和常用账同一处，不新增云端集合），到期状态用 <code>lastFiredAt</code> 记录，本机判断，不依赖云函数。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">附件</span><span class="ic r">完成</span></div>
+  <div class="body">
+    <div class="row" style="gap:9px;flex-wrap:wrap">
+      <div class="thumb" style="width:76px;height:76px">收据<br>1</div>
+      <div class="thumb" style="width:76px;height:76px">过磅单</div>
+      <div class="thumb" style="width:76px;height:76px">化肥袋</div>
+      <div class="thumb" style="width:76px;height:76px;border-style:dashed">＋</div>
+    </div>
+    <div class="row" style="gap:8px">
+      <div class="btn g sm grow"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-cam"/></svg> 拍照</div>
+      <div class="btn line sm grow">从相册选</div>
+    </div>
+    <div class="note"><b>存哪：</b>原图先存本机（不压缩、离线也能看），联网后自动传云存储拿 <code>fileID</code> 回填到这笔账。换手机时从云端拉回。单笔最多 9 张，单张不限尺寸（本机存原图，云端存压缩版）。</div>
+    <h3 class="sect">已加</h3>
+    <div class="c2">
+      <div class="kv"><span class="row"><span class="thumb" style="width:34px;height:34px;font-size:9px">图1</span> 收据.jpg</span><span class="tiny">2.1 MB · 本机</span></div>
+      <div class="kv"><span class="row"><span class="thumb" style="width:34px;height:34px;font-size:9px">图2</span> 过磅单.jpg</span><span class="tiny">已上传</span></div>
+      <div class="kv"><span class="row"><span class="thumb" style="width:34px;height:34px;font-size:9px">图3</span> 化肥袋.jpg</span><span class="tiny">已上传</span></div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F5 · 附件 / 拍照留证<span class="tagline">P1-9</span></h4>
+<ul>
+<li>入口：记一笔 chip 行「附件」；流水详情里也能补加（F8）。</li>
+<li>三个农业高频拍法直接给按钮：收据、过磅单、化肥袋——都走 <code>wx.chooseMedia</code>，拍照/相册同一入口。</li>
+<li>离线优先：先落本机路径进账，联网后 <code>wx.cloud.uploadFile</code> 拿 fileID 回填。上传失败不阻塞保存，列表里显示「本机」小标。</li>
+<li>列表与详情用同一 <code>thumb</code> 占位组件；点开九宫格大图可左右滑。</li>
+<li>删除附件是软删（进回收站，F21），和账目删除同一套留痕口径。</li>
+</ul></div></div></div>
+<h2 class="sec">4. 账本（P1-7 / P1-11 / P1-9）</h2>
+<p class="secnote">新增一级 tab，承担「全部地块统一流水」。三个入口卡（报表/欠款/库存）放最上面，下面才是流水本体，筛选和搜索常驻。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="grow">账本</span><span class="ic r">全部地块 ▾</span></div>
+  <div class="body">
+    <div class="hub">
+      <a><div class="ic"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-chart"/></svg></div><div class="n">报表</div><div class="s">今年净收 ¥3.2万</div></a>
+      <a><div class="ic"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg></div><div class="n">欠款</div><div class="s">待收 1.5万 · 待付 0.4万</div></a>
+      <a><div class="ic"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div><div class="n">库存</div><div class="s">化肥剩 12 袋</div></a>
+    </div>
+    <div class="row" style="gap:8px">
+      <div class="srch grow"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-search"/></svg> 搜备注 / 对方 / 品名</div>
+      <div class="chip"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-filter"/></svg> 筛选</div>
+    </div>
+    <div class="chips">
+      <span class="chip hl">本月</span><span class="chip">全部时间</span><span class="chip">化肥 ×</span><span class="chip">含赊账 ×</span>
+    </div>
+    <div class="row between" style="margin:0 2px">
+      <div class="tiny">共 38 笔 · 收 ¥15,120 · 支 ¥4,860</div>
+      <div class="seg" style="width:132px"><div class="on">列表</div><div>月历</div><div>周历</div></div>
+    </div>
+    <div class="dayh"><b>10月5日 周日</b><span class="tiny">收入 ¥15,120 · 支出 ¥2,180</span></div>
+    <div class="c2 pad0">
+      <div class="flow">
+        <div class="fic g">卖</div>
+        <div class="grow"><div style="font-weight:700">卖粮 · 小麦<span class="tag">东大块</span></div><div class="tiny">粮站收购 · 已结款</div></div>
+        <div class="right"><div class="num" style="color:var(--in)">＋15,120</div></div>
+      </div>
+      <div class="flow">
+        <div class="fic o">肥</div>
+        <div class="grow"><div style="font-weight:700">农资投入 · 化肥<span class="tag">东大块</span></div><div class="tiny row" style="gap:5px"><span class="thumb" style="width:16px;height:16px;font-size:0"></span>收据 · 复合肥 20 袋</div></div>
+        <div class="right"><div class="num" style="color:var(--out)">−2,180</div></div>
+      </div>
+    </div>
+    <div class="dayh"><b>10月3日 周五</b><span class="tiny">支出 ¥2,680</span></div>
+    <div class="c2 pad0">
+      <div class="flow">
+        <div class="fic d">欠</div>
+        <div class="grow"><div style="font-weight:700">机械作业 · 飞防<span class="tag debt">应付</span></div><div class="tiny">欠 老王（机手） · 收粮后结</div></div>
+        <div class="right"><div class="num" style="color:var(--out)">−1,500</div></div>
+      </div>
+      <div class="flow">
+        <div class="fic o">工</div>
+        <div class="grow"><div style="font-weight:700">雇工成本 · 按天用工<span class="tag">东大块</span></div><div class="tiny">4 人 · 老王家的收割机</div></div>
+        <div class="right"><div class="num" style="color:var(--out)">−1,180</div></div>
+      </div>
+    </div>
+    <div class="btn g">＋ 记一笔</div>
+  </div>
+  <div class="tabb"><div><em>▦</em>今天</div><div class="on"><em>▤</em>账本</div><div><em>◲</em>地块</div><div><em>☺</em>我的</div></div>
+</div>
+<div class="cap"><h4>F6 · 账本 · 全部地块流水<span class="tagline">P1-11 / P1-7 / P1-12</span></h4>
+<ul>
+<li>跨季跨地块的统一流水：顶部「全部地块 ▾」可切成单地块/单季（保留季详情里的季内视图，两处数据同源）。</li>
+<li>三入口卡带实时结论，不用点进去就知道要不要看：报表带今年净收，欠款带待收/待付，库存带最紧张的一项余量。</li>
+<li>搜索框覆盖 <b>备注 / 对方 / 品名</b>；已生效的筛选以「可删的 chip」回显，点 × 移除。</li>
+<li>列表按日分组，组头显示当天收入与支出两个数（原来只有支出合计）。</li>
+<li>每行左侧图标底色即方向：收入绿 / 支出橙红 / 赊账紫；带附件的行显示缩略块，带赊账的显示「应付/应收」标。</li>
+<li>「列表 / 月历 / 周历」三者切换（日历见 F9 F10）。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">筛选</span><span class="ic r" style="color:#CFE0C9">重置</span></div>
+  <div class="body">
+    <h3 class="sect">收支</h3>
+    <div class="seg"><div class="on">全部</div><div>只看支出</div><div>只看收入</div></div>
+    <h3 class="sect">类型（可多选）</h3>
+    <div class="chips">
+      <span class="chip hl">农资</span><span class="chip hl">机械</span><span class="chip">运输</span><span class="chip">雇工</span><span class="chip">固定资产</span>
+      <span class="chip hl">卖粮</span><span class="chip">补贴</span><span class="chip">租金</span>
+    </div>
+    <h3 class="sect">细分（选了农资/机械后展开）</h3>
+    <div class="chips">
+      <span class="chip hl">化肥</span><span class="chip">种子</span><span class="chip">农药</span><span class="chip hl">飞防</span><span class="chip">播种</span><span class="chip">收获</span>
+    </div>
+    <h3 class="sect">金额区间</h3>
+    <div class="row" style="gap:8px">
+      <div class="chip grow" style="justify-content:center">¥ 500</div><span class="muted">—</span><div class="chip grow" style="justify-content:center">¥ 5,000</div>
+    </div>
+    <div class="chips"><span class="chip">¥100 以下</span><span class="chip hl">¥100–1,000</span><span class="chip">¥1,000–1万</span><span class="chip">¥1 万以上</span></div>
+    <h3 class="sect">时间</h3>
+    <div class="chips"><span class="chip">本月</span><span class="chip hl">今年</span><span class="chip">上一季</span><span class="chip">自定义 ▾</span></div>
+    <h3 class="sect">其他</h3>
+    <div class="chips">
+      <span class="chip hl">只看赊账</span><span class="chip hl">只看带附件</span><span class="chip">只看关联记事</span>
+    </div>
+    <div class="row" style="gap:9px;margin-top:4px">
+      <div class="btn ghost grow sm">清空</div><div class="btn g grow">看 12 笔 · 支出 ¥4,860</div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F7 · 筛选抽屉<span class="tagline">P1-7</span></h4>
+<ul>
+<li>六个维度：收支方向、类型多选、细分多选、金额区间（手填 + 四档快捷）、时间、其他（只赊账/只带附件/只关联记事）。</li>
+<li>多选即并集；类型与细分是 父→子 联动，取消父则子一起清。</li>
+<li>底部按钮始终回显命中笔数与金额，不会点了才知道筛空。</li>
+<li>筛选状态存在页面级（不落库），从首页/季详情带参进来时可预设。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">流水详情</span><span class="ic r">✎</span></div>
+  <div class="body">
+    <div class="c2">
+      <div class="row" style="gap:11px">
+        <div class="fic o" style="width:44px;height:44px"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div>
+        <div class="grow">
+          <div style="font-weight:800;font-size:16px">农资投入 · 化肥</div>
+          <div class="tiny">2026-10-05 · 已关联 1 条记事</div>
+        </div>
+        <div class="amt out" style="font-size:26px"><span class="yen">−¥</span>2,180</div>
+      </div>
+    </div>
+    <div class="c2">
+      <div class="kv"><span class="muted">算出来的</span><span>单价 ¥109/袋 × 20 袋</span></div>
+      <div class="kv"><span class="muted">分摊到</span><span>东大块 52亩 · 河边地 28亩（按亩均摊）</span></div>
+      <div class="kv"><span class="muted">本季计入</span><span class="num">¥2,180</span></div>
+      <div class="kv"><span class="muted">结款</span><span style="color:var(--debt)">应付 · 欠县城农资店 · 10-31</span></div>
+      <div class="kv"><span class="muted">备注</span><span>复合肥 40kg×20 袋</span></div>
+    </div>
+    <h3 class="sect">附件（3）</h3>
+    <div class="row" style="gap:9px">
+      <div class="thumb">收据</div><div class="thumb">过磅单</div><div class="thumb">化肥袋</div><div class="thumb" style="border-style:dashed">＋</div>
+    </div>
+    <h3 class="sect">操作留痕</h3>
+    <div class="c2 flat">
+      <div class="kv"><span class="muted">10-05 14:22 创建</span><span class="tiny">本机</span></div>
+      <div class="kv"><span class="muted">10-05 14:31 改金额 2,080 → 2,180</span><span class="tiny">本机</span></div>
+      <div class="kv"><span class="muted">10-05 14:40 加附件 收据.jpg</span><span class="tiny">本机</span></div>
+    </div>
+    <div class="row" style="gap:9px">
+      <div class="btn ghost grow sm">删除（进回收站）</div><div class="btn g grow sm">编辑</div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F8 · 流水详情（含留痕）<span class="tagline">P1-9 / P1-12</span></h4>
+<ul>
+<li>把「怎么算出来的 / 分摊到哪 / 结款状态 / 备注」四件事一次说清，替代现在只有一行的列表信息量。</li>
+<li>附件在详情里可补加、可删。</li>
+<li><b>操作留痕</b>只记关键动作（创建 / 改金额 / 改分类 / 加删附件 / 销账），每条带时间戳与来源（本机 / 云端），不记打开、滚动这类噪音。</li>
+<li>删除走软删 → 回收站（F21），文案明确写「进回收站」而不是「删除」，减少误操作恐惧。</li>
+</ul></div></div></div>
+<h2 class="sec">5. 日历（P1-8）</h2>
+<p class="secnote">现有日历只有月视图 + 有花费标记。升级为 月/周 双视图、收入支出双色、连续补账。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="grow">账本</span><span class="ic r">全部地块 ▾</span></div>
+  <div class="body">
+    <div class="row between">
+      <div class="seg" style="width:150px"><div>列表</div><div class="on">月历</div><div>周历</div></div>
+      <div class="row" style="gap:10px"><span style="font-size:19px">‹</span><b>2026年10月</b><span style="font-size:19px">›</span></div>
+    </div>
+    <div class="c2 flat" style="padding:12px 10px">
+      <div class="calh"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+      <div class="cal" style="margin-top:6px">
+        <div class="cc om"><div class="d">28</div></div><div class="cc om"><div class="d">29</div></div><div class="cc om"><div class="d">30</div></div>
+        <div class="cc"><div class="d">1</div><div class="ot">-680</div><div class="dot"></div></div>
+        <div class="cc"><div class="d">2</div><div class="lg"></div></div>
+        <div class="cc"><div class="d">3</div><div class="ot">-2,680</div><div class="lg"></div></div>
+        <div class="cc"><div class="d">4</div><div class="tiny">未记</div></div>
+        <div class="cc today"><div class="d">5</div><div class="in">+15.1k</div><div class="ot">-2,180</div></div>
+        <div class="cc"><div class="d">6</div><div class="tiny">未记</div></div>
+        <div class="cc out"><div class="d">7</div></div>
+        <div class="cc out"><div class="d">8</div></div>
+        <div class="cc out"><div class="d">9</div></div>
+        <div class="cc out"><div class="d">10</div><div class="dot" style="background:var(--wheat)"></div></div>
+        <div class="cc out"><div class="d">11</div></div>
+        <div class="cc out"><div class="d">12</div></div>
+        <div class="cc out"><div class="d">13</div></div>
+        <div class="cc out"><div class="d">14</div></div>
+        <div class="cc out"><div class="d">15</div></div>
+        <div class="cc out"><div class="d">16</div></div>
+        <div class="cc out"><div class="d">17</div></div><div class="cc out"><div class="d">18</div></div>
+      </div>
+      <div class="legend" style="margin-top:8px">
+        <span><s style="background:var(--in)"></s>收入</span><span><s style="background:#E5A891"></s>支出</span>
+        <span><s style="background:var(--rain)"></s>下雨</span><span><s style="background:var(--green)"></s>有记事</span>
+        <span><s style="background:var(--wheat)"></s>待办/到期</span><span>未记 = 没记事也没记账</span>
+      </div>
+    </div>
+    <div class="c2">
+      <div class="row between"><b style="font-size:14px">本月合计</b><span class="tiny">收 ¥15,120 · 支 ¥4,860 · 净 ¥10,260</span></div>
+      <div class="stack" style="margin-top:9px">
+        <i style="width:76%;background:var(--in)"></i><i style="width:24%;background:#E5A891"></i>
+      </div>
+    </div>
+    <div class="btn g sm">连续补账 ▸</div>
+  </div>
+  <div class="tabb"><div><em>▦</em>今天</div><div class="on"><em>▤</em>账本</div><div><em>◲</em>地块</div><div><em>☺</em>我的</div></div>
+</div>
+<div class="cap"><h4>F9 · 月历<span class="tagline">P1-8</span></h4>
+<ul>
+<li>格内最多两行：收入一行绿、支出一行橙红；≥1 万显示 <code>+15.1k</code>。今天加麦金双线框。</li>
+<li>四个角标：右下绿点=有记事，右上蓝点=下雨，右上麦金点=有待办/周期账到期（新增），格内「未记」灰字保持现状。</li>
+<li>季外日期置灰不可点（沿用），但「全部地块」模式下不再受限，只区分「有无记录」。</li>
+<li>月份下方新增本月合计 + 收入/支出占比条，翻月即变。</li>
+<li>底部「连续补账」进 F11。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="grow">账本</span><span class="ic r">全部地块 ▾</span></div>
+  <div class="body">
+    <div class="row between">
+      <div class="seg" style="width:150px"><div>列表</div><div>月历</div><div class="on">周历</div></div>
+      <div class="row" style="gap:10px"><span style="font-size:19px">‹</span><b>10/5 – 10/11</b><span style="font-size:19px">›</span></div>
+    </div>
+    <div class="c2 flat" style="padding:12px 10px">
+      <div class="calh"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+      <div class="ccw" style="margin-top:6px">
+        <div class="cc today"><div class="d">5</div><div class="in">+15.1k</div><div class="ot">-2,180</div><div class="lg"></div></div>
+        <div class="cc"><div class="d">6</div><div class="tiny">未记</div><div class="dot" style="background:var(--wheat)"></div></div>
+        <div class="cc"><div class="d">7</div><div class="ot">-320</div></div>
+        <div class="cc"><div class="d">8</div><div class="tiny">未记</div></div>
+        <div class="cc"><div class="d">9</div><div class="ot">-1,500</div><div class="lg"></div></div>
+        <div class="cc"><div class="d">10</div><div class="tiny">未记</div><div class="dot"></div></div>
+        <div class="cc"><div class="d">11</div><div class="tiny">未记</div></div>
+      </div>
+      <div class="row between" style="margin-top:10px">
+        <div class="tiny">本周：收 ¥15,120 · 支 ¥4,000</div><div class="tiny">未记 4 天</div>
+      </div>
+    </div>
+    <div class="c2">
+      <div class="tiny" style="margin-bottom:6px">本周每天</div>
+      <div class="kv"><span>10-05 周日</span><span><b class="num" style="color:var(--in)">+15,120</b> <b class="num" style="color:var(--out)">-2,180</b></span></div>
+      <div class="kv"><span>10-07 周二</span><span class="num" style="color:var(--out)">-320</span></div>
+      <div class="kv"><span>10-09 周四</span><span class="num" style="color:var(--out)">-1,500</span></div>
+    </div>
+    <div class="row" style="gap:9px">
+      <div class="btn ghost grow sm">补 10-06</div><div class="btn g grow sm">连续补账 ▸</div>
+    </div>
+  </div>
+  <div class="tabb"><div><em>▦</em>今天</div><div class="on"><em>▤</em>账本</div><div><em>◲</em>地块</div><div><em>☺</em>我的</div></div>
+</div>
+<div class="cap"><h4>F10 · 周历<span class="tagline">P1-8</span></h4>
+<ul>
+<li>一周 7 格，格子放大到 96px 高，能放两行金额 + 两个角标；标题显示日期范围。</li>
+<li>下方把「本周每天」列成明细行，只有记录的日期出现；没有记录的日期给「补 X-XX」按钮直接跳补账。</li>
+<li>周/月共用同一份数据与筛选条件，切换只换排版，不重新查。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">连续补账</span><span class="ic r">退出</span></div>
+  <div class="body">
+    <div class="c2 flat">
+      <div class="row between"><span class="tiny">补账进度</span><span class="tiny">第 2 / 4 天</span></div>
+      <div class="steps" style="margin-top:7px"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+      <div class="tiny" style="margin-top:7px">只补「没记事也没记账」的日子，有记录的直接跳过。</div>
+    </div>
+    <div class="row between">
+      <div class="row" style="gap:9px"><span style="font-size:20px">‹</span><b style="font-size:17px">10月6日 周一</b><span style="font-size:20px">›</span></div>
+      <span class="tiny">第 105 天 · 待补</span>
+    </div>
+    <div class="c2">
+      <div class="chips">
+        <span class="chip hl">记支出</span><span class="chip">记收入</span><span class="chip">只写记事</span><span class="chip">这天没事</span>
+      </div>
+    </div>
+    <div class="c2 flat">
+      <div class="tiny" style="margin-bottom:6px">快速选类型（点一下直接进记一笔，日期已填好）</div>
+      <div class="chips">
+        <span class="chip">化肥</span><span class="chip">农药</span><span class="chip">飞防</span><span class="chip">收获</span><span class="chip">拉粮</span><span class="chip">雇工</span><span class="chip">卖粮</span>
+      </div>
+    </div>
+    <div class="c2 flat">
+      <div class="tiny" style="margin-bottom:6px">已补 10月4日</div>
+      <div class="kv"><span class="row"><span class="fic o" style="width:26px;height:26px;font-size:11px">肥</span>化肥 ¥680</span><span class="tiny">✓ 已保存</span></div>
+    </div>
+    <div class="row" style="gap:9px">
+      <div class="btn ghost grow sm">跳过这天</div><div class="btn g grow sm">下一天 ›</div>
+    </div>
+    <div class="muted" style="text-align:center;font-size:12px">全部补完自动退出；中途退出已保存的不丢</div>
+  </div>
+</div>
+<div class="cap"><h4>F11 · 连续补账<span class="tagline">P1-8</span></h4>
+<ul>
+<li>解决「隔了半个月才想起来记账」：列出缺记的日子，一天一屏，补完自动跳下一天。</li>
+<li>四种动作：记支出 / 记收入 / 只写记事 / 这天没事。「这天没事」会写一条空标记，日历上不再提示未记。</li>
+<li>顶部进度条 + 「第 N / M 天」，随时可退出，已补的不丢（每保存一笔立即落库）。</li>
+<li>类型 chip 直接带参进记一笔，日期预填，省掉重复选日期。</li>
+</ul></div></div></div>
+<h2 class="sec">6. 报表与趋势（P0-3）</h2>
+<p class="secnote">现有只有一个「5 类占比条」。报表页做两屏：总览 + 结构趋势。所有图表都用纯 CSS（占比条 + flex 柱）画，不引图表库、不用 canvas。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">报表</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="seg"><div>今年</div><div class="on">本季</div><div>本月</div><div>全部</div></div>
+    <div class="c2 flat">
+      <div class="tiny">本季净收益（收入 − 支出）</div>
+      <div class="amt in" style="font-size:34px"><span class="yen">＋¥</span>10,260</div>
+      <div class="row between" style="margin-top:4px">
+        <span class="tiny">收入 ¥15,120</span><span class="tiny">支出 ¥4,860</span>
+      </div>
+      <div class="stack" style="margin-top:9px"><i style="width:76%;background:var(--in)"></i><i style="width:24%;background:#E5A891"></i></div>
+    </div>
+    <div class="kpis">
+      <div><div class="k">投入 / 亩</div><div class="v num">¥60</div></div>
+      <div><div class="k">每斤成本</div><div class="v num">0.39</div></div>
+      <div><div class="k">亩产</div><div class="v num">786</div></div>
+    </div>
+    <h3 class="sect">按作物</h3>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic o" style="background:#F1EBDC;color:var(--green-d)">麦</div><div class="grow"><div style="font-weight:700">小麦 · 东大块</div><div class="tiny">52 亩 · 收 ¥15,120 · 支 ¥3,120</div></div><div class="right"><div class="num" style="color:var(--in)">+12,000</div><div class="tiny">¥231/亩</div></div></div>
+      <div class="flow"><div class="fic o" style="background:#F1EBDC;color:var(--green-d)">麦</div><div class="grow"><div style="font-weight:700">小麦 · 河边地</div><div class="tiny">28 亩 · 收 ¥0 · 支 ¥1,740</div></div><div class="right"><div class="num" style="color:var(--out)">-1,740</div><div class="tiny">未收粮</div></div></div>
+    </div>
+    <div class="c2 flat"><div class="tiny">口径说明</div><div style="font-size:12.5px;margin-top:4px">净收益 = 收入 − 成本。赊账不计现金（未结款挂应收/应付），结清后才进「已收/已付」。固定资产一次计入当季，不摊折旧。</div></div>
+  </div>
+</div>
+<div class="cap"><h4>F12 · 报表总览<span class="tagline">P0-3</span></h4>
+<ul>
+<li>四个时间口径：今年 / 本季 / 本月 / 全部，切换即重算（都走本地 <code>stats.js</code>，不请求云）。</li>
+<li>第一块是<b>净收益</b>（这是整个 P0-1 的目的：能回答「今年挣了多少」），配收入/支出双数 + 占比条。</li>
+<li>三个农业指标保留并前置：投入/亩、每斤成本、亩产（原来藏在收获页）。</li>
+<li>「按作物」按季列出收入、支出、净额、¥/亩；没收粮的季显示「未收粮」而不是 0 收益。</li>
+<li>底部固定一条口径说明，避免用户误以为赊账=已花/已收。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">报表 · 结构与趋势</span><span class="ic r"></span></div>
+  <div class="body">
+    <h3 class="sect">支出结构</h3>
+    <div class="c2">
+      <div class="stack" style="height:14px">
+        <i style="width:42%;background:var(--green)"></i><i style="width:26%;background:var(--wheat)"></i>
+        <i style="width:18%;background:var(--rain)"></i><i style="width:9%;background:var(--heat)"></i><i style="width:5%;background:var(--debt)"></i>
+      </div>
+      <div class="legend" style="margin-top:9px">
+        <span><s style="background:var(--green)"></s>农资 42% · ¥2,040</span>
+        <span><s style="background:var(--wheat)"></s>机械 26% · ¥1,264</span>
+        <span><s style="background:var(--rain)"></s>运输 18% · ¥875</span>
+        <span><s style="background:var(--heat)"></s>雇工 9% · ¥437</span>
+        <span><s style="background:var(--debt)"></s>固资 5% · ¥244</span>
+      </div>
+      <div class="tiny" style="margin-top:8px">点任意一项 → 下钻到该大类的细分构成</div>
+    </div>
+    <h3 class="sect">月度趋势（近 6 个月）</h3>
+    <div class="c2">
+      <div class="bars">
+        <div class="b"><i class="up" style="height:8%"></i><i class="dn" style="height:34%"></i></div>
+        <div class="b"><i class="up" style="height:6%"></i><i class="dn" style="height:52%"></i></div>
+        <div class="b"><i class="up" style="height:12%"></i><i class="dn" style="height:78%"></i></div>
+        <div class="b"><i class="up" style="height:4%"></i><i class="dn" style="height:22%"></i></div>
+        <div class="b"><i class="up" style="height:9%"></i><i class="dn" style="height:15%"></i></div>
+        <div class="b"><i class="up" style="height:96%"></i><i class="dn" style="height:18%"></i></div>
+      </div>
+      <div class="calh" style="grid-template-columns:repeat(6,1fr);margin-top:6px"><span>5月</span><span>6月</span><span>7月</span><span>8月</span><span>9月</span><span>10月</span></div>
+      <div class="legend" style="margin-top:9px"><span><s style="background:var(--in)"></s>收入</span><span><s style="background:#E5A891"></s>支出</span><span>10 月收粮，净额 +¥10,260</span></div>
+    </div>
+    <h3 class="sect">成本进度</h3>
+    <div class="c2 flat">
+      <div class="kv"><span class="muted">本季已投入</span><span class="num">¥4,860</span></div>
+      <div class="kv"><span class="muted">到目前累计 / 亩</span><span class="num">¥60/亩</span></div>
+      <div class="kv"><span class="muted">待付（应付未结）</span><span class="num" style="color:var(--debt)">¥1,500</span></div>
+      <div class="kv"><span class="muted">待收（应收未结）</span><span class="num" style="color:var(--debt)">¥15,120</span></div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F13 · 报表 · 结构与趋势<span class="tagline">P0-3</span></h4>
+<ul>
+<li>支出结构：沿用现有 5 类 + 占比条，升级为可下钻（点大类看细分），并直接把金额写在图例里。</li>
+<li>月度趋势：近 6 个月收入/支出双柱，纯 CSS <code>flex</code> 画；收粮月自然出一根高峰，能一眼看出「这个月为什么净赚」。</li>
+<li>成本进度：累计投入 / 亩 + 待收待付，把 P0-2 的口径接进报表，一处看全。</li>
+<li>整页无第三方图表库、无 canvas：收益是离线可用（田间弱网）与包体积。</li>
+</ul></div></div>
+</div>
+
+<h2 class="sec">7. 欠款台账（P0-2）</h2>
+<p class="secnote">应收/应付两个方向。农业的真实场景：化肥赊账（应付）、卖粮未结款（应收）、机手做完活先欠着（应付）。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">欠款</span><span class="ic r">＋</span></div>
+  <div class="body">
+    <div class="seg"><div class="on">应收（别人欠我）</div><div>应付（我欠别人）</div></div>
+    <div class="c2 flat">
+      <div class="row between"><span class="tiny">未结清合计</span><span class="tiny">2 笔</span></div>
+      <div class="amt" style="font-size:30px;color:var(--debt)"><span class="yen">¥</span>16,620</div>
+      <div class="row between" style="margin-top:4px"><span class="tiny">逾期未结 1 笔 · ¥15,120</span><span class="chip warn">催一下</span></div>
+    </div>
+    <h3 class="sect">未结</h3>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic d">粮</div><div class="grow"><div style="font-weight:700">粮站收购款 <span class="tag">逾期 2 天</span></div><div class="tiny">约定 10-03 · 小麦 12,600 斤</div></div><div class="right"><div class="num">15,120</div><div class="tiny link" style="color:var(--green)">销账 ›</div></div></div>
+      <div class="flow"><div class="fic d">飞</div><div class="grow"><div style="font-weight:700">飞防作业费</div><div class="tiny">约定 收粮后 · 老王（机手）</div></div><div class="right"><div class="num">1,500</div><div class="tiny" style="color:var(--green)">销账 ›</div></div></div>
+    </div>
+    <h3 class="sect">已结清</h3>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic g">补</div><div class="grow"><div style="font-weight:700">种粮补贴</div><div class="tiny">2026-09-20 已收 · 现金</div></div><div class="right"><div class="num muted">3,200</div></div></div>
+    </div>
+    <div class="tiny" style="text-align:center">赊账的那笔账本身仍计入成本/收入，这里只管「钱收没收到 / 付没付出」</div>
+  </div>
+</div>
+<div class="cap"><h4>F15 · 欠款台账<span class="tagline">P0-2</span></h4>
+<ul>
+<li>两个方向分 tab，未结在上、已结清折叠在下。</li>
+<li>未结合计大字 + 逾期笔数 + 「催一下」（一键生成催款文案复制到微信，不做短信/推送）。</li>
+<li>每行显示：对方/事由、约定日期（绝对日期或「收粮后」相对标记）、关联数量、金额、销账入口。</li>
+<li>底部一条固定口径，避免用户以为赊账是重复记账。</li>
+<li>入口：账本 tab 入口卡、首页「待收/待付」条、记一笔的赊账 chip。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">粮站收购款</span><span class="ic r">···</span></div>
+  <div class="body">
+    <div class="c2 flat">
+      <div class="tiny">应收 · 未结清</div>
+      <div class="amt" style="font-size:32px;color:var(--debt)"><span class="yen">¥</span>15,120</div>
+      <div class="row between" style="margin-top:4px"><span class="tiny">约定 2026-10-03</span><span class="chip warn">逾期 2 天</span></div>
+    </div>
+    <div class="c2">
+      <div class="kv"><span class="muted">对方</span><span>县城粮站 · 138****6621</span></div>
+      <div class="kv"><span class="muted">事由</span><span>小麦 12,600 斤 × 1.20 元/斤</span></div>
+      <div class="kv"><span class="muted">关联</span><span style="color:var(--green)">卖粮 · 小麦（10-05）›</span></div>
+      <div class="kv"><span class="muted">地块 / 季</span><span>东大块 · 2026 秋小麦</span></div>
+      <div class="kv"><span class="muted">备注</span><span>说好过磅后一周结</span></div>
+    </div>
+    <h3 class="sect">附件（1）</h3>
+    <div class="row" style="gap:9px"><div class="thumb">过磅单</div><div class="thumb" style="border-style:dashed">＋</div></div>
+    <div class="btn g">销账 · 已收 ¥15,120</div>
+    <div class="row" style="gap:9px">
+      <div class="btn ghost grow sm">改约定日期</div><div class="btn ghost grow sm">部分收款…</div>
+    </div>
+    <div class="dim">
+      <div class="sheet">
+        <h4>销账</h4>
+        <div class="c2 flat">
+          <div class="kv"><span class="muted">销账金额</span><span class="num">¥15,120</span></div>
+          <div class="kv"><span class="muted">到账方式</span><span>微信 / 现金 / 银行转账</span></div>
+          <div class="kv"><span class="muted">到账日期</span><span>2026-10-07</span></div>
+        </div>
+        <div class="muted">销账会把这笔标成已结清，并允许记一条「实际到账」流水（金额可与约定不同，差额留在备注里）。</div>
+        <div class="row" style="gap:9px"><div class="btn ghost grow sm">取消</div><div class="btn g grow sm">确认销账</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F16 · 欠款详情 + 结清<span class="tagline">P0-2</span></h4>
+<ul>
+<li>详情说清五件事：多少钱、欠谁的、为什么欠、关联到哪笔账哪块地、有没有凭据（过磅单/收据）。</li>
+<li>销账弹层支持<b>部分收款</b>：金额可改，销账后原记录标记「部分已结 ¥x」，剩余留待下次。</li>
+<li>销账允许与约定金额不一致（现实中常砍价/抹零），差额自动写进备注，不改原收入金额。</li>
+<li>关联是可点的，跳回那笔账的详情（F8），两条记录互相能走通。</li>
+</ul></div></div></div>
+<h2 class="sec">8. 库存（P0-5）</h2>
+<p class="secnote">两个方向：农资库存（化肥/种子/农药还剩多少）、粮食库存（收了多少斤、卖了多少、还剩多少）。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">库存</span><span class="ic r">＋</span></div>
+  <div class="body">
+    <div class="seg"><div class="on">农资</div><div>粮食</div></div>
+    <div class="c2 flat">
+      <div class="row between"><span class="tiny">农资在库</span><span class="tiny">3 种 · 市值 ¥1,860</span></div>
+      <div class="row between" style="margin-top:6px">
+        <div><div class="tiny">化肥</div><div class="num" style="font-size:22px">12 <span class="tiny">袋</span></div></div>
+        <div><div class="tiny">种子</div><div class="num" style="font-size:22px">40 <span class="tiny">斤</span></div></div>
+        <div><div class="tiny">农药</div><div class="num" style="font-size:22px">4 <span class="tiny">瓶</span></div></div>
+        <div><div class="tiny">其他</div><div class="num" style="font-size:22px">2 <span class="tiny">件</span></div></div>
+      </div>
+      <div class="chip warn" style="margin-top:10px">化肥低于 15 袋，该补货了</div>
+    </div>
+    <h3 class="sect">明细</h3>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic o">肥</div><div class="grow"><div style="font-weight:700">复合肥 40kg</div><div class="tiny">均价 ¥109/袋 · 最近 10-05</div></div><div class="right"><div class="num">12 袋</div><div class="tiny">低于预警 15</div></div></div>
+      <div class="flow"><div class="fic o">种</div><div class="grow"><div style="font-weight:700">济麦 22</div><div class="tiny">¥3.2/斤 · 最近 09-28</div></div><div class="right"><div class="num">40 斤</div><div class="tiny">低于预警 60</div></div></div>
+      <div class="flow"><div class="fic o">药</div><div class="grow"><div style="font-weight:700">吡虫啉</div><div class="tiny">¥18/瓶 · 最近 10-01</div></div><div class="right"><div class="num">4 瓶</div><div class="tiny">够用</div></div></div>
+    </div>
+    <h3 class="sect">最近出入库</h3>
+    <div class="c2 flat">
+      <div class="kv"><span class="muted">10-05 出库 · 施肥扣减</span><span>化肥 −20 袋</span></div>
+      <div class="kv"><span class="muted">10-05 入库 · 采购</span><span>化肥 ＋20 袋</span></div>
+      <div class="kv"><span class="muted">09-28 入库 · 采购</span><span>种子 ＋60 斤</span></div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F17 · 库存台账<span class="tagline">P0-5</span></h4>
+<ul>
+<li>农资 tab：按品类显示在库数量 + 均价 + 最近动账；低于预警量的给橙红提示（预警值是每项可设的一个数）。</li>
+<li>粮食 tab：按作物显示 收获量 / 已卖 / 在库（斤），并换算成「按当次售价折算的市值」，让「还没卖的粮值多少钱」有个数。</li>
+<li>出入库从两处自动发生：记一笔采购 → 入库；记事里「农资用量」→ 出库。不用手填就能对上账，手动增减只作为修正手段（原始「肥料」段落）。</li>
+<li>库存数量用「最近一次均价」估值，不引移动加权平均，避免过度设计；均价在明细里显示口径。</li>
+<li>数据落在 <code>tags</code> 里（和常用账同一个单文档），不新增云端集合；出入库流水复用 <code>logs</code>/<code>costs</code> 的 diff，不复制一份数据。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">入库 / 出库</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="seg"><div class="on">入库</div><div>出库</div></div>
+    <div class="seg seg2"><div class="on">农资</div><div>粮食</div></div>
+    <h3 class="sect">品名</h3>
+    <div class="chips"><span class="chip hl">复合肥 40kg</span><span class="chip">尿素</span><span class="chip">济麦 22</span><span class="chip">吡虫啉</span><span class="chip">＋ 新增品名</span></div>
+    <div class="c2">
+      <div class="kv"><span class="muted">数量</span><span><b class="num">20</b> 袋</span></div>
+      <div class="kv"><span class="muted">单价</span><span><b class="num">109</b> 元/袋</span></div>
+      <div class="kv"><span class="muted">合计</span><span class="num" style="font-size:17px">¥2,180</span></div>
+      <div class="kv"><span class="muted">日期</span><span>2026-10-05</span></div>
+    </div>
+    <div class="c2 flat">
+      <div class="row between"><span style="font-size:13.5px">同时记一笔支出</span><span class="chip hl">开</span></div>
+      <div class="tiny" style="margin-top:5px">打开后自动生成「农资投入 · 化肥 ¥2,180」，分类金额已填好，你只需确认。</div>
+    </div>
+    <div class="c2 flat">
+      <div class="row between"><span style="font-size:13.5px">入库后预警阈值</span><span class="chip">15 袋</span></div>
+    </div>
+    <div class="btn g">确认入库 ＋20 袋</div>
+  </div>
+</div>
+<div class="cap"><h4>F18 · 入库 / 出库<span class="tagline">P0-5</span></h4>
+<ul>
+<li>入库/出库同一页，方向分段；品名用 chip 记忆（历史品名 + 新增）。</li>
+<li>「同时记一笔支出」默认开：入库即记账，一份输入两处生效，避免重复填。出库则不记账（钱在采购时已经花了）。</li>
+<li>单价 × 数量 = 合计实时算，可直接改合计。</li>
+<li>预警阈值可在入库时就设定，也可以之后在明细里改。</li>
+</ul>
+</div>
+
+</div>
+</div>
+<h2 class="sec">9. 收支闭环（P0-1 / P0-2）</h2>
+<p class="secnote">收入不是孤立的一页：收获时自动生成售粮收入、首页给净收、季详情把成本与收入并列。这三屏是把 P0-1 真正闭上的地方。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">收获</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="c2">
+      <div class="kv"><span class="muted">收获日期 <span style="color:var(--danger)">*</span></span><span class="num">2026-10-05 ▾</span></div>
+      <div class="kv"><span class="muted">总产量 <span style="color:var(--danger)">*</span></span><span><b class="num">12,600</b> 斤</span></div>
+      <div class="tiny" style="margin-top:6px">折合亩产 <b class="num">786</b> 斤/亩（东大块 52 亩）</div>
+    </div>
+    <h3 class="sect">按地块分行（选填）</h3>
+    <div class="c2 flat">
+      <div class="kv"><span class="muted">东大块 · 52 亩</span><span><b class="num">8,400</b> 斤 <span class="tiny">676 斤/亩</span></span></div>
+      <div class="kv"><span class="muted">河边地 · 28 亩</span><span><b class="num">4,200</b> 斤 <span class="tiny">750 斤/亩</span></span></div>
+      <div class="kv"><span class="muted">两块合计</span><span class="num" style="color:var(--in)">12,600 斤 <span class="tag">与总产量一致</span></span></div>
+    </div>
+    <div class="tiny" style="margin:0 4px">两种记法都留着：只想记总数就直接填上面那格；想让每块地各算亩产、各算 ¥/亩，就在这儿分行填，合计会自动对齐总数。</div>
+    <h3 class="sect">顺手收入账</h3>
+    <div class="c2 flat">
+      <div class="row between"><span style="font-size:13.5px;font-weight:700">把卖粮收入一起记了</span><span class="chip in">开</span></div>
+      <div class="kv" style="margin-top:8px"><span class="muted">卖了多少斤</span><span><b class="num">12,600</b> 斤</span></div>
+      <div class="kv"><span class="muted">卖价</span><span><b class="num">1.20</b> 元/斤</span></div>
+      <div class="kv"><span class="muted">收入</span><span class="num" style="color:var(--in);font-size:17px">＋¥15,120</span></div>
+      <div class="kv"><span class="muted">粮站 / 结款</span><span>县城粮站 · <span style="color:var(--debt)">未结 → 挂应收</span></span></div>
+    </div>
+    <h3 class="sect">全周期汇总</h3>
+    <div class="kpis">
+      <div><div class="k">生长天数</div><div class="v num">104</div></div>
+      <div><div class="k">积温</div><div class="v num" style="color:var(--heat)">2,180</div></div>
+      <div><div class="k">降雨</div><div class="v num" style="color:var(--rain)">286</div></div>
+    </div>
+    <div class="c2 flat">
+      <div class="kv"><span class="muted">总收入</span><span class="num" style="color:var(--in)">＋¥15,120</span></div>
+      <div class="kv"><span class="muted">总投入</span><span class="num" style="color:var(--out)">−¥4,860</span></div>
+      <div class="kv"><span class="muted">净收益</span><span class="num" style="font-size:18px">＋¥10,260</span></div>
+      <div class="kv"><span class="muted">每斤粮成本</span><span class="num">0.39 元/斤</span></div>
+    </div>
+    <div class="btn g">确认收获，结束本季</div>
+  </div>
+</div>
+<div class="cap"><h4>F19 · 收获（顺带把收入记了）<span class="tagline">P0-1 P0-2</span></h4>
+<ul>
+<li>保留原来的产量/亩产，新增「顺手收入账」区块并默认打开——这是农户最需要、又最容易忘的一步。</li>
+<li><b>按地块分行是选填</b>：不填就还是「一季一个总数」（与现状完全一致，老数据零迁移）；填了就让每块地各算亩产、各算 ¥/亩，合计自动校验等于总产量，不等时标红但不拦保存。</li>
+<li>数量默认带出总产量，卖价可改；收入实时算。结款状态二选一：已结 / 未结 → 自动生成应收（F15）。</li>
+<li>全周期汇总新增 <b>总收入 / 总投入 / 净收益</b> 三行，收获那一刻就把「这一季到底挣了多少」说清。</li>
+<li>不选「顺手记收入」也没关系，本季标记为「未收粮」，报表按作物那一行会显示「未收粮」而不是 0。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="grow">今天</span><span class="ic r">◔</span></div>
+  <div class="body">
+    <div class="c2" style="background:var(--green);border-color:var(--green);color:#fff">
+      <div class="row between"><span style="font-size:13px;opacity:.9">10月5日 周日</span><span class="chip" style="background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);color:#fff">收粮季</span></div>
+      <div style="font-size:14px;opacity:.92;margin-top:6px">今天地里干了啥、花了多少，随手记一笔</div>
+      <div class="row between" style="margin-top:12px">
+        <div><div style="font-size:11px;opacity:.85">本月净收</div><div class="num" style="font-size:26px">＋¥10,260</div></div>
+        <div class="right"><div style="font-size:11px;opacity:.85">本月</div><div class="num" style="font-size:14px">收 15,120 · 支 4,860</div></div>
+      </div>
+    </div>
+    <div class="c2" style="border-color:#C7BCDC">
+      <div class="row between">
+        <span class="row" style="gap:7px"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg><b style="font-size:13.5px">待收 ¥15,120</b><span class="tag">逾期 2 天</span></span>
+        <span class="tiny">待付 ¥1,500 ›</span>
+      </div>
+      <div class="tiny" style="margin-top:5px">粮站收购款 10-03 到期 · 点开去催账 / 销账</div>
+    </div>
+    <div class="c2">
+      <div class="row" style="gap:10px">
+        <div class="fic o" style="background:var(--wheat-l);color:#8A5E12">麦</div>
+        <div class="grow"><div style="font-weight:800">东大块 · 小麦</div><div class="tiny">52 亩 · 播种第 104 天</div></div>
+        <span class="muted">›</span>
+      </div>
+      <div class="kpis" style="margin-top:10px">
+        <div><div class="k">总投入</div><div class="v num" style="font-size:16px;color:var(--out)">¥3,120</div><div class="tiny">¥60/亩</div></div>
+        <div><div class="k">已收</div><div class="v num" style="font-size:16px;color:var(--in)">¥15,120</div><div class="tiny">已结</div></div>
+        <div><div class="k">净收益</div><div class="v num" style="font-size:16px">＋¥12,000</div><div class="tiny">¥231/亩</div></div>
+      </div>
+      <div class="row" style="gap:8px;margin-top:11px">
+        <div class="btn sm grow" style="flex:1">记一笔账</div>
+        <div class="btn g sm" style="flex:1">记今天的活</div>
+      </div>
+    </div>
+    <div class="chip hl">🌾 化肥剩 12 袋，低于预警 ›</div>
+    <div class="c2 flat"><div class="row between"><b style="font-size:13.5px">最近记的</b><span class="tiny">全部 ›</span></div>
+      <div class="flow" style="padding:9px 0"><div class="fic g">卖</div><div class="grow"><div style="font-size:13px;font-weight:700">卖粮 · 小麦</div><div class="tiny">东大块 · 10/5</div></div><div class="num" style="color:var(--in)">＋15,120</div></div>
+      <div class="flow" style="padding:9px 0;border-bottom:0"><div class="fic o">肥</div><div class="grow"><div style="font-size:13px;font-weight:700">农资 · 化肥</div><div class="tiny">东大块 · 10/5</div></div><div class="num" style="color:var(--out)">−2,180</div></div>
+    </div>
+  </div>
+  <div class="tabb"><div class="on"><em>▦</em>今天</div><div><em>▤</em>账本</div><div><em>◲</em>地块</div><div><em>☺</em>我的</div></div>
+</div>
+<div class="cap"><h4>F23 · 今天（净收 + 待收待付 + 库存预警）<span class="tagline">P0-1 P0-2 P0-5</span></h4>
+<ul>
+<li>Hero 从「本月花费」换成 <b>本月净收</b>，下面一行小字给收/支明细——一个数就能判断这个月好不好。</li>
+<li>新增待收待付条：逾期变橙红 + 「逾期 N 天」标，点进去是 F15/F16。</li>
+<li>季卡片 KPI 从「总投入 / 积温 / 降雨」换成 <b>总投入 / 已收 / 净收益</b>（积温降雨挪到季详情天气 tab，那里本来就有大图，不重复占位）。</li>
+<li>库存预警 chip：任一项低于阈值就在首页露一条，不单开提醒系统。</li>
+<li>「最近记的」保持 3 条，但改成带方向色 + 「全部 ›」跳账本 tab（补上现在没有的全局流水入口）。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">东大块 · 小麦</span><span class="ic r">···</span></div>
+  <div class="body">
+    <div class="c2" style="background:var(--green);border-color:var(--green);color:#fff">
+      <div class="row" style="gap:10px">
+        <div class="fic" style="background:rgba(255,255,255,.18);color:#fff">麦</div>
+        <div class="grow"><div style="font-weight:800;font-size:15px">2026–2027 小麦</div><div style="font-size:12px;opacity:.9">东大块 · 52 亩 · 第 104 天</div></div>
+        <span class="chip" style="background:rgba(255,255,255,.2);border-color:transparent;color:#fff">在种</span>
+      </div>
+      <div class="row between" style="margin-top:12px">
+        <div><div style="font-size:11px;opacity:.85">总投入</div><div class="num" style="font-size:19px">¥3,120</div><div style="font-size:10.5px;opacity:.85">¥60/亩</div></div>
+        <div><div style="font-size:11px;opacity:.85">已收</div><div class="num" style="font-size:19px">¥15,120</div><div style="font-size:10.5px;opacity:.85">已结</div></div>
+        <div><div style="font-size:11px;opacity:.85">净收益</div><div class="num" style="font-size:19px">＋¥12,000</div><div style="font-size:10.5px;opacity:.85">¥231/亩</div></div>
+        <div><div style="font-size:11px;opacity:.85">积温</div><div class="num" style="font-size:19px">2,180</div><div style="font-size:10.5px;opacity:.85">℃·天</div></div>
+      </div>
+    </div>
+    <div class="c2 flat" style="padding:9px 14px">
+      <div class="row between"><span class="tiny">待付 ¥0 · 待收 ¥0</span><span class="tiny" style="color:var(--green)">这一季账已结清</span></div>
+    </div>
+    <div class="row" style="gap:14px;border-bottom:1px solid var(--line);padding:0 4px">
+      <span style="font-weight:800;color:var(--green);border-bottom:3px solid var(--green);padding-bottom:6px;font-size:13.5px">账本</span>
+      <span class="muted" style="padding-bottom:6px;font-size:13.5px">记事</span>
+      <span class="muted" style="padding-bottom:6px;font-size:13.5px">天气</span>
+      <span class="muted" style="padding-bottom:6px;font-size:13.5px">信息</span>
+    </div>
+    <div class="c2">
+      <div class="stack"><i style="width:64%;background:var(--green)"></i><i style="width:22%;background:var(--wheat)"></i><i style="width:14%;background:var(--rain)"></i></div>
+      <div class="legend" style="margin-top:8px"><span><s style="background:var(--green)"></s>农资 64%</span><span><s style="background:var(--wheat)"></s>机械 22%</span><span><s style="background:var(--rain)"></s>运输 14%</span></div>
+      <div class="row between" style="margin-top:10px;border-top:1px solid var(--line);padding-top:9px">
+        <b style="font-size:13.5px">本季支出</b><span class="num" style="color:var(--out)">−¥3,120</span>
+      </div>
+      <div class="row between" style="margin-top:6px">
+        <b style="font-size:13.5px">本季收入</b><span class="num" style="color:var(--in)">＋¥15,120</span>
+      </div>
+      <div class="row between" style="margin-top:6px">
+        <b style="font-size:13.5px">净收益</b><span class="num" style="font-size:19px">＋¥12,000</span>
+      </div>
+    </div>
+    <div class="row between">
+      <b style="font-size:13.5px">流水（7）</b>
+      <div class="seg" style="width:150px"><div class="on">列表</div><div>月历</div><div>周历</div></div>
+    </div>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic g">卖</div><div class="grow"><div style="font-weight:700">卖粮 · 小麦</div><div class="tiny">10-05 · 粮站 · 已结</div></div><div class="num" style="color:var(--in)">＋15,120</div></div>
+      <div class="flow"><div class="fic o">肥</div><div class="grow"><div style="font-weight:700">农资投入 · 化肥</div><div class="tiny">10-05 · 2 张票</div></div><div class="num" style="color:var(--out)">−2,180</div></div>
+    </div>
+    <div class="dock"><div class="btn" style="flex:1">记一笔账</div><div class="btn g" style="flex:1">记今天的活</div></div>
+  </div>
+</div>
+<div class="cap"><h4>F24 · 季详情（成本与收入并列）<span class="tagline">P0-1 P0-2</span></h4>
+<ul>
+<li>顶部 KPI 四格：总投入 / 已收 / 净收益 / 积温（降雨留在天气 tab）。已收获的季把「积温」换成「亩产」。</li>
+<li>KPI 下面一条待收待付；已结清时显示绿字「这一季账已结清」，一眼就有结论。</li>
+<li>分类占比条下把「本季支出 / 本季收入 / 净收益」三行排在一起——原来的页面只有支出合计。</li>
+<li>流水列表保持按日分组，收入行绿、支出行橙红；日历入口升级为 列表/月历/周历（F9 F10）。</li>
+<li>底部 dock 保留两个大按钮，手势与首页一致。</li>
+</ul></div></div>
+
+</div>
+
+<h2 class="sec">10. 我的与设置（P0-2 / P0-3 / P0-5 / P1-6 / P1-10 / P1-12）</h2>
+<p class="secnote">我的页从「几个计数」变成入口汇总；键盘自定义、回收站、类型管理都落在这里。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="grow">我的</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="c2">
+      <div class="row" style="gap:12px">
+        <div class="fic" style="width:48px;height:48px;border-radius:15px;font-size:18px;background:var(--green-l);color:var(--green-d)">谷</div>
+        <div class="grow"><div style="font-size:16px;font-weight:800">我的农田账本</div><div class="tiny">2026 年</div></div>
+      </div>
+      <div class="row between" style="margin-top:12px">
+        <div><div class="tiny">今年净收益</div><div class="num" style="font-size:22px;color:var(--in)">＋¥10,260</div></div>
+        <div class="right"><div class="tiny">收 / 支</div><div class="num" style="font-size:13px">15,120 / 4,860</div></div>
+      </div>
+      <div class="stack" style="margin-top:9px"><i style="width:76%;background:var(--in)"></i><i style="width:24%;background:#E5A891"></i></div>
+    </div>
+    <div class="c2 pad0" style="padding:0 14px">
+      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-chart"/></svg></div><div class="grow"><div style="font-weight:700">统计报表</div><div class="tiny">收支 / 结构 / 趋势 / 成本进度</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="fic d"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg></div><div class="grow"><div style="font-weight:700">欠款台账</div><div class="tiny">待收 ¥15,120 · 待付 ¥1,500</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="fic o"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div><div class="grow"><div style="font-weight:700">库存</div><div class="tiny">农资 3 种 · 粮食 12,600 斤</div></div><span class="muted">›</span></div>
+    </div>
+    <div class="c2 pad0" style="padding:0 14px">
+      <div class="flow"><div class="fic b">类</div><div class="grow"><div style="font-weight:700">记账 / 记事类型管理</div><div class="tiny">分类、颜色、收入类型</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="fic b">周</div><div class="grow"><div style="font-weight:700">周期账与分期</div><div class="tiny">2 个周期账 · 下次 11-01</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="fic b">⌨</div><div class="grow"><div style="font-weight:700">记账键盘</div><div class="tiny">默认布局 · 最近分类 4 个</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-trash"/></svg></div><div class="grow"><div style="font-weight:700">回收站</div><div class="tiny">2 项 · 30 天后彻底删除</div></div><span class="muted">›</span></div>
+    </div>
+    <div class="c2 pad0" style="padding:0 14px">
+      <div class="flow"><div class="fic b">份</div><div class="grow"><div style="font-weight:700">云备份</div><div class="tiny">已开 · 3 分钟前同步</div></div><span class="chip hl">已开</span></div>
+      <div class="flow" style="border-bottom:0"><div class="fic b">荐</div><div class="grow"><div style="font-weight:700">推荐给种地的朋友</div></div><span class="muted">›</span></div>
+    </div>
+    <div class="muted" style="text-align:center;font-size:12px">地块 2 · 种植季 3 · 账目 38 · 记事 61</div>
+  </div>
+  <div class="tabb"><div><em>▦</em>今天</div><div><em>▤</em>账本</div><div><em>◲</em>地块</div><div class="on"><em>☺</em>我的</div></div>
+</div>
+<div class="cap"><h4>F20 · 我的<span class="tagline">P0-3 P0-5 P1-10 P1-12</span></h4>
+<ul>
+<li>顶部从「计数」换成 <b>今年净收益 + 收支 + 占比条</b>，计数降为页脚一行小字。</li>
+<li>三个入口卡：统计报表 / 欠款 / 库存，每个都带一句实时结论，不是裸链接。</li>
+<li>设置组：类型管理（含收入类型）、周期账与分期、记账键盘、回收站（带待清理数量）。</li>
+<li>云备份状态显性化（原来只在同步里存在，用户看不见）。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">回收站</span><span class="ic r">清空</span></div>
+  <div class="body">
+    <div class="c2 flat"><div class="tiny">30 天后自动彻底删除；删错的东西都在这里，恢复后连同附件一起回来。</div></div>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic o">肥</div><div class="grow"><div style="font-weight:700">农资投入 · 化肥 ¥2,180</div><div class="tiny">10-05 删除 · 剩 29 天</div></div><span class="chip hl">恢复</span></div>
+      <div class="flow"><div class="fic b">记</div><div class="grow"><div style="font-weight:700">记事：施肥 复合肥 20 袋</div><div class="tiny">10-04 删除 · 剩 28 天</div></div><span class="chip hl">恢复</span></div>
+      <div class="flow"><div class="fic d">欠</div><div class="grow"><div style="font-weight:700">应付 · 老王（机手）¥1,500</div><div class="tiny">10-02 删除 · 剩 26 天</div></div><span class="chip hl">恢复</span></div>
+    </div>
+    <div class="c2 flat">
+      <div class="tiny" style="margin-bottom:5px">这一季的操作记录</div>
+      <div class="kv"><span class="muted">10-05 14:40 删除一笔账</span><span class="tiny">本机</span></div>
+      <div class="kv"><span class="muted">10-05 14:31 改金额 2,080 → 2,180</span><span class="tiny">本机</span></div>
+      <div class="kv"><span class="muted">10-05 14:22 新建一笔账</span><span class="tiny">本机</span></div>
+    </div>
+    <div class="muted" style="text-align:center;font-size:12px">删除不弹二次确认，因为可以恢复——比现在的「confirm 后硬删」更安全</div>
+  </div>
+</div>
+<div class="cap"><h4>F21 · 回收站 + 操作留痕<span class="tagline">P1-12</span></h4>
+<ul>
+<li>所有删除改为软删（账目 / 记事 / 欠款 / 库存动账 / 附件），保留 30 天，可一键恢复。</li>
+<li>「清空」需二次确认；到期自动清理在启动时本机做，不依赖云函数。</li>
+<li>恢复会把关联关系一并还原（账↔记事、账↔附件、欠款↔账）。</li>
+<li>下半页是操作留痕：只记关键动作 + 时间戳 + 来源，和 F8 详情里的留痕同一份数据。</li>
+<li>有了回收站，各处删除不再需要 confirm 弹窗——少一步点击，误删也不怕。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">记账键盘</span><span class="ic r">恢复默认</span></div>
+  <div class="body">
+    <h3 class="sect">键盘布局</h3>
+    <div class="seg"><div class="on">默认</div><div>连续录入</div><div>极简</div></div>
+    <div class="c2">
+      <div class="tiny" style="margin-bottom:8px">点任意键可换成别的功能（数字键位置固定）</div>
+      <div class="keys">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">⌫</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key fn">＋</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key fn">－</div>
+        <div class="key fn">再记</div><div class="key">0</div><div class="key">.</div><div class="key ok">完成</div>
+      </div>
+      <div class="tiny" style="margin-top:9px">点左下角 → 可选：再记 / 清空 / 今天 / 常用账 / 附件</div>
+    </div>
+    <h3 class="sect">常用分类栏</h3>
+    <div class="c2 flat">
+      <div class="row between"><span style="font-size:13.5px">在键盘上方显示「最近用过」</span><span class="chip hl">开</span></div>
+      <div class="row between" style="margin-top:9px"><span style="font-size:13.5px">显示几个</span>
+        <div class="chips"><span class="chip">3</span><span class="chip hl">4</span><span class="chip">6</span></div>
+      </div>
+      <div class="tiny" style="margin-top:9px">只按大类还是带细分</div>
+      <div class="chips" style="margin-top:5px"><span class="chip">只大类</span><span class="chip hl">带细分（化肥 · 复合肥）</span></div>
+    </div>
+    <h3 class="sect">金额显示</h3>
+    <div class="c2 flat">
+      <div class="row between"><span style="font-size:13.5px">千分位分隔（¥15,120）</span><span class="chip hl">开</span></div>
+      <div class="row between" style="margin-top:9px"><span style="font-size:13.5px">按键震动</span><span class="chip hl">开</span></div>
+      <div class="row between" style="margin-top:9px"><span style="font-size:13.5px">按 ⌫ 长按清空全部</span><span class="chip hl">开</span></div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F22 · 记账键盘设置<span class="tagline">P1-6</span></h4>
+<ul>
+<li>三个预设（按已实现的口径写）：<b>默认</b>（左下「再记」+ 最近分类 4 个带细分 + 千分位）、<b>连续录入</b>（左下「清空」+ 最近分类 6 个）、<b>极简</b>（不显示最近分类 + 关千分位与震动）。改任意一项即变「自定义」。</li>
+<li>可换的只有功能键（左下角「再记」那一格最常被换），数字与小数点在固定位置——不让人把键盘改成不认识的形状。</li>
+<li>「最近用过」栏可选 不显示 / 3 / 4 / 6 个，可选是否带细分；关掉后记一笔页不显示那一行。</li>
+<li>千分位、震动、⌫ 长按清空三项独立开关；千分位会同时影响全站金额显示（含报表与流水）。</li>
+<li>设置存在本机（<code>guyuji_kp_pref</code>），不进云端，换手机回默认。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">类型管理</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="seg"><div>支出类型</div><div class="on">收入类型</div><div>记事类型</div><div>常用账</div></div>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic g" style="width:32px;height:32px;border-radius:9px">粮</div><div class="grow"><div style="font-weight:700">卖粮</div><div class="tiny">12 笔 · 默认按斤×价</div></div><span class="tiny">✎</span><span class="tiny">≡</span></div>
+      <div class="flow"><div class="fic g" style="width:32px;height:32px;border-radius:9px">补</div><div class="grow"><div style="font-weight:700">补贴</div><div class="tiny">2 笔 · 默认直接填</div></div><span class="tiny">✎</span><span class="tiny">≡</span></div>
+      <div class="flow"><div class="fic g" style="width:32px;height:32px;border-radius:9px">租</div><div class="grow"><div style="font-weight:700">土地租金</div><div class="tiny">0 笔 · 常配周期账</div></div><span class="tiny">✎</span><span class="tiny">≡</span></div>
+      <div class="flow"><div class="fic g" style="width:32px;height:32px;border-radius:9px">机</div><div class="grow"><div style="font-weight:700">农机服务</div><div class="tiny">1 笔</div></div><span class="tiny">✎</span><span class="tiny">≡</span></div>
+      <div class="flow" style="border-bottom:0"><div class="fic g" style="width:32px;height:32px;border-radius:9px">险</div><div class="grow"><div style="font-weight:700">保险赔付</div><div class="tiny">0 笔</div></div><span class="tiny">✎</span><span class="tiny">≡</span></div>
+    </div>
+    <div class="btn ghost">＋ 新增收入类型</div>
+    <div class="c2 flat">
+      <div class="tiny">收入类型可选默认计算方式：按斤×价 / 按亩×价 / 直接填；改完在记一笔里自动生效。</div>
+    </div>
+    <div class="c2 flat">
+      <div class="row between"><span style="font-size:13.5px">支出类型里的「农资用量」联动库存</span><span class="chip hl">开</span></div>
+      <div class="tiny" style="margin-top:5px">打开后，记事里填农资用量会自动扣库存（F17）。</div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F25 · 类型管理（新增收入类型）<span class="tagline">P0-1 P0-5</span></h4>
+<ul>
+<li>四个 tab：支出类型（现有）/ <b>收入类型（新）</b> / 记事类型（现有）/ 常用账（现有）。</li>
+<li>收入类型可各自设默认计算方式，记一笔时按类型自动切到「按斤×价」还是「直接填」。</li>
+<li>「农资用量联动库存」开关放在这里，把 P0-5 的自动扣减做成可关的行为，而不是硬编码。</li>
+<li>排序与改名沿用现有 <code>tags</code> 能力，不动同步口径。</li>
+</ul></div></div>
+
+</div>
+
+<h2 class="sec">11. 关键状态与降级（P1-9 等）</h2>
+<p class="secnote">这些不是「边角」，是田间真实会遇到的状态：没网、附件没传完、周期账到期、赊账没结。</p>
+
+<div class="grid">
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="grow">账本</span><span class="ic r">全部地块 ▾</span></div>
+  <div class="body">
+    <div class="c2" style="background:#FBE6DE;border-color:#E5B6A5">
+      <div class="row between"><b style="font-size:13.5px;color:#7A2A1F">当前无网络</b><span class="tiny">记录已存手机</span></div>
+      <div class="tiny" style="color:#7A2A1F;margin-top:4px">3 张附件还没传完，2 条账待同步；联网后自动继续，不用管。</div>
+    </div>
+    <div class="c2" style="border-color:#E5B6A5;background:#FBEFE6">
+      <div class="row between">
+        <span class="row" style="gap:7px"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-clock"/></svg><b style="font-size:13.5px">2 个周期账到期待记</b></span>
+        <span class="chip" style="background:var(--wheat);border-color:var(--wheat);color:#fff">去记 ›</span>
+      </div>
+      <div class="tiny" style="margin-top:5px">11-01 土地流转 ¥1,800 · 11-05 农资贷款 ¥900</div>
+    </div>
+    <h3 class="sect">账本</h3>
+    <div class="dayh"><b>10月5日 周日</b><span class="tiny">收 ¥15,120 · 支 ¥2,180</span></div>
+    <div class="c2 pad0">
+      <div class="flow"><div class="fic g">卖</div><div class="grow"><div style="font-weight:700">卖粮 · 小麦</div><div class="tiny">粮站 · 未结 → 应收</div></div><div class="right"><div class="num" style="color:var(--in)">＋15,120</div><div class="tiny" style="color:var(--debt)">待收</div></div></div>
+      <div class="flow"><div class="fic o">肥</div><div class="grow"><div style="font-weight:700">农资投入 · 化肥</div><div class="tiny row" style="gap:6px">2 票<span class="tiny" style="border:1px solid var(--line);border-radius:4px;padding:0 3px">1 张待传</span></div></div><div class="right"><div class="num" style="color:var(--out)">−2,180</div></div></div>
+    </div>
+    <h3 class="sect">空态（新用户 / 这块地还没记）</h3>
+    <div class="c2" style="text-align:center;padding:26px 16px">
+      <div style="font-size:15px;font-weight:700">还没有记账</div>
+      <div class="tiny" style="margin-top:6px">点下面「记一笔」，或去「账本 → 库存」先把买到手的化肥入库</div>
+      <div class="row" style="gap:9px;margin-top:14px">
+        <div class="btn ghost sm grow">去库存入库</div><div class="btn g sm grow">记一笔</div>
+      </div>
+    </div>
+  </div>
+  <div class="tabb"><div><em>▦</em>今天</div><div class="on"><em>▤</em>账本</div><div><em>◲</em>地块</div><div><em>☺</em>我的</div></div>
+</div>
+<div class="cap"><h4>F26 · 降级与空状态<span class="tagline">P1-9 / P1-10 / P1-12</span></h4>
+<ul>
+<li><b>离线</b>：顶部一条橙红说明还剩多少没同步/没传完，不阻塞任何操作，联网自动继续（沿用现有 outbox 机制，只是把状态显性化）。</li>
+<li><b>周期账到期</b>：橙红卡在账本顶部 + 今天页红点；点了直接进记一笔，金额分类都填好，只差确认。</li>
+<li><b>赊账</b>：列表里右侧多一行「待收 / 待付」，不用点开就知道这笔钱还没落地。</li>
+<li><b>附件待传</b>：缩略图旁一个「1 张待传」小标，而不是转圈或失败。</li>
+<li><b>空态</b>：所有空态都给两条出路（去库存 / 记一笔），不做只有一句「暂无数据」的死胡同。</li>
+</ul></div></div>
+
+</div>
+
+<h2 class="sec">12. 交互细则汇总（实现时的口径表）</h2>
+<table>
+<tr><th style="width:150px">项</th><th>规则</th></tr>
+<tr><td>方向</td><td>记一笔顶部 支出/收入 分段；默认支出。<code>costs</code> 里新增 <code>dir:'out'|'in'</code>，旧数据无 <code>dir</code> 一律按 <code>out</code> 处理（零迁移）</td></tr>
+<tr><td>统计口径</td><td>净收益 = Σ收入 − Σ支出（均按分摊后金额）。赊账记入成本/收入，但另挂欠款记录；销账只改欠款状态，不改原金额</td></tr>
+<tr><td>收入计算方式</td><td><code>calc.mode</code> 增加 <code>perJin</code>（斤×价）、<code>perMuPrice</code>（亩×价），与现有 <code>perMu</code>/<code>perDay</code>/<code>fixed</code> 并列；表达式求值沿用 <code>utils/keypad.js</code></td></tr>
+<tr><td>欠款</td><td>新集合 <b>不做</b>；欠款挂在 <code>costs</code> 的 <code>debt:{party,dueDate|dueTag,settled,settledAt,paidAmount}</code> 上，随账目一起同步</td></tr>
+<tr><td>库存</td><td>存在 <code>tags.stock</code> 单文档：<code>[{name,unit,onHand,warnAt,lastPrice}]</code>；出入库流水不复制数据，由 <code>costs</code>（采购）与 <code>logs.materials</code>（用量）派生 + 手动修正条</td></tr>
+<tr><td>附件</td><td><code>costs[i].attachments=[{name,localPath,fileID,size}]</code>；先本机后云端，上传失败保留 localPath 并在列表标「待传」</td></tr>
+<tr><td>周期账</td><td><code>tags.recurring=[{id,name,cat,sub,mode,freq,day|dueTag,amount,startAt,endAt,lastFiredAt,enabled}]</code>；到期只生成待记，不自动落账</td></tr>
+<tr><td>分期</td><td>同上，加 <code>installment:{total,periods,index}</code>；每期金额 = 总额/期数，尾差进最后一期（复用现有 <code>splitBy</code>）</td></tr>
+<tr><td>回收站</td><td><code>costs/logs</code> 加 <code>deletedAt</code>；所有列表过滤掉带 <code>deletedAt</code> 的；30 天后启动时本机清理</td></tr>
+<tr><td>留痕</td><td><code>costs[i].audit=[{at,action,from,to,src:'local'|'cloud'}]</code>，只记关键动作</td></tr>
+<tr><td>日历</td><td>月/周共用 <code>stats.costMonth</code>；周视图新增 <code>stats.costWeek</code>，输出与月一致的格结构</td></tr>
+<tr><td>连续补账</td><td>由「季内日历缺记日」派生，纯前端状态机，每保存一天立即落库</td></tr>
+<tr><td>筛选</td><td>纯前端过滤（数据量在千级以内），条件对象 <code>{dir,cats[],subs[],amtMin,amtMax,from,to,onlyDebt,onlyAttach,onlyLinked,q}</code></td></tr>
+<tr><td>报表</td><td>全部由 <code>stats.js</code> 纯函数产出；图表用 CSS flex 柱 + 占比条，不引图表库、不用 canvas</td></tr>
+<tr><td>同步</td><td>新字段（dir/debt/attachments/recurring/stock/deletedAt/audit）随现有 <code>costs</code>/<code>tags</code> 单文档走 outbox；<b>不新增云端集合</b>；仍要剔除 <code>undefined</code> 字段（已知坑）</td></tr>
+<tr><td>测试</td><td>沿用 <code>miniprogram/tests/</code>（<code>node --test</code>），新增：净收益口径、perJin 求值、分期尾差、软删过滤、周期到期判定、筛选过滤、CSV 输出</td></tr>
+</table>
+
+<h2 class="sec">13. 你的确认结果 + 这次的改动</h2>
+<div class="note done"><b>1. 底部 TabBar 加第 4 个「账本」tab —— 已确认：加。</b><br>
+已落到 <code>app.json</code>：今天 / 账本 / 地块 / 我的。现版本 TabBar 就是纯文字无图标，所以新 tab 不需要补图标资源。</div>
+<div class="note done" style="margin-top:12px"><b>2. 收获产量 —— 已确认：两种都留。</b><br>
+默认还是「一季一个总数」；另加一块选填的「按地块分行」，填了就按地块各算亩产与 ¥/亩，合计自动对齐总数。见 F19。</div>
+<div class="note done" style="margin-top:12px"><b>3. 欠款挂进 <code>costs</code> —— 已确认：按此做。</b><br>
+无新增云端集合，账↔欠款天然关联，随现有 outbox 一起同步。</div>
+<div class="note done" style="margin-top:12px"><b>4. 库存自动扣减 —— 已确认：行。</b><br>
+首次进库存页先设一次期初（或选「只记录不扣减」），之后默认自动扣减，老库不会被一上来扣成负数。</div>
+<div class="note done" style="margin-top:12px"><b>5. 导出模块 —— 已删除，不做。</b><br>
+<code>utils/export.js</code>、报表页与我的页的导出入口、以及本稿原来的 F14 全部移除；<code>miniprogram/README.md</code> 里「mine 有导出为文字」的描述也一并改成实际能力。账目对外分享只保留小程序原生「推荐给朋友」。</div>
+<div class="note" style="margin-top:12px"><b>6. 全量落地，不拆 MVP。</b><br>
+收入侧 / 欠款 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 操作留痕与回收站，一起做完再回归真机。</div>
+<div class="note done" style="margin-top:12px"><b>7. 补齐 3 个记账缺口 —— 已确认：全做（预算 / 资金账户 / 资产负债）。</b><br>
+对照随手记最新能力清单，补掉「预算与超支提醒」「多账户与余额」「资产负债总览」；见第 14 节 F25 / F26 / F27。</div>
+<div class="note done" style="margin-top:12px"><b>8. 收获「加一块地」—— 已确认：保持开放。</b><br>
+允许把非本季地块加进来（比如同一季里又包了别人一块地），不做限制。</div>
+<div class="note done" style="margin-top:12px"><b>9. <code>design_handoff/</code> 里的旧导出代码 —— 已删除。</b><br>
+原型页与 handoff 版 <code>mine</code> 的「导出为文字」全部移除，与本稿第 13 节第 5 条口径一致。</div>
+</div>
+
+<h2 class="sec">14. 新增：预算 / 资金账户 / 资产负债（本轮补齐的 3 个记账缺口）</h2>
+<p class="secnote">对照随手记最新能力清单后补的三块：随手记有而谷雨记原来没有的「预算与超支提醒」「多账户与余额」「资产负债总览」。三块都复用现有数据（季 / 库存 / 欠款 / 账目），<b>不新增云端集合</b>。</p>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">预算</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="c2 flat"><div class="tiny">选一个种植季</div>
+      <div class="kv" style="margin-top:6px"><span>东大块 · 小麦</span><span class="muted">›</span></div>
+    </div>
+    <div class="c2"><div class="tiny">本季预算</div>
+      <div class="kv" style="margin-top:6px"><span class="muted">总预算（元）</span><span class="num">12,000</span></div>
+      <div class="kv"><span class="muted">每亩目标成本（元/亩）</span><span class="num">800</span></div>
+      <div class="tiny" style="margin-top:6px">只填每亩目标时，按本季地块 12 亩自动折算成总预算；两个都空 = 不设预算。</div>
+    </div>
+    <div class="c2"><div class="row between"><b>进度</b><span class="chip warn">已超支</span></div>
+      <div class="stack" style="height:12px;margin-top:9px"><i style="width:100%;background:var(--out)"></i></div>
+      <div class="kv" style="margin-top:8px"><span class="muted">已花 ¥12,480 / 预算 ¥12,000</span><span class="num" style="color:var(--out)">超 ¥480</span></div>
+      <div class="kv"><span class="muted">每亩 ¥1,040（目标 ¥800）</span><span class="num" style="color:var(--out)">每亩也超</span></div>
+    </div>
+    <div class="c2"><div class="tiny">分类预算（选填）</div>
+      <div class="kv" style="margin-top:6px"><span>农资投入</span><span class="muted">已花 ¥5,200 / ¥5,000</span></div>
+      <div class="kv"><span>机械作业</span><span class="muted">已花 ¥3,100 / ¥3,500</span></div>
+    </div>
+    <div class="btn">保存预算</div>
+  </div>
+</div>
+<div class="cap"><h4>F25 · 预算<span class="tagline">P1-13</span></h4>
+<ul>
+<li><b>有效预算</b>：填了总预算就按总预算；只填每亩目标就 × 地块面积自动折算。都空 = 不设预算，页面显示「还没设」。</li>
+<li>支出按分摊后金额算（和报表同口径），所以跨季分摊的一笔只会算进它分摊到的那部分。</li>
+<li>本季支出 ≥ 预算 90% 时，<b>首页</b>和<b>账本</b>会各出一条提醒条（几季都紧张就提醒最紧的那季）。</li>
+<li>存 <code>seasons[i].budget = { total, perMu, cats }</code>，随现有 <code>seasons</code> 单文档同步。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">资金账户</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="c2"><div class="tiny">资金余额（全部）</div>
+      <div class="num" style="font-size:34px;font-weight:800;margin-top:4px">¥18,640</div>
+      <div class="kv" style="margin-top:8px"><span class="muted">期初 ¥6,000</span><span class="num" style="color:var(--in)">收 ¥21,040</span><span class="num" style="color:var(--out)">支 ¥8,400</span></div>
+    </div>
+    <div class="seg"><span>全部</span><span>今年</span><span>本月</span></div>
+    <div class="c2"><div class="kv"><span>现金</span><span class="num">¥2,300</span></div>
+      <div class="kv"><span class="muted">期初 0</span><span class="num" style="color:var(--in)">收 ¥4,100</span><span class="num" style="color:var(--out)">支 ¥1,800</span></div>
+    </div>
+    <div class="c2"><div class="kv"><span>微信</span><span class="num" style="color:var(--out)">−¥200</span></div>
+      <div class="kv"><span class="muted">期初 0</span><span class="num" style="color:var(--in)">收 ¥2,000</span><span class="num" style="color:var(--out)">支 ¥2,200</span></div>
+    </div>
+    <div class="c2"><div class="kv"><span>银行卡</span><span class="num">¥16,540</span></div>
+      <div class="kv"><span class="muted">期初 ¥6,000</span><span class="num" style="color:var(--in)">收 ¥14,940</span><span class="num" style="color:var(--out)">支 ¥4,400</span></div>
+    </div>
+    <div class="tiny" style="margin:2px 4px">还有 3 笔账没挂账户，不计入余额</div>
+    <div class="btn ghost dash">＋ 添加账户</div>
+  </div>
+</div>
+<div class="cap"><h4>F26 · 资金账户<span class="tagline">P1-14</span></h4>
+<ul>
+<li>记一笔多一个「账户」chip；账本筛选抽屉里多一组账户 chip，能只看某个口袋的流水。</li>
+<li><b>余额 = 期初 + 实收 − 实付</b>；挂了赊账的只算<b>已销账金额</b>——钱没到手就不进账户，避免和应收重复计算。</li>
+<li>没挂账户的账不计入任何账户，页面明确提示「还有 N 笔没挂账户」，不做静默吞掉。</li>
+<li>存 <code>tags.accounts = [{key,name,init}]</code>、账目挂 <code>costs[i].account</code>，都随现有单文档同步。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">资产负债</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="c2" style="text-align:center"><div class="tiny">净资产</div>
+      <div class="num" style="font-size:36px;font-weight:800;color:var(--green)">¥26,240</div>
+      <div class="kv" style="margin-top:8px"><span class="muted">总资产 ¥27,040</span><span class="muted">总负债 ¥800</span></div>
+    </div>
+    <div class="tiny" style="margin:6px 4px 0">资产</div>
+    <div class="c2"><div class="kv"><span>资金账户余额</span><span class="num">¥18,640</span></div>
+      <div class="kv"><span>库存估值（6 个品名）</span><span class="num">¥5,400</span></div>
+      <div class="kv"><span>应收（还没收到的钱）</span><span class="num">¥3,000</span></div>
+      <div class="kv"><span><b>资产合计</b></span><span class="num"><b>¥27,040</b></span></div>
+    </div>
+    <div class="tiny" style="margin:6px 4px 0">负债</div>
+    <div class="c2"><div class="kv"><span>应付（还没付出的钱）</span><span class="num" style="color:var(--out)">¥800</span></div>
+      <div class="kv"><span><b>负债合计</b></span><span class="num" style="color:var(--out)"><b>¥800</b></span></div>
+    </div>
+    <div class="tiny" style="margin:8px 4px 0">库存按最近入库/出库均价折算；应收应付取欠款台账未结部分。点任意一行去对应页面。</div>
+  </div>
+</div>
+<div class="cap"><h4>F27 · 资产负债总览<span class="tagline">P1-15</span></h4>
+<ul>
+<li>三块数据全是现成的：资金账户（本轮新增）、库存估值（<code>stock.lastPrice × onHand</code>）、应收应付（欠款台账未结）。</li>
+<li><b>净资产 = 账户余额 + 库存估值 + 应收 − 应付</b>，回答「我这摊子到底值多少」。</li>
+<li>每行可点，直接下钻到资金账户 / 库存 / 欠款台账，不在这一页重复操作。</li>
+</ul></div></div>
+
+</body>
+</html>

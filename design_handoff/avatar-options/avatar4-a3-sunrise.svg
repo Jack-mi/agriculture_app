@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- A3 日出田：太阳从田字格后升起，清晨下地记账 -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#24492A"/>
+      <stop offset="1" stop-color="#1F4024"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="220" fill="url(#sky)"/>
+  <!-- 升起的太阳（被田字格上沿裁切） -->
+  <defs>
+    <clipPath id="horizon"><rect x="0" y="0" width="1024" height="452"/></clipPath>
+  </defs>
+  <g clip-path="url(#horizon)">
+    <circle cx="512" cy="452" r="150" fill="#E8A93C"/>
+    <circle cx="512" cy="452" r="196" fill="#E8A93C" opacity="0.25"/>
+  </g>
+  <!-- 田字格（下半） -->
+  <g stroke="#FFFDF7" stroke-width="34" fill="none">
+    <path d="M232 452 h560"/>
+    <path d="M232 452 v320 a40 40 0 0 0 40 40 h480 a40 40 0 0 0 40 -40 v-320"/>
+    <line x1="512" y1="452" x2="512" y2="812"/>
+    <line x1="232" y1="632" x2="792" y2="632"/>
+  </g>
+  <!-- 田间一行小字位置留空，加两只飞鸟 -->
+  <g stroke="#F6E7C6" stroke-width="12" stroke-linecap="round" fill="none">
+    <path d="M300 250 q 22 -20 44 0 q 22 -20 44 0"/>
+    <path d="M620 190 q 18 -16 36 0 q 18 -16 36 0"/>
+  </g>
+</svg>

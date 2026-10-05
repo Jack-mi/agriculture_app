@@ -1,0 +1,46 @@
+<view class="wrap">
+
+  <view class="card hero">
+    <view class="muted">净资产</view>
+    <view class="big {{bs.netNeg ? 'neg' : ''}}">{{bs.netNeg ? '−' : ''}}¥{{bs.netText}}</view>
+    <view class="row between" style="margin-top:20rpx">
+      <text class="muted">总资产 ¥{{bs.assetsText}}</text>
+      <text class="muted">总负债 ¥{{bs.liabilitiesText}}</text>
+    </view>
+  </view>
+
+  <view class="sec-title">资产</view>
+  <view class="card">
+    <view class="arow" wx:for="{{bs.assetRows}}" wx:key="name" bindtap="go" data-go="{{item.go}}">
+      <view class="f1">
+        <view class="an">{{item.name}}</view>
+        <view class="muted ah">{{item.hint}}</view>
+      </view>
+      <text class="av">¥{{item.text}}</text>
+      <text class="ar">›</text>
+    </view>
+    <view class="arow total">
+      <text class="an">资产合计</text>
+      <text class="av">¥{{bs.assetsText}}</text>
+    </view>
+  </view>
+
+  <view class="sec-title">负债</view>
+  <view class="card">
+    <view class="arow" wx:for="{{bs.liabRows}}" wx:key="name" bindtap="go" data-go="{{item.go}}">
+      <view class="f1">
+        <view class="an">{{item.name}}</view>
+        <view class="muted ah">{{item.hint}}</view>
+      </view>
+      <text class="av heat">¥{{item.text}}</text>
+      <text class="ar">›</text>
+    </view>
+    <view class="arow total">
+      <text class="an">负债合计</text>
+      <text class="av heat">¥{{bs.liabilitiesText}}</text>
+    </view>
+  </view>
+
+  <view class="muted tip">库存按最近入库/出库均价折算；应收应付取欠款台账未结部分。</view>
+
+</view>

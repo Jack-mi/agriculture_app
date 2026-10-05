@@ -1,0 +1,10 @@
+.tabs { display: flex; background: var(--card); border: 2rpx solid var(--line); border-radius: 18rpx; padding: 6rpx; margin-bottom: 24rpx; }
+.tab { flex: 1; text-align: center; height: 72rpx; line-height: 72rpx; font-size: 30rpx; border-radius: 14rpx; color: var(--sub); }
+.tab.on { background: var(--green); color: #fff; font-weight: 700; }
+.input.nm { flex: 1; min-height: 80rpx; font-size: 34rpx; font-weight: 600; }
+.input.init { width: 260rpx; min-height: 80rpx; font-size: 32rpx; text-align: right; }
+.del { color: var(--danger); font-size: 28rpx; margin-left: 24rpx; }
+.bal { font-size: 34rpx; font-weight: 800; color: var(--green); }
+.bal.neg { color: var(--heat); }
+.in { color: var(--green); font-weight: 700; }
+.out { color: var(--heat); font-weight: 700; }

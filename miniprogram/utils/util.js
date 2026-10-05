@@ -36,11 +36,19 @@ function cnDate(s, withYear) {
   return withYear ? d.getFullYear() + '年' + base : base;
 }
 function weekday(s) { return '周' + WEEK[parse(s).getDay()]; }
+// 时间戳 → '10-05 14:22'（留痕用）
+function dt(ts) {
+  const d = new Date(+ts || Date.now());
+  return pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
 
 function money(n) {
   n = Math.round((+n || 0) * 100) / 100;
   const s = n.toFixed(n % 1 === 0 ? 0 : 2);
-  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  // 千分位可在「我的 → 记账键盘」里关掉；关了更省眼，但复制给别人看时没那么清楚
+  let sep = true;
+  try { sep = require('./pref.js').all().thousands !== false; } catch (e) { sep = true; }
+  return sep ? s.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : s;
 }
 function round1(n) { return Math.round((+n || 0) * 10) / 10; }
 
@@ -50,4 +58,4 @@ function uid(prefix) {
 
 function toast(title, icon) { wx.showToast({ title, icon: icon || 'none', duration: 1600 }); }
 
-module.exports = { pad, fmtDate, today, parse, addDays, diffDays, range, cnDate, weekday, money, round1, uid, toast };
+module.exports = { pad, fmtDate, today, parse, addDays, diffDays, range, cnDate, weekday, dt, money, round1, uid, toast };

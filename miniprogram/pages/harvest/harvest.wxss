@@ -1,8 +1,9 @@
-.sum { display: flex; flex-wrap: wrap; padding: 12rpx 32rpx; }
-.sum-cell { width: 50%; padding: 20rpx 0; }
-.sum-cell.full { width: 100%; border-top: 2rpx solid var(--line); }
-.v { font-size: 48rpx; font-weight: 800; }
-.u { font-size: 24rpx; color: var(--sub); margin-left: 6rpx; font-weight: 500; }
-.heat { color: var(--heat); }
-.rain { color: var(--rain); }
-.wheat-t { color: var(--wheat); }
+.hrow { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 2rpx solid var(--line); }
+.hrow:last-of-type { border-bottom: none; }
+.f-t { font-size: 32rpx; font-weight: 700; }
+.del { font-size: 32rpx; color: var(--sub); padding: 0 0 0 20rpx; }
+.col { flex: 1; }
+.unitbox { display: flex; align-items: baseline; background: #FBF8EF; border-radius: 16rpx; min-height: 104rpx; padding: 0 28rpx; }
+.unitbox .num { font-size: 40rpx; font-weight: 800; line-height: 104rpx; }
+.unitbox .u { margin-left: 12rpx; color: var(--sub); font-size: 30rpx; }
+.chip.small { height: 64rpx; line-height: 60rpx; font-size: 27rpx; padding: 0 24rpx; border-radius: 32rpx; margin: 8rpx 12rpx 0 0; display: inline-block; }

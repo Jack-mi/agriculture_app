@@ -15,6 +15,21 @@
 > - **2026-09-30：体验版 `0.3.0` 已上传**（随手记式记一笔：键盘/按亩计/按亩均摊 + 流水按日/日历 + 常用账 + 作物品种；纯前端改版，云函数未动）
 > - **2026-10-01：体验版 `0.4.0` 已上传**（农事参谋一期：今天页两态/预警/待办/参谋标签页/任务/生育期/跟参谋说；新增云函数 `weatherForecast` 已部署；新建集合 `tasks`、`memory`；WechatSI 插件因后台添加失败暂未声明，聊天页降级打字，添加后恢复 app.json 的 plugins 声明即可）
 > - **2026-10-01：体验版 `0.4.1` 已上传**（参谋 AI 模型可切换：本地规则/混元 Turbo/DeepSeek V3/R1 + BYOK 自带 Key；新增云函数 `advisorChat`（OpenAI 兼容代理，Key 存云端 `config` 集合，仅创建者可读写）已部署并实测 status/chat 通道；新建集合 `config`。云开发 AI 额度未开通（需管理员扫码进腾讯云控制台），微信同声传译插件添加被平台拒（214008，疑似主体变更审核中限制））
+> - **2026-10-05：体验版 `0.7.0` 已上传 —— 收支双向 + 库存/欠款/报表/回收站 + 预算/资金账户/资产负债**
+>   - 记账改成**收支双态**（`costs[i].dir` = `out`/`in`，旧数据无 `dir` 一律按支出，零迁移）；新增收入类型（卖粮/补贴/土地租金/农机服务/保险赔付/其他，可自定义）
+>   - 新增算法：按斤×价、按亩×价；新增字段：`debt`（赊账/欠款，可部分销账）、`attachments`（附件，先本机后云存储 fileID）、`audit`（操作留痕，关键动作 + 时间戳）、`deletedAt`（软删进回收站，30 天后本机清理）
+>   - 新增/重写页面：`ledger`（账本一级 tab：全部地块统一流水 + 六维筛选 + 列表/月历/周历）、`report`（净收益总览/结构/趋势）、`debt`（欠款台账）、`stock`（农资/粮食库存）、`trash`（回收站）、`recurring`（周期账与分期）、`catchup`（连续补账）、`keypanel`（记账键盘设置）；`cost-edit` / `index` / `mine` / `season` / `tags` / `harvest` / `log-edit` / `keypad` 同步升级
+>   - TabBar 由 3 个变 4 个（今天 / **账本** / 地块 / 我的）
+>   - **不新增云端集合**：欠款挂 `costs.debt`、库存挂 `tags.stock`、周期账挂 `tags.recurring`、键盘偏好只存本机 `guyuji_kp_pref`；`sync.js` 补了深层 `undefined` 清洗（附件 fileID 这类嵌套字段以前会让整条写库失败）
+>   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51 通过；`node scripts/check-miniprogram.js` → 25 个页面 + keypad 全通过（含 wxml 事件与模块方法核对）
+>   - 本轮补齐的 3 个记账缺口（对照随手记最新能力清单）：
+     - **预算**：`seasons[i].budget = { total, perMu, cats }`；有效预算 = 总预算优先，其次「每亩目标 × 地块面积」；本季支出 ≥ 90% 时首页与账本各出一条提醒。新增页 `pages/budget`
+     - **资金账户**：`tags.accounts = [{key,name,init}]` + `costs[i].account`；余额 = 期初 + 实收 − 实付（挂了赊账的只算已销账金额，不和应收重复）；账本筛选抽屉新增账户维度。新增页 `pages/funds`
+     - **资产负债总览**：账户余额 + 库存估值 + 应收 − 应付 = 净资产。新增页 `pages/balance`
+   - 顺带修掉：`pages/ledger/ledger.wxss` 尾部混入了两行 shell 残留（`JSEOF` / `echo written`），导致整包 WXSS 编译失败；已删除并补齐账本页缺失样式。另把 `.flow/.fic/.f-t/.f-a/.tabs/.tab/.kv/.sheet-lb/.link/.stack` 提到 `app.wxss` 统一，欠款/报表/库存页的分段控件原来没有样式（竖着堆）。
+   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 25 页 + keypad 全通过；模拟器逐页截图存 `docs/design/verify/`
+   - **上传记录**：2026-10-05 `upload --upload-version 0.7.0`，代码包 517,578 B（TOTAL 1 个包），`taskId=confirmation_upload_572b3961…` 经 IDE 确认后 `execution_success`
+   - **待办**：官方体验版二维码待取（mp.weixin.qq.com 登录已超时，需扫一次微信登录码后从「管理 → 版本管理 → 开发版本 → 体验版二维码」保存到 `docs/`）；真机回归待扫码
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`

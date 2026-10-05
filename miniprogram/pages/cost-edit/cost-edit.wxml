@@ -1,20 +1,41 @@
 <view class="page">
-  <!-- ① 金额头 -->
+  <!-- ① 方向 + 金额头 -->
   <view class="head">
+    <view class="dirs">
+      <view class="dir {{dir === 'out' ? 'on' : ''}}" bindtap="pickDir" data-k="out">支出</view>
+      <view class="dir {{dir === 'in' ? 'on-in' : ''}}" bindtap="pickDir" data-k="in">收入</view>
+    </view>
+
+    <!-- 最近用过 -->
+    <scroll-view wx:if="{{recents.length}}" scroll-x class="recents">
+      <view wx:for="{{recents}}" wx:key="key" class="chip small" bindtap="pickRecent" data-i="{{index}}">{{item.label || item.cat}}</view>
+    </scroll-view>
+
     <view class="row between">
       <view class="hcat">
-        <view class="hic" style="background:{{catColor}}"><image src="{{subIcon}}" class="hic-img" /></view>
+        <view class="hic" style="background:{{dir === 'in' ? 'var(--green-l)' : catColor}}">
+          <image src="{{dir === 'in' ? subIcon : iconOn}}" class="hic-img" mode="aspectFit" />
+        </view>
         <text class="hsub">{{sub || catName}}</text><text class="muted"> · {{catName}}</text>
       </view>
       <view class="muted hseason">{{headLabel}}</view>
     </view>
 
-    <!-- 计算方式 -->
     <view class="modes">
       <view wx:for="{{modes}}" wx:key="key" class="mode {{mode === item.key ? 'on' : ''}}" bindtap="pickMode" data-m="{{item.key}}">{{item.name}}</view>
     </view>
 
     <view wx:if="{{mode === 'perMu'}}" class="formula">
+      <view class="fx {{field === 'price' ? 'on' : ''}}" bindtap="pickField" data-f="price">单价 <text class="num b">¥{{priceText}}</text>/亩</view>
+      <text class="muted x">×</text>
+      <view class="fx {{field === 'mu' ? 'on' : ''}}" bindtap="pickField" data-f="mu"><text class="num b">{{muText}}</text> 亩</view>
+    </view>
+    <view wx:elif="{{mode === 'perJin'}}" class="formula">
+      <view class="fx {{field === 'price' ? 'on' : ''}}" bindtap="pickField" data-f="price">单价 <text class="num b">¥{{priceText}}</text>/斤</view>
+      <text class="muted x">×</text>
+      <view class="fx {{field === 'qty' ? 'on' : ''}}" bindtap="pickField" data-f="qty"><text class="num b">{{qtyText}}</text> 斤</view>
+    </view>
+    <view wx:elif="{{mode === 'perMuPrice'}}" class="formula">
       <view class="fx {{field === 'price' ? 'on' : ''}}" bindtap="pickField" data-f="price">单价 <text class="num b">¥{{priceText}}</text>/亩</view>
       <text class="muted x">×</text>
       <view class="fx {{field === 'mu' ? 'on' : ''}}" bindtap="pickField" data-f="mu"><text class="num b">{{muText}}</text> 亩</view>
@@ -26,30 +47,52 @@
     </view>
     <view wx:else class="expr num">{{exprShow}}</view>
 
-    <view class="big num {{total > 0 ? '' : 'zero'}}"><text class="yen">¥</text>{{totalText}}</view>
+    <view class="big num {{dir === 'in' ? 'in' : 'out'}} {{total > 0 ? '' : 'zero'}}">
+      <text class="yen">{{dir === 'in' ? '＋' : '−'}}¥</text>{{totalText}}
+    </view>
   </view>
 
   <!-- ② 分类 -->
   <scroll-view scroll-y class="mid">
-    <view class="seg">
-      <view wx:for="{{cats}}" wx:key="key" class="sg {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
-        <text class="sdot" style="background:{{item.color}}"></text>{{item.name}}
-      </view>
-    </view>
-    <view class="grid">
-      <view wx:for="{{subs}}" wx:key="name" class="gi {{sub === item.name ? 'on' : ''}}" bindtap="pickSub" data-s="{{item.name}}">
-        <view class="gic" style="{{sub === item.name ? 'background:' + catColor + ';border-color:' + catColor : ''}}">
-          <image src="{{sub === item.name ? item.iconOn : item.icon}}" class="gic-img" />
+    <!-- 支出：5 大类分段 + 细分宫格 -->
+    <block wx:if="{{dir === 'out'}}">
+      <view class="seg">
+        <view wx:for="{{cats}}" wx:key="key" class="sg {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
+          <text class="sdot" style="background:{{item.color}}"></text>{{item.name}}
         </view>
-        <text class="gname">{{item.name}}</text>
       </view>
-      <view class="gi" bindtap="addSub">
-        <view class="gic dash"><image src="/assets/icons/plus_mach.svg" class="gic-img" style="opacity:.8" /></view>
-        <text class="gname" style="color:var(--green)">自定义</text>
+      <view class="grid">
+        <view wx:for="{{subs}}" wx:key="name" class="gi {{sub === item.name ? 'on' : ''}}" bindtap="pickSub" data-s="{{item.name}}">
+          <view class="gic" style="{{sub === item.name ? 'background:' + catColor + ';border-color:' + catColor : ''}}">
+            <image src="{{sub === item.name ? item.iconOn : item.icon}}" class="gic-img" />
+          </view>
+          <text class="gname">{{item.name}}</text>
+        </view>
+        <view class="gi" bindtap="addSub">
+          <view class="gic dash"><image src="/assets/icons/plus_sub.svg" class="gic-img" style="opacity:.8" /></view>
+          <text class="gname" style="color:var(--green)">自定义</text>
+        </view>
       </view>
-    </view>
+    </block>
+
+    <!-- 收入：收入类型宫格（选中 = 绿底白图标） -->
+    <block wx:else>
+      <view class="grid">
+        <view wx:for="{{incList}}" wx:key="name" class="gi {{sub === item.name ? 'on' : ''}}" bindtap="pickIncCat" data-n="{{item.name}}">
+          <view class="gic" style="{{sub === item.name ? 'background:var(--green);border-color:var(--green)' : ''}}">
+            <image src="{{sub === item.name ? item.iconOn : item.icon}}" class="gic-img" />
+          </view>
+          <text class="gname">{{item.name}}</text>
+        </view>
+        <view class="gi" bindtap="addSub">
+          <view class="gic dash"><image src="/assets/icons/plus_sub.svg" class="gic-img" style="opacity:.8" /></view>
+          <text class="gname" style="color:var(--green)">自定义</text>
+        </view>
+      </view>
+    </block>
+
     <view class="mng"><text bindtap="manageTags">管理类型 ›</text></view>
-    <view wx:if="{{isEdit}}" class="delbox"><view class="btn danger" hover-class="btn-hover" bindtap="del">删除这笔账</view></view>
+    <view wx:if="{{isEdit}}" class="delbox"><view class="btn danger" hover-class="btn-hover" bindtap="del">删除这笔账（可在回收站恢复）</view></view>
   </scroll-view>
 
   <!-- ③ 附加信息 chip 行 -->
@@ -59,13 +102,17 @@
     </picker>
     <view class="meta {{picked.length > 1 ? 'hl' : ''}} {{allocErr ? 'err' : ''}}" bindtap="openAlloc">⇆ {{allocText}}{{allocErr ? ' · ' + allocErr : ''}}</view>
     <view class="meta" bindtap="openNote">✎ {{note || '备注'}}</view>
+    <view class="meta {{attachments.length ? 'hl' : ''}}" bindtap="openAtt">▣ 附件{{attachments.length ? ' ' + attachments.length : ''}}</view>
+    <view class="meta" bindtap="openRec">⟳ 周期</view>
+    <view class="meta {{debt ? 'debt' : ''}}" bindtap="openDebt">{{debt ? (dir === 'in' ? '应收 ' : '应付 ') + debt.party : (dir === 'in' ? '未结款' : '赊账')}}</view>
+    <view class="meta {{account ? 'hl' : ''}}" bindtap="openAcct">{{account ? acctName : '账户'}}</view>
     <view wx:if="{{logId}}" class="meta hl">已关联记事</view>
     <view class="meta" bindtap="openTpl">★ 常用账</view>
   </scroll-view>
 
   <!-- ④ 键盘 -->
-  <keypad expr="{{kpExpr}}" okText="{{isEdit ? '保存' : '完成'}}" showAgain="{{!isEdit}}" disabled="{{!(total > 0)}}"
-    bind:input="onKey" bind:done="onKeyDone" bind:again="onKeyAgain" />
+  <keypad expr="{{kpExpr}}" okText="{{isEdit ? '保存' : '完成'}}" tone="{{dir === 'in' ? 'in' : ''}}" showAgain="{{!isEdit}}" disabled="{{!(total > 0)}}"
+    bind:input="onKey" bind:done="onKeyDone" bind:again="onKeyAgain" bind:fn="onKeyFn" />
 </view>
 
 <!-- 分摊弹层 -->
@@ -103,8 +150,91 @@
 <view wx:if="{{sheet === 'note'}}" class="mask" bindtap="closeSheet">
   <view class="sheet" catchtap="noop">
     <view class="sheet-title">备注</view>
-    <input class="input" focus value="{{noteDraft}}" bindinput="onNoteDraft" maxlength="60" placeholder="{{cat === 'agri' ? '如：复合肥 20 袋' : cat === 'mach' ? '如：老王家的收割机' : '选填'}}" placeholder-class="ph" confirm-type="done" bindconfirm="saveNote" />
+    <input class="input" focus value="{{noteDraft}}" bindinput="onNoteDraft" maxlength="60" placeholder="{{dir === 'in' ? '如：卖出小麦 12,600 斤' : cat === 'agri' ? '如：复合肥 20 袋' : cat === 'mach' ? '如：老王家的收割机' : '选填'}}" placeholder-class="ph" confirm-type="done" bindconfirm="saveNote" />
     <view class="btn" style="margin-top:32rpx" hover-class="btn-hover" bindtap="saveNote">好了</view>
+  </view>
+</view>
+
+<!-- 附件弹层 -->
+<view wx:if="{{sheet === 'att'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">附件（留个凭证）</view>
+    <view class="thumbs">
+      <view wx:for="{{attachments}}" wx:key="localPath" class="thumb">
+        <image src="{{item.localPath}}" mode="aspectFill" class="thumb-img" />
+        <view class="thumb-del" catchtap="delAtt" data-i="{{index}}">✕</view>
+      </view>
+      <view class="thumb add" bindtap="addAtt">＋</view>
+    </view>
+    <view class="muted" style="font-size:24rpx">拍照或从相册选，最多 9 张。原图先存本机（离线也能看），联网后自动传云端；换手机时能拉回来。</view>
+    <view class="row" style="margin-top:8rpx">
+      <view class="btn ghost" style="flex:1" bindtap="addAtt">拍照 / 选图</view>
+      <view class="btn" style="flex:1;margin-left:20rpx" bindtap="closeSheet">好了</view>
+    </view>
+  </view>
+</view>
+
+<!-- 赊账弹层 -->
+<view wx:if="{{sheet === 'debt'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">{{dir === 'in' ? '挂成应收' : '挂成应付'}}</view>
+    <view class="muted" style="font-size:24rpx">这笔不落现金，记成「{{dir === 'in' ? '别人欠我' : '我欠别人'}}」。结清时去「账本 → 欠款」销账。</view>
+    <view class="card flat" style="margin:0">
+      <view class="kv"><text class="muted">这笔金额</text><text class="num">{{dir === 'in' ? '＋¥' : '−¥'}}{{totalText}}</text></view>
+      <view class="kv"><text class="muted">方向</text><text style="color:var(--debt);font-weight:700">{{dir === 'in' ? '应收（别人欠我）' : '应付（我欠别人）'}}</text></view>
+    </view>
+    <view class="sheet-lb">{{dir === 'in' ? '谁欠' : '欠给谁'}}</view>
+    <view class="chips">
+      <view wx:for="{{partyList}}" wx:key="*this" class="chip small {{party === item ? 'on' : ''}}" bindtap="pickParty" data-n="{{item}}">{{item}}</view>
+    </view>
+    <input class="input" style="margin-top:16rpx" value="{{party}}" bindinput="onParty" placeholder="填名字，如：县城农资店、老王" placeholder-class="ph" />
+    <view class="sheet-lb" style="margin-top:24rpx">约定哪天结</view>
+    <view class="chips">
+      <view wx:for="{{dueTags}}" wx:key="*this" class="chip small {{dueTag === item && !dueDate ? 'on' : ''}}" bindtap="pickDueTag" data-n="{{item}}">{{item}}</view>
+    </view>
+    <picker mode="date" value="{{dueDate}}" bindchange="onDueDate" style="margin-top:16rpx">
+      <view class="picker">{{dueDate || '选具体日期'}}</view>
+    </picker>
+    <view class="btn wheat" bindtap="confirmDebt">确认，记成{{dir === 'in' ? '应收' : '应付'}} ¥{{totalText}}</view>
+    <view wx:if="{{debt}}" class="btn ghost" bindtap="clearDebt">取消挂账</view>
+  </view>
+</view>
+
+<!-- 周期账弹层 -->
+<!-- 资金账户弹层 -->
+<view wx:if="{{sheet === 'acct'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">钱走哪个账户</view>
+    <view class="chips">
+      <view wx:for="{{acctList}}" wx:key="key" class="chip {{account === item.key ? 'on' : ''}}" bindtap="pickAcct" data-k="{{item.key}}">{{item.name}}</view>
+    </view>
+    <view wx:if="{{account}}" class="btn ghost" bindtap="clearAcct">不指定账户</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet === 'rec'}}" class="mask" bindtap="closeSheet">
+  <view class="sheet" catchtap="noop">
+    <view class="sheet-title">存成周期账</view>
+    <view class="muted" style="font-size:24rpx">到日子只生成一条「待记」，你确认后才落账——不会偷偷改你的账。</view>
+    <view class="sheet-lb">多久一次</view>
+    <view class="chips">
+      <view wx:for="{{recFreqs}}" wx:key="k" class="chip {{rec.freq === item.k ? 'on' : ''}}" bindtap="pickFreq" data-k="{{item.k}}">{{item.n}}</view>
+    </view>
+    <view class="sheet-lb" style="margin-top:24rpx">哪天</view>
+    <view class="chips">
+      <block wx:if="{{rec.freq === 'week'}}">
+        <view wx:for="{{weekDays}}" wx:key="d" class="chip {{rec.day === item.d ? 'on' : ''}}" bindtap="pickDay" data-d="{{item.d}}">周{{item.n}}</view>
+      </block>
+      <block wx:else>
+        <view wx:for="{{monthDays}}" wx:key="*this" class="chip {{rec.day === item ? 'on' : ''}}" bindtap="pickDay" data-d="{{item}}">{{item}} 号</view>
+      </block>
+    </view>
+    <view class="card flat" style="margin:0">
+      <view class="kv"><text class="muted">每期</text><text>{{catName}}{{sub ? ' · ' + sub : ''}}</text></view>
+      <view class="kv"><text class="muted">金额</text><text class="num">¥{{totalText}}</text></view>
+      <view class="kv"><text class="muted">起点</text><text>{{dateText}}</text></view>
+    </view>
+    <view class="btn wheat" bindtap="saveRec">存为周期账</view>
   </view>
 </view>
 

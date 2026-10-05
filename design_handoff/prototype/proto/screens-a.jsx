@@ -113,16 +113,6 @@ function MinePage({ ui }) {
   useDB();
   const d = S.db; const y = String(new Date().getFullYear());
   const yc = d.costs.filter(c => c.date.slice(0, 4) === y).reduce((a, c) => a + c.amount, 0);
-  const exportText = () => {
-    const lines = ['【谷雨记 · 数据导出】' + U.today()];
-    S.seasons.all().forEach(s => { const b = GY.brief(s); const cs = GY.costSummary(s.id);
-      lines.push('', '■ ' + b.plot.name + ' ' + b.label + b.crop.name + '（' + (s.status === 'done' ? '已收获' : '在种') + '）');
-      lines.push('积温 ' + b.gdd + '℃·天 · 降雨 ' + b.rain + 'mm');
-      cs.cats.forEach(c => { if (c.total) lines.push('  ' + c.name + '：¥' + U.money(c.total)); });
-      lines.push('  合计：¥' + U.money(cs.total)); });
-    navigator.clipboard && navigator.clipboard.writeText(lines.join('\n')).catch(() => {});
-    ui.toast('已复制，可粘贴到微信');
-  };
   return (
     <div className="page wrap">
       <div className="card row">
@@ -137,7 +127,6 @@ function MinePage({ ui }) {
       </div>
       <div className="card" style={{ padding: '0 16px' }}>
         <div className="mitem" onClick={() => ui.toast('原型中数据存于浏览器本地')}><div className="f1"><div>数据备份</div><div className="muted" style={{ fontSize: 13 }}>本地模式 · 数据存在这部手机里</div></div></div>
-        <div className="mitem" onClick={exportText}><div className="f1">导出为文字（复制到微信）</div><span className="muted">›</span></div>
         <div className="mitem" onClick={() => ui.toast('调起微信分享')}><div className="f1">推荐给种地的朋友</div><span className="muted">›</span></div>
         <div className="mitem" onClick={() => ui.modal({ title: '关于谷雨记', content: '谷雨种谷，雨生百谷。\n记下作物生长的每一场雨、每一天。\n天气数据来自 Open-Meteo 开源天气。' })}><div className="f1">关于谷雨记</div><span className="muted">›</span></div>
       </div>

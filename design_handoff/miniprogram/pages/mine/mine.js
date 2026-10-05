@@ -27,21 +27,6 @@ Page({
     sync.flush().then(() => { this.onShow(); U.toast('已同步'); });
   },
 
-  // 导出：复制为文本，可粘贴到微信发给家人或自己留存
-  exportText() {
-    const lines = ['【谷雨记 · 数据导出】' + U.today()];
-    store.seasons.all().forEach(s => {
-      const b = stats.seasonBrief(s);
-      const cs = stats.costSummary(s.id);
-      lines.push('', '■ ' + b.plotName + ' ' + b.yearLabel + b.crop + '（' + (s.status === 'done' ? '已收获' : '在种') + '）');
-      lines.push('播种 ' + s.sowDate + (s.seedRate ? ' · ' + s.seedRate + '斤/亩' : '') + (s.harvestDate ? ' → 收获 ' + s.harvestDate : ''));
-      lines.push('积温 ' + b.gdd + '℃·天 · 降雨 ' + b.rain + 'mm' + (s.yieldJin ? ' · 产量 ' + s.yieldJin + '斤' : ''));
-      cs.cats.forEach(c => { if (c.total) lines.push('  ' + c.name + '：¥' + c.totalText); });
-      lines.push('  合计：¥' + cs.totalText);
-    });
-    wx.setClipboardData({ data: lines.join('\n'), success: () => U.toast('已复制，可粘贴到微信') });
-  },
-
   about() {
     wx.showModal({
       title: '关于谷雨记',

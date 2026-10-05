@@ -1,12 +1,24 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/ledger/ledger",
+    "pages/report/report",
+    "pages/debt/debt",
+    "pages/stock/stock",
+    "pages/trash/trash",
+    "pages/recurring/recurring",
+    "pages/catchup/catchup",
+    "pages/keypanel/keypanel",
+    "pages/budget/budget",
+    "pages/funds/funds",
+    "pages/balance/balance",
     "pages/plots/plots",
     "pages/mine/mine",
     "pages/plot-edit/plot-edit",
     "pages/season-new/season-new",
     "pages/season/season",
     "pages/cost-edit/cost-edit",
+    "pages/cost-detail/cost-detail",
     "pages/log-edit/log-edit",
     "pages/harvest/harvest",
     "pages/tags/tags",
@@ -30,6 +42,10 @@
       {
         "pagePath": "pages/index/index",
         "text": "今天"
+      },
+      {
+        "pagePath": "pages/ledger/ledger",
+        "text": "账本"
       },
       {
         "pagePath": "pages/plots/plots",

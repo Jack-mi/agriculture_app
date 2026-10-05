@@ -1,0 +1,54 @@
+<view class="wrap">
+  <view class="card flat">
+    <view class="muted">这些设置只存在这台手机上，不进云端备份，换手机回默认。改完回记一笔立刻生效。</view>
+  </view>
+
+  <view class="sec-title">预设</view>
+  <view class="card" style="padding:0 32rpx">
+    <view wx:for="{{presets}}" wx:key="k" class="prow" bindtap="pickPreset" data-k="{{item.k}}" hover-class="btn-hover">
+      <view class="ck {{p.preset === item.k ? 'on' : ''}}">{{p.preset === item.k ? '✓' : ''}}</view>
+      <view class="flex1" style="min-width:0">
+        <view class="pt">{{item.n}}</view>
+        <view class="muted" style="font-size:25rpx">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="sec-title">键盘左下角那颗键</view>
+  <view class="chips">
+    <view wx:for="{{fnKeys}}" wx:key="k" class="chip {{p.fnKey === item.k ? 'on' : ''}}" bindtap="pickFn" data-k="{{item.k}}">{{item.n}}</view>
+  </view>
+  <view class="muted" style="font-size:24rpx;margin:8rpx">数字和小数点位置固定不变，只换这颗功能键——不让人把键盘改成不认识的形状。</view>
+
+  <view class="sec-title">键盘上方的「最近用过」</view>
+  <view class="card flat">
+    <view class="row between">
+      <view class="flex1"><view class="pt">显示几个</view><view class="muted" style="font-size:25rpx">0 = 不显示；用得多的分类自动排前面</view></view>
+    </view>
+    <view class="chips" style="margin-top:16rpx">
+      <view wx:for="{{counts}}" wx:key="*this" class="chip {{p.recentCount === item ? 'on' : ''}}" bindtap="pickCount" data-n="{{item}}">{{item === 0 ? '不显示' : item + ' 个'}}</view>
+    </view>
+    <view class="row between" style="margin-top:24rpx">
+      <view class="flex1"><view class="pt">带细分</view><view class="muted" style="font-size:25rpx">开 = 「化肥 · 复合肥」；关 = 只显示大类</view></view>
+      <view class="chip {{p.recentSub ? 'on' : ''}}" bindtap="toggleSub">{{p.recentSub ? '开' : '关'}}</view>
+    </view>
+  </view>
+
+  <view class="sec-title">金额显示</view>
+  <view class="card flat">
+    <view class="row between">
+      <view class="flex1"><view class="pt">千分位分隔</view><view class="muted" style="font-size:25rpx">开 = 15,120；关 = 15120</view></view>
+      <view class="chip {{p.thousands ? 'on' : ''}}" bindtap="toggle" data-k="thousands">{{p.thousands ? '开' : '关'}}</view>
+    </view>
+    <view class="row between" style="margin-top:24rpx">
+      <view class="flex1"><view class="pt">按键震动</view><view class="muted" style="font-size:25rpx">按一下轻微震一下，户外戴手套也能确认按上了</view></view>
+      <view class="chip {{p.vibrate ? 'on' : ''}}" bindtap="toggle" data-k="vibrate">{{p.vibrate ? '开' : '关'}}</view>
+    </view>
+    <view class="row between" style="margin-top:24rpx">
+      <view class="flex1"><view class="pt">⌫ 长按清空</view><view class="muted" style="font-size:25rpx">长按退格 = 一次清掉整串数字</view></view>
+      <view class="chip {{p.longClear ? 'on' : ''}}" bindtap="toggle" data-k="longClear">{{p.longClear ? '开' : '关'}}</view>
+    </view>
+  </view>
+
+  <view class="btn ghost" bindtap="reset">恢复默认</view>
+</view>

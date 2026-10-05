@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- A2 四季田：四格=四季，春芽/夏长/秋收/冬藏 -->
+  <rect width="1024" height="1024" rx="220" fill="#1F4024"/>
+  <!-- 四格底色 -->
+  <rect x="234" y="234" width="256" height="256" rx="26" fill="#8FB573"/>
+  <rect x="534" y="234" width="256" height="256" rx="26" fill="#2E5B34"/>
+  <rect x="234" y="534" width="256" height="256" rx="26" fill="#C98B1E"/>
+  <rect x="534" y="534" width="256" height="256" rx="26" fill="#ECE7DA"/>
+  <!-- 田字格线 -->
+  <g stroke="#FFFDF7" stroke-width="30" fill="none">
+    <rect x="212" y="212" width="600" height="600" rx="40"/>
+    <line x1="512" y1="212" x2="512" y2="812"/>
+    <line x1="212" y1="512" x2="812" y2="512"/>
+  </g>
+  <!-- 春：两叶嫩芽 -->
+  <g fill="#1F4024">
+    <rect x="354" y="372" width="16" height="72" rx="8"/>
+    <path d="M362 392 C 316 384 300 350 302 320 C 340 324 360 352 362 392 Z"/>
+    <path d="M362 392 C 408 384 424 350 422 320 C 384 324 364 352 362 392 Z"/>
+  </g>
+  <!-- 夏：太阳 -->
+  <circle cx="662" cy="362" r="46" fill="#F3EBA8"/>
+  <g stroke="#F3EBA8" stroke-width="14" stroke-linecap="round">
+    <line x1="662" y1="292" x2="662" y2="270"/>
+    <line x1="662" y1="432" x2="662" y2="454"/>
+    <line x1="592" y1="362" x2="570" y2="362"/>
+    <line x1="732" y1="362" x2="754" y2="362"/>
+  </g>
+  <!-- 秋：麦穗（三对籽粒） -->
+  <line x1="362" y1="736" x2="362" y2="600" stroke="#1F4024" stroke-width="14" stroke-linecap="round"/>
+  <g fill="#1F4024">
+    <ellipse cx="338" cy="622" rx="14" ry="30" transform="rotate(36 338 622)"/>
+    <ellipse cx="386" cy="622" rx="14" ry="30" transform="rotate(-36 386 622)"/>
+    <ellipse cx="334" cy="672" rx="14" ry="32" transform="rotate(42 334 672)"/>
+    <ellipse cx="390" cy="672" rx="14" ry="32" transform="rotate(-42 390 672)"/>
+    <ellipse cx="362" cy="586" rx="13" ry="28"/>
+  </g>
+  <!-- 冬：雪花 -->
+  <g stroke="#8A5A0B" stroke-width="14" stroke-linecap="round">
+    <line x1="662" y1="612" x2="662" y2="712"/>
+    <line x1="619" y1="637" x2="705" y2="687"/>
+    <line x1="705" y1="637" x2="619" y2="687"/>
+  </g>
+</svg>

@@ -1,0 +1,4 @@
+.flow { display: flex; align-items: center; padding: 24rpx 0; border-bottom: 2rpx solid var(--line); }
+.flow:last-child { border-bottom: none; }
+.fic { width: 64rpx; height: 64rpx; border-radius: 18rpx; background: #ECE7DA; color: var(--sub); font-weight: 800; font-size: 26rpx; display: flex; align-items: center; justify-content: center; margin-right: 20rpx; flex-shrink: 0; }
+.f-t { font-size: 30rpx; font-weight: 600; }

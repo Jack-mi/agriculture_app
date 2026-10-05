@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- A5 笔墨田：手写田字 + 朱砂小印 -->
+  <rect width="1024" height="1024" rx="220" fill="#FFFDF7"/>
+  <g stroke="#1F4024" stroke-linecap="round" fill="none">
+    <!-- 外框：四笔，带手写抖动和粗细 -->
+    <path d="M268 296 Q 262 292 258 302 L 246 730 Q 246 744 260 744" stroke-width="52"/>
+    <path d="M268 274 L 740 258 Q 756 258 754 274" stroke-width="46"/>
+    <path d="M752 282 L 770 716 Q 770 732 754 732" stroke-width="52"/>
+    <path d="M278 752 L 742 740 Q 758 740 756 724" stroke-width="46"/>
+    <!-- 中横 -->
+    <path d="M252 506 Q 512 486 764 500" stroke-width="40"/>
+    <!-- 中竖：略斜，出锋 -->
+    <path d="M520 268 Q 506 500 492 748" stroke-width="40"/>
+  </g>
+  <!-- 飞白点 -->
+  <circle cx="300" cy="330" r="10" fill="#1F4024" opacity="0.35"/>
+  <circle cx="730" cy="700" r="8" fill="#1F4024" opacity="0.3"/>
+  <!-- 朱砂小印：记 -->
+  <g transform="rotate(6 792 792)">
+    <rect x="732" y="732" width="120" height="120" rx="18" fill="#B3372B"/>
+    <text x="792" y="818" text-anchor="middle" font-family="Songti SC, STSong, serif" font-weight="700" font-size="76" fill="#FFFDF7">记</text>
+  </g>
+</svg>

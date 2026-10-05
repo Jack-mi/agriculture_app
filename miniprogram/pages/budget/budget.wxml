@@ -1,0 +1,59 @@
+<view class="wrap">
+
+  <view class="card">
+    <view class="sec-title">选一个种植季</view>
+    <picker mode="selector" range="{{seasonNames}}" value="{{seasonIdx}}" bindchange="pickSeason">
+      <view class="picker">{{seasonName}}</view>
+    </picker>
+  </view>
+
+  <block wx:if="{{prog}}">
+    <view class="card">
+      <view class="sec-title">本季预算</view>
+      <view class="field">
+        <view class="label">总预算（元）</view>
+        <input class="input" type="digit" value="{{b.totalText}}" data-k="total" bindinput="onIn" placeholder="如 12000" />
+      </view>
+      <view class="field">
+        <view class="label">每亩目标成本（元/亩 · 选填）</view>
+        <input class="input" type="digit" value="{{b.perMuText}}" data-k="perMu" bindinput="onIn" placeholder="如 800" />
+      </view>
+      <view class="muted">只填每亩目标时，按本季地块 {{prog.area}} 亩自动折算成总预算；两个都空 = 不设预算。</view>
+    </view>
+
+    <view class="card" wx:if="{{prog.hasBudget}}">
+      <view class="row between">
+        <text class="sec-title" style="margin:0">进度</text>
+        <text class="tag {{prog.over ? 'warn' : ''}}">{{prog.over ? '已超支' : prog.pct + '%'}}</text>
+      </view>
+      <view class="pbar"><view class="pfill {{prog.over ? 'over' : ''}}" style="width:{{prog.barW}}%"></view></view>
+      <view class="row between pmt">
+        <text class="muted">已花 ¥{{prog.spentText}}</text>
+        <text class="muted">预算 ¥{{prog.totalText2}}</text>
+      </view>
+      <view class="row between pmt">
+        <text style="font-weight:700;color:{{prog.over ? 'var(--heat)' : 'var(--green)'}}">{{prog.over ? '超出' : '还剩'}} ¥{{prog.remainText}}</text>
+        <text class="muted">每亩 ¥{{prog.perMuText}}</text>
+      </view>
+      <view wx:if="{{prog.perMuOver}}" class="warnbar">每亩已超目标：目标 ¥{{prog.perMuTarget}}，实际 ¥{{prog.perMuText}}</view>
+    </view>
+
+    <view class="card">
+      <view class="sec-title">分类预算（选填）</view>
+      <view class="brow" wx:for="{{cats}}" wx:key="key">
+        <view class="bhead">
+          <text class="bname"><text class="cdot" style="background:{{item.color}}"></text>{{item.name}}</text>
+          <text class="muted">已花 ¥{{item.usedText}}{{item.target ? ' / ' + item.targetText : ''}}</text>
+        </view>
+        <view class="pbar slim" wx:if="{{item.target}}">
+          <view class="pfill {{item.over ? 'over' : ''}}" style="width:{{item.barW}}%"></view>
+        </view>
+        <input class="input slim" type="digit" value="{{item.target ? item.targetText : ''}}" data-k="{{item.key}}" bindinput="onCat" placeholder="不设就留空" />
+      </view>
+    </view>
+
+    <view class="btn" bindtap="save">保存预算</view>
+    <view class="btn ghost" style="margin-top:20rpx" bindtap="goSeason">看这季账本</view>
+  </block>
+
+</view>

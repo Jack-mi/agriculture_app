@@ -8,7 +8,8 @@ const U = require('../../utils/util.js');
 const C = require('../../utils/const.js');
 
 Page({
-  data: { todayText: '', week: '', hasPlots: false, growing: 0, online: true, wxLine: '', month: '0', v: null, showLater: false, recent: [], tpls: [], loading: false },
+  data: { todayText: '', week: '', hasPlots: false, growing: 0, online: true, wxLine: '', month: '0', v: null, showLater: false, recent: [], tpls: [], loading: false,
+    money: {}, debt: {}, stock: {}, dueCount: 0 },
 
   onShow() {
     this.render();
@@ -40,15 +41,55 @@ Page({
     // 最近记的（日志 + 账目混排，最多 3 条）
     const d = store.db();
     const plotOf = sid => { const s = store.seasons.get(sid); return s ? (store.plots.get(s.plotId) || {}).name : ''; };
-    const recent = d.logs.map(l => ({ id: l.id, kind: 'log', date: l.date, at: l.createdAt, title: (l.ops || []).join(' · ') || '记事', sub: plotOf(l.seasonId) + (l.text ? ' · ' + l.text.slice(0, 14) : ''), amt: '' }))
-      .concat(d.costs.map(c => ({ id: c.id, kind: 'cost', date: c.date, at: c.createdAt, title: C.catOf(c.cat).name + ' · ' + (c.sub || ''), sub: store.costs.allocOf(c).map(a => plotOf(a.seasonId)).join('、'), amt: '¥' + U.money(c.amount) })))
+    const recent = d.logs.filter(l => !l.deletedAt).map(l => ({ id: l.id, kind: 'log', date: l.date, at: l.createdAt, title: (l.ops || []).join(' · ') || '记事', sub: plotOf(l.seasonId) + (l.text ? ' · ' + l.text.slice(0, 14) : ''), amt: '', inc: false }))
+      .concat(d.costs.filter(c => !c.deletedAt).map(c => ({
+        id: c.id, kind: 'cost', date: c.date, at: c.createdAt,
+        title: C.catOf(c.cat).name + ' · ' + (c.sub || ''),
+        sub: store.costs.allocOf(c).map(a => plotOf(a.seasonId)).join('、'),
+        amt: (store.isIncome(c) ? '＋' : '−') + '¥' + U.money(store.allocTotal(c)),
+        inc: store.isIncome(c)
+      })))
       .sort((a, b) => (a.date === b.date ? b.at - a.at : (b.date > a.date ? 1 : -1))).slice(0, 3)
       .map(x => Object.assign(x, { dateText: (+x.date.slice(5, 7)) + '/' + (+x.date.slice(8)) }));
     const tpls = store.tags.templates().slice(0, 6).map(x => ({ id: x.id, name: x.name, icon: C.iconOf(x.sub, x.cat), color: C.catOf(x.cat).color, desc: stats.tplDesc(x) }));
+    // 本月收支与净收
+    const ms = stats.monthSpend(t.slice(0, 7));
+    const money = {
+      income: ms.incomeText, expense: ms.totalText, net: ms.netText, netPos: ms.net >= 0,
+      hasIncome: ms.income > 0, hasAny: ms.income > 0 || ms.total > 0
+    };
+    // 待收待付
+    const ds = stats.debtSummary();
+    const debt = {
+      has: ds.hasAny,
+      recv: ds.receivable.totalText, recvCount: ds.receivable.count, recvOverdue: ds.receivable.overdueCount,
+      pay: ds.payable.totalText, payCount: ds.payable.count,
+      overdue: ds.receivable.overdueCount + ds.payable.overdueCount
+    };
+    // 库存预警（只提醒最低的一项）
+    const ss = stats.stockSummary();
+    const lowItem = ss.items.filter(x => x.low)[0];
+    const stock = lowItem ? { warn: true, text: lowItem.name + '只剩 ' + lowItem.onHandText + lowItem.unit + '，低于预警' } : { warn: false, count: ss.count };
+    const dueCount = stats.recurringDue(t).length;
+    // 预算提醒（在种季里已超支 / 快超支的，只提醒最紧张的一季）
+    const bAlerts = stats.budgetAlerts();
+    const budget = bAlerts.length ? {
+      n: bAlerts.length, plotName: bAlerts[0].plotName, pct: bAlerts[0].pct,
+      over: bAlerts[0].over, remainText: bAlerts[0].remainText
+    } : null;
+    // 在种季卡：总投入 / 已收 / 净收益（一眼看到这一季怎么样）
+    const briefs = growing.map(s => {
+      const b = stats.seasonBrief(s);
+      return {
+        id: s.id, plotName: b.plotName, crop: b.crop, dayN: b.dayN, area: b.area,
+        cost: b.costText, income: b.incomeText, net: b.netText, netPos: b.net >= 0, hasIncome: b.hasIncome,
+        perMu: b.perMuText, cls: b.cropCls, icon: b.cropIcon
+      };
+    });
     this.setData({
       todayText: U.cnDate(t), week: U.weekday(t), hasPlots: store.plots.all().length > 0, growing: growing.length,
-      online: getApp().globalData.online, wxLine, month: U.money(stats.monthSpend(t.slice(0, 7)).total),
-      v, recent, tpls,
+      online: getApp().globalData.online, wxLine, month: ms.totalText,
+      v, recent, tpls, money, debt, stock, dueCount, briefs, budget,
       nextText: v.nextTask ? v.nextTask.plot + ' ' + v.nextTask.title : '',
       nextDue: v.nextTask ? v.nextTask.due : ''
     });
@@ -61,7 +102,7 @@ Page({
   goSeason(e) { wx.navigateTo({ url: '/pages/season/season?id=' + e.currentTarget.dataset.id + '&tab=advisor' }); },
   goRecent(e) {
     const { id, kind } = e.currentTarget.dataset;
-    wx.navigateTo({ url: kind === 'log' ? '/pages/log-edit/log-edit?id=' + id : '/pages/cost-edit/cost-edit?id=' + id });
+    wx.navigateTo({ url: kind === 'log' ? '/pages/log-edit/log-edit?id=' + id : '/pages/cost-detail/cost-detail?id=' + id });
   },
   pickSeason(cb) {
     const g = store.seasons.growing();
@@ -78,6 +119,12 @@ Page({
     wx.navigateTo({ url: '/pages/cost-edit/cost-edit?seasonId=' + g[0].id + '&tpl=' + e.currentTarget.dataset.id });
   },
   goTpl() { wx.navigateTo({ url: '/pages/tags/tags?tab=tpl' }); },
+  goLedger() { wx.switchTab({ url: '/pages/ledger/ledger' }); },
+  goDebt() { wx.navigateTo({ url: '/pages/debt/debt' }); },
+  goStock() { wx.navigateTo({ url: '/pages/stock/stock' }); },
+  goReport() { wx.navigateTo({ url: '/pages/report/report' }); },
+  goBudget() { wx.navigateTo({ url: '/pages/budget/budget' }); },
+  goDue() { wx.navigateTo({ url: '/pages/recurring/recurring?due=1' }); },
   addPlot() { wx.navigateTo({ url: '/pages/plot-edit/plot-edit' }); },
   newSeason() { wx.navigateTo({ url: '/pages/season-new/season-new' }); }
 });

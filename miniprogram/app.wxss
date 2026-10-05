@@ -13,6 +13,10 @@ page {
   --rain: #2F6F9F;
   --heat: #C4532B;
   --danger: #B3372B;
+  /* 收支与欠款的语义色：只做别名，复用上面既有色值，不引入新色相 */
+  --in: #2E5B34; --in-bg: #E4ECDD;      /* 收入 = 主绿 */
+  --out: #C4532B; --out-bg: #F8E1D6;    /* 支出 = 积温橙红（同 .tag.warn 底色） */
+  --debt: #6B5B95; --debt-bg: #EDE9F4;  /* 欠款 = 固定资产紫 */
   background: var(--paper);
   color: var(--ink);
   font-size: 34rpx;
@@ -100,3 +104,31 @@ page {
 .mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(20, 24, 18, .5); z-index: 50; display: flex; align-items: flex-end; }
 .sheet { width: 100%; background: var(--card); border-radius: 28rpx 28rpx 0 0; padding: 40rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .sheet-title { font-size: 38rpx; font-weight: 700; margin-bottom: 32rpx; }
+
+/* ---------- 账目流水行（账本 / 欠款 / 报表 / 库存 / 周期账 / 回收站共用） ---------- */
+.flow { display: flex; align-items: center; padding: 24rpx 0; border-bottom: 2rpx solid var(--line); }
+.flow:last-child { border-bottom: none; }
+.fic { width: 72rpx; height: 72rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; font-size: 30rpx; font-weight: 800; flex-shrink: 0; }
+.fic.in { background: var(--green-l); color: var(--green-d); }
+.fic.out { background: #F8E1D6; color: var(--heat); }
+.fic.debt { background: var(--debt-bg); color: var(--debt); }
+.f-t { font-size: 32rpx; font-weight: 700; }
+.f-s { font-size: 25rpx; color: var(--sub); margin-top: 4rpx; }
+.f-a { font-size: 34rpx; font-weight: 800; margin-left: 16rpx; white-space: nowrap; }
+.f-a.in { color: var(--green); }
+.f-a.out { color: var(--heat); }
+
+/* ---------- 分段控件（口径切换 / 列表·月历·周历） ---------- */
+.tabs { display: flex; background: var(--card); border: 2rpx solid var(--line); border-radius: 18rpx; padding: 6rpx; margin-bottom: 20rpx; }
+.tab { flex: 1; text-align: center; height: 72rpx; line-height: 72rpx; font-size: 30rpx; border-radius: 14rpx; color: var(--sub); }
+.tab.on { background: var(--green); color: #fff; font-weight: 700; }
+
+/* ---------- 弹层键值行 / 小标题 / 文字链接 ---------- */
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 18rpx 0; border-bottom: 2rpx solid var(--line); font-size: 32rpx; }
+.kv:last-of-type { border-bottom: none; }
+.sheet-row { margin-bottom: 24rpx; }
+.sheet-lb { font-size: 28rpx; color: var(--sub); font-weight: 600; margin-bottom: 12rpx; }
+.link { color: var(--green); font-weight: 700; }
+
+/* ---------- 收支占比条 ---------- */
+.stack { display: flex; height: 20rpx; border-radius: 10rpx; overflow: hidden; background: var(--line); }

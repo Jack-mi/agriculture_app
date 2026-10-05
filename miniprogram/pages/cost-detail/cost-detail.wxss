@@ -1,0 +1,11 @@
+.fic { width: 88rpx; height: 88rpx; border-radius: 24rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fic.in { background: var(--green-l); } .fic.out { background: #F8E1D6; }
+.fic-img { width: 48rpx; height: 48rpx; }
+.hd-t { font-size: 36rpx; font-weight: 800; }
+.hd-a { font-size: 42rpx; font-weight: 800; white-space: nowrap; }
+.kv.sub { padding-left: 24rpx; }
+.thumbs { display: flex; flex-wrap: wrap; margin: 0 -8rpx; }
+.thumb { width: 150rpx; height: 150rpx; margin: 8rpx; border-radius: 16rpx; background: #EDE7D8; position: relative; overflow: hidden; }
+.thumb-img { width: 100%; height: 100%; }
+.thumb-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--sub); }
+.thumb-badge { position: absolute; left: 6rpx; bottom: 6rpx; background: rgba(20,24,18,.6); color: #fff; font-size: 20rpx; border-radius: 8rpx; padding: 2rpx 8rpx; }

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- 方案C 稻草人：田的守护人，帮你看田也帮你守账 -->
+  <rect width="1024" height="1024" rx="220" fill="#F6E7C6"/>
+  <!-- 远处小太阳 -->
+  <circle cx="780" cy="240" r="64" fill="#C4532B"/>
+  <!-- 田垄线 -->
+  <g stroke="#D9B96A" stroke-width="10" fill="none" opacity="0.7">
+    <path d="M120 880 Q 512 800 904 880"/>
+    <path d="M160 940 Q 512 862 864 940"/>
+  </g>
+  <!-- 横杆手臂 -->
+  <rect x="296" y="470" width="432" height="30" rx="15" fill="#8A5A0B"/>
+  <!-- 袖口稻草 -->
+  <g stroke="#C98B1E" stroke-width="14" stroke-linecap="round">
+    <line x1="300" y1="486" x2="252" y2="446"/>
+    <line x1="300" y1="490" x2="244" y2="492"/>
+    <line x1="300" y1="494" x2="256" y2="536"/>
+    <line x1="724" y1="486" x2="772" y2="446"/>
+    <line x1="724" y1="490" x2="780" y2="492"/>
+    <line x1="724" y1="494" x2="768" y2="536"/>
+  </g>
+  <!-- 立杆 -->
+  <rect x="496" y="470" width="32" height="360" fill="#8A5A0B"/>
+  <!-- 红围巾 -->
+  <path d="M440 486 q72 44 144 0 l-14 58 q-58 34 -116 0 Z" fill="#B3372B"/>
+  <!-- 脸 -->
+  <circle cx="512" cy="372" r="112" fill="#FFF3D6"/>
+  <!-- 缝线眼（X） -->
+  <g stroke="#8A5A0B" stroke-width="12" stroke-linecap="round">
+    <line x1="448" y1="340" x2="486" y2="378"/>
+    <line x1="486" y1="340" x2="448" y2="378"/>
+    <line x1="538" y1="340" x2="576" y2="378"/>
+    <line x1="576" y1="340" x2="538" y2="378"/>
+  </g>
+  <!-- 缝线笑 -->
+  <path d="M462 414 Q 512 452 562 414" stroke="#8A5A0B" stroke-width="11" stroke-linecap="round" fill="none" stroke-dasharray="16 12"/>
+  <!-- 斗笠 -->
+  <g transform="rotate(4 512 280)">
+    <ellipse cx="512" cy="296" rx="196" ry="42" fill="#1F4024"/>
+    <path d="M512 148 L330 300 Q512 348 694 300 Z" fill="#2E5B34"/>
+    <path d="M398 264 Q512 300 626 264 L646 296 Q512 340 378 296 Z" fill="#C98B1E"/>
+  </g>
+</svg>

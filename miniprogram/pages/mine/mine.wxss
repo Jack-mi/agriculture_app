@@ -1,12 +1,15 @@
-.me { display: flex; align-items: center; }
-.avatar { width: 112rpx; height: 112rpx; border-radius: 50%; overflow: hidden; background: var(--green); color: #fff; font-size: 52rpx; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-.counts { display: flex; padding: 28rpx 0; }
-.counts .c { flex: 1; text-align: center; }
-.counts .c + .c { border-left: 2rpx solid var(--line); }
-.n { font-size: 48rpx; font-weight: 800; }
-.list { padding: 0 32rpx; }
-.item { display: flex; align-items: center; min-height: 112rpx; border-bottom: 2rpx solid var(--line); padding: 16rpx 0; }
+.avatar { width: 96rpx; height: 96rpx; border-radius: 28rpx; background: var(--green-l); color: var(--green-d); font-size: 44rpx; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cards { display: flex; margin: 0 -8rpx 24rpx; }
+.cc { flex: 1; margin: 0 8rpx; background: var(--card); border: 2rpx solid var(--line); border-radius: 20rpx; padding: 24rpx 16rpx; text-align: center; }
+.cci { font-size: 34rpx; font-weight: 800; color: var(--green); }
+.ccn { font-size: 30rpx; font-weight: 700; margin-top: 8rpx; }
+.ccs { font-size: 22rpx; color: var(--sub); margin-top: 6rpx; line-height: 1.35; }
+.ccs.debt { color: #6B5B95; font-weight: 700; }
+.ccs.warn { color: var(--heat); font-weight: 700; }
+.stack { display: flex; height: 20rpx; border-radius: 10rpx; overflow: hidden; background: var(--line); }
+.list { padding: 4rpx 32rpx; }
+.item { display: flex; align-items: center; padding: 28rpx 0; border-bottom: 2rpx solid var(--line); }
 .item:last-child { border-bottom: none; }
-.it { font-size: 34rpx; }
-.share { background: transparent; margin: 0; padding: 16rpx 0; line-height: 1.5; border-radius: 0; font-size: 34rpx; color: var(--ink); width: 100%; }
-.share::after { border: none; }
+.item.share { background: transparent; border-radius: 0; line-height: 1.5; padding: 28rpx 0; font-size: 34rpx; color: var(--ink); text-align: left; }
+.item.share::after { border: none; }
+.it { font-size: 34rpx; font-weight: 600; }

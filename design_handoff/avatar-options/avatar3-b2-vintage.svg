@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- B2 复古：米白纸底 + 老木框算盘 + 一粒朱砂谷 -->
+  <rect width="1024" height="1024" rx="220" fill="#FFFDF7"/>
+  <rect x="56" y="56" width="912" height="912" rx="180" fill="none" stroke="#ECE7DA" stroke-width="10"/>
+  <!-- 木框（带四角包边感） -->
+  <rect x="216" y="266" width="592" height="492" rx="36" fill="#8A5A0B"/>
+  <rect x="252" y="302" width="520" height="420" rx="18" fill="#FFFDF7"/>
+  <!-- 梁 -->
+  <rect x="252" y="420" width="520" height="30" fill="#8A5A0B"/>
+  <!-- 档杆 -->
+  <g stroke="#8A5A0B" stroke-width="10" opacity="0.7">
+    <line x1="370" y1="312" x2="370" y2="712"/>
+    <line x1="512" y1="312" x2="512" y2="712"/>
+    <line x1="654" y1="312" x2="654" y2="712"/>
+  </g>
+  <defs>
+    <path id="g2" d="M0 -46 Q 28 -18 28 4 Q 28 28 0 46 Q -28 28 -28 4 Q -28 -18 0 -46 Z"/>
+  </defs>
+  <g fill="#C98B1E">
+    <!-- 上珠区 -->
+    <use href="#g2" x="370" y="396"/>
+    <use href="#g2" x="512" y="336"/>
+    <use href="#g2" x="654" y="396"/>
+    <!-- 下珠区 -->
+    <use href="#g2" x="370" y="496"/>
+    <use href="#g2" x="370" y="590"/>
+    <use href="#g2" x="512" y="496"/>
+    <use href="#g2" x="512" y="684"/>
+    <use href="#g2" x="654" y="590"/>
+    <use href="#g2" x="654" y="684"/>
+  </g>
+  <!-- 点睛：一粒朱砂谷 -->
+  <use href="#g2" x="512" y="590" fill="#B3372B"/>
+  <!-- 框底小落款 -->
+  <text x="512" y="852" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="56" fill="#8A5A0B" letter-spacing="14">粒粒皆账</text>
+</svg>

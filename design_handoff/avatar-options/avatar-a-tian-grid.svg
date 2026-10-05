@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- 方案A 田字格：深绿底 + 田字地块格 + 一格金色熟田 -->
+  <rect x="0" y="0" width="1024" height="1024" rx="220" fill="#1F4024"/>
+  <rect x="212" y="212" width="600" height="600" rx="72" fill="none" stroke="#FFFDF7" stroke-width="44"/>
+  <line x1="512" y1="212" x2="512" y2="812" stroke="#FFFDF7" stroke-width="44"/>
+  <line x1="212" y1="512" x2="812" y2="512" stroke="#FFFDF7" stroke-width="44"/>
+  <rect x="556" y="556" width="212" height="212" rx="24" fill="#C98B1E"/>
+  <!-- 金色格里的麦穗芽 -->
+  <path d="M662 736 v-96 m0 24 c-26 -6 -40 -26 -42 -52 m42 30 c26 -6 40 -26 42 -52" stroke="#1F4024" stroke-width="22" stroke-linecap="round" fill="none"/>
+</svg>

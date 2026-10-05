@@ -1,0 +1,12 @@
+.pbar { height: 22rpx; border-radius: 12rpx; background: #E9E3D3; overflow: hidden; margin: 20rpx 0 12rpx; }
+.pbar.slim { height: 14rpx; margin: 12rpx 0; }
+.pfill { height: 100%; background: var(--green); border-radius: 12rpx; }
+.pfill.over { background: var(--heat); }
+.pmt { margin-top: 8rpx; }
+.warnbar { margin-top: 20rpx; padding: 16rpx 20rpx; border-radius: 14rpx; background: #F8E1D6; color: var(--heat); font-size: 28rpx; }
+.brow { padding: 20rpx 0; border-top: 2rpx solid var(--line); }
+.brow:first-child { border-top: none; }
+.bhead { display: flex; justify-content: space-between; align-items: center; }
+.bname { font-size: 32rpx; font-weight: 600; }
+.cdot { display: inline-block; width: 16rpx; height: 16rpx; border-radius: 50%; margin-right: 10rpx; }
+.input.slim { min-height: 80rpx; font-size: 32rpx; }

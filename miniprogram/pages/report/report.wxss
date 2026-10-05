@@ -1,0 +1,23 @@
+.k3 { display: flex; margin: 0 -8rpx 24rpx; }
+.k3c { flex: 1; margin: 0 8rpx; background: var(--card); border: 2rpx solid var(--line); border-radius: 20rpx; padding: 20rpx 12rpx; text-align: center; }
+.k3c .v { font-size: 36rpx; font-weight: 800; margin-top: 6rpx; }
+.fp { width: 72rpx; height: 72rpx; border-radius: 20rpx; background: var(--green-l); color: var(--green-d); font-weight: 800; font-size: 30rpx; display: flex; align-items: center; justify-content: center; margin-right: 20rpx; flex-shrink: 0; }
+.flow { display: flex; align-items: center; padding: 24rpx 0; border-bottom: 2rpx solid var(--line); }
+.flow:last-child { border-bottom: none; }
+.f-t { font-size: 32rpx; font-weight: 700; }
+.f-a { font-size: 34rpx; font-weight: 800; }
+.f-a.in { color: var(--green); } .f-a.out { color: var(--heat); }
+.lg2 { margin-top: 20rpx; }
+.lg2i { font-size: 25rpx; color: var(--sub); margin-bottom: 8rpx; }
+.dot { display: inline-block; width: 14rpx; height: 14rpx; border-radius: 50%; margin-right: 8rpx; vertical-align: 2rpx; }
+.bars { display: flex; align-items: flex-end; padding-top: 8rpx; }
+.bcol { flex: 1; text-align: center; }
+.bwrap { display: flex; justify-content: center; align-items: flex-end; height: 220rpx; }
+.bup { width: 26rpx; background: var(--green); border-radius: 6rpx 6rpx 0 0; margin-right: 6rpx; }
+.bdn { width: 26rpx; background: #E5A891; border-radius: 6rpx 6rpx 0 0; }
+.blb { font-size: 23rpx; color: var(--sub); margin-top: 10rpx; }
+.legend { display: flex; margin-top: 16rpx; font-size: 24rpx; color: var(--sub); }
+.legend text { margin-right: 24rpx; }
+.pbar { height: 22rpx; border-radius: 12rpx; background: #E9E3D3; overflow: hidden; margin: 20rpx 0 12rpx; }
+.pfill { height: 100%; background: var(--green); border-radius: 12rpx; }
+.pfill.over { background: var(--heat); }

@@ -31,7 +31,6 @@ pages/season                     季详情：账本 / 记事 / 天气(逐日+累
 pages/cost-edit                  记账：5 类 + 细分；雇工 = 人数×日工价
 pages/log-edit                   记事：多选农事 + 施肥品类/用量 + 墒情；"保存并记花费"一键关联
 pages/harvest                    收获：产量、亩产、全周期积温/降雨/成本、每斤成本
-pages/mine                       统计、导出为文字、分享
 ```
 
 ## 口径

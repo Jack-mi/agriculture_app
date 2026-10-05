@@ -1,0 +1,25 @@
+<view class="wrap">
+  <view class="card flat">
+    <view class="muted">删除的账目和记事先放这儿，<text style="font-weight:700;color:var(--ink)">30 天内</text>都能恢复；到期自动彻底删除。</view>
+    <view class="muted" style="margin-top:8rpx;font-size:24rpx">所以现在删东西不再弹「确定吗」，删错了来这儿捞就行。</view>
+  </view>
+
+  <view class="card" style="padding:0 28rpx">
+    <view wx:if="{{!rows.length}}" class="empty">
+      <view style="font-size:36rpx;font-weight:700;color:var(--ink);margin-bottom:12rpx">回收站是空的</view>
+      <view class="muted">删过的账目和记事会出现在这里</view>
+    </view>
+    <view wx:for="{{rows}}" wx:key="id" class="flow">
+      <view class="fic">{{item.kind === '账目' ? '账' : '记'}}</view>
+      <view class="flex1" style="min-width:0">
+        <view class="f-t">{{item.title}}</view>
+        <view class="muted" style="font-size:25rpx">{{item.dateText}} · 删除后还剩 {{item.daysLeft}} 天</view>
+      </view>
+      <view class="chip on" catchtap="restore" data-col="{{item.col}}" data-id="{{item.id}}">恢复</view>
+      <view class="chip" catchtap="purge" data-col="{{item.col}}" data-id="{{item.id}}">彻底删</view>
+    </view>
+  </view>
+
+  <view wx:if="{{rows.length}}" class="btn danger" bindtap="empty">清空回收站（{{count}}）</view>
+  <view class="muted" style="font-size:24rpx;margin:24rpx 8rpx">恢复会把关联关系一起带回来：账↔记事、账↔附件、账↔欠款都还在。</view>
+</view>

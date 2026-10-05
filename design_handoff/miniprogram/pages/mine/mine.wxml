@@ -19,7 +19,6 @@
       <view class="flex1"><view class="it">数据备份</view><view class="muted" style="font-size:26rpx">{{syncText}}</view></view>
       <text wx:if="{{sync.enabled}}" class="muted">立即同步 ›</text>
     </view>
-    <view class="item" bindtap="exportText"><view class="flex1 it">导出为文字（复制到微信）</view><text class="muted">›</text></view>
     <button class="item share" open-type="share"><view class="flex1 it" style="text-align:left">推荐给种地的朋友</view><text class="muted">›</text></button>
     <view class="item" bindtap="about"><view class="flex1 it">关于谷雨记</view><text class="muted">›</text></view>
   </view>

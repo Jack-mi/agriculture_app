@@ -64,3 +64,17 @@
 .dk + .dk { margin-left: 16rpx; }
 .dk-mic { width: 100rpx; height: 92rpx; margin-left: 16rpx; display: flex; align-items: center; justify-content: center; line-height: normal; padding: 0; }
 .mic-img { width: 44rpx; height: 44rpx; }
+
+/* 钱的入口条（待收待付 / 周期账 / 库存预警） */
+.mbar { display: flex; align-items: center; background: var(--card); border: 2rpx solid var(--line); border-radius: 20rpx; padding: 20rpx 24rpx; margin-bottom: 20rpx; box-shadow: 0 6rpx 24rpx rgba(0,0,0,.05); }
+.mb-ic { width: 60rpx; height: 60rpx; border-radius: 18rpx; font-size: 28rpx; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-right: 20rpx; flex-shrink: 0; }
+.mb-t { font-size: 31rpx; font-weight: 700; }
+.mb-s { font-size: 24rpx; color: var(--sub); margin-top: 4rpx; }
+.hero-mx { font-size: 22rpx; opacity: .85; margin-top: 2rpx; }
+
+/* 在种季：投入 / 已收 / 净收益 */
+.sbs { padding: 24rpx; }
+.sb-t { font-size: 32rpx; font-weight: 700; }
+.sbg { display: flex; margin-top: 20rpx; background: #FBF8EF; border-radius: 16rpx; padding: 18rpx 0; }
+.sbc { flex: 1; text-align: center; }
+.sbv { font-size: 32rpx; font-weight: 800; margin: 4rpx 0; }

@@ -93,11 +93,21 @@ async function pushTags() {
 }
 
 function strip(rec) {
-  const d = Object.assign({}, rec);
+  const d = deepClean(rec);
   delete d._openid;
-  // 云数据库不接受 undefined 字段（calc / expr / split 为可选）
-  Object.keys(d).forEach(k => { if (d[k] === undefined) delete d[k]; });
   return d;
+}
+
+// 云数据库不接受 undefined 字段（calc / expr / split / 附件 fileID 等可选字段都可能是）
+// 深层清洗：对象与数组元素里的 undefined 一并剔除，否则整条写入会失败
+function deepClean(v) {
+  if (Array.isArray(v)) return v.map(deepClean);
+  if (v && typeof v === 'object') {
+    const o = {};
+    Object.keys(v).forEach(k => { if (v[k] !== undefined) o[k] = deepClean(v[k]); });
+    return o;
+  }
+  return v;
 }
 
 // 逐条消费 outbox；任一条失败即中止，保留剩余下次重试

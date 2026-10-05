@@ -1,0 +1,120 @@
+<view class="wrap">
+  <view class="tabs">
+    <view wx:for="{{scopes}}" wx:key="k" class="tab {{scope === item.k ? 'on' : ''}}" bindtap="setScope" data-k="{{item.k}}">{{item.n}}</view>
+  </view>
+  <view class="muted" style="margin:8rpx 8rpx 20rpx">{{scopeName}} · {{periodText}}</view>
+
+  <view class="card flat">
+    <view class="muted">净收益（收入 − 支出）</view>
+    <view class="num" style="font-size:72rpx;font-weight:800;color:{{ov.net >= 0 ? 'var(--green)' : 'var(--heat)'}}">{{ov.netText2}}</view>
+    <view class="row between" style="margin-top:8rpx">
+      <text class="muted">收入 ¥{{ov.incomeText}}</text>
+      <text class="muted">支出 ¥{{ov.expenseText}}</text>
+    </view>
+    <view class="stack" style="margin-top:20rpx">
+      <view style="width:{{ov.inPct}}%;background:var(--green)"></view>
+      <view style="width:{{100 - ov.inPct}}%;background:#E5A891"></view>
+    </view>
+  </view>
+
+  <view class="k3">
+    <view class="k3c"><view class="muted" style="font-size:24rpx">投入 / 亩</view><view class="num v">¥{{ov.perMuCost}}</view></view>
+    <view class="k3c"><view class="muted" style="font-size:24rpx">每斤成本</view><view class="num v">{{ov.costPerJin}}</view></view>
+    <view class="k3c"><view class="muted" style="font-size:24rpx">产量</view><view class="num v">{{ov.yieldJin}}</view></view>
+  </view>
+
+  <view class="card" wx:if="{{budget}}">
+    <view class="row between">
+      <text class="sec-title" style="margin:0">本季预算</text>
+      <text class="tag {{budget.over ? 'warn' : ''}}">{{budget.hasBudget ? (budget.over ? '已超支' : budget.pct + '%') : '还没设'}}</text>
+    </view>
+    <block wx:if="{{budget.hasBudget}}">
+      <view class="pbar"><view class="pfill {{budget.over ? 'over' : ''}}" style="width:{{budget.barW}}%"></view></view>
+      <view class="row between">
+        <text class="muted">已花 ¥{{budget.spentText}} / 预算 ¥{{budget.totalText2}}</text>
+        <text class="muted">{{budget.over ? '超' : '余'}} ¥{{budget.remainText}}</text>
+      </view>
+    </block>
+    <view wx:else class="muted">给这季设个预算，花超了会提醒。</view>
+    <view class="btn ghost small" style="margin-top:20rpx" bindtap="goBudget">设预算 / 看进度</view>
+  </view>
+
+  <view class="card">
+    <view class="row between">
+      <text class="sec-title" style="margin:0">资金与资产</text>
+      <text class="muted" bindtap="goBalance">资产负债 ›</text>
+    </view>
+    <view class="row between" style="margin-top:12rpx">
+      <text class="muted">账户余额合计</text>
+      <text class="num" style="font-weight:800">¥{{acc.totalBalanceText}}</text>
+    </view>
+    <view class="row between" style="margin-top:8rpx">
+      <text class="muted">库存估值</text>
+      <text class="muted">¥{{bs.stockValueText}}</text>
+    </view>
+    <view class="row between" style="margin-top:8rpx">
+      <text class="muted">应收 / 应付</text>
+      <text class="muted">¥{{bs.receivableText}} / ¥{{bs.payableText}}</text>
+    </view>
+    <view class="row" style="margin-top:20rpx">
+      <view class="btn ghost small" style="flex:1" bindtap="goFunds">资金账户</view>
+      <view class="btn ghost small" style="flex:1;margin-left:16rpx" bindtap="goBalance">资产负债</view>
+    </view>
+  </view>
+
+  <view class="sec-title">按作物 / 按季</view>
+  <view class="card" style="padding:0 28rpx">
+    <view wx:if="{{!rows.length}}" class="empty">这段时间还没有账</view>
+    <view wx:for="{{rows}}" wx:key="id" class="flow" bindtap="goSeason" hover-class="btn-hover">
+      <view class="fp">{{item.crop}}</view>
+      <view class="flex1" style="min-width:0">
+        <view class="f-t">{{item.yearLabel}} {{item.crop}} · {{item.plotName}}</view>
+        <view class="muted" style="font-size:25rpx">{{item.area}} 亩 · 收 {{item.incomeText}} · 支 {{item.expenseText}}</view>
+      </view>
+      <view style="text-align:right">
+        <view class="num f-a {{item.net >= 0 ? 'in' : 'out'}}">{{item.netText}}</view>
+        <view class="muted" style="font-size:23rpx">{{item.sold ? item.perMuText : '未收粮'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="sec-title">支出结构</view>
+  <view class="card">
+    <view wx:if="{{!st.total}}" class="empty">这段时间没有支出</view>
+    <block wx:else>
+      <view class="stack">
+        <view wx:for="{{st.cats}}" wx:key="key" wx:if="{{item.total > 0}}" style="width:{{item.pct}}%;background:{{item.color}}"></view>
+      </view>
+      <view class="lg2">
+        <view wx:for="{{st.cats}}" wx:key="key" wx:if="{{item.total > 0}}" class="lg2i">
+          <text class="dot" style="background:{{item.color}}"></text>{{item.name}} {{item.pct}}% · ¥{{item.totalText}}
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="sec-title">{{trendTitle}}</view>
+  <view class="card">
+    <view class="bars">
+      <view wx:for="{{trend}}" wx:key="ym" class="bcol">
+        <view class="bwrap">
+          <view class="bup" style="height:{{item.incomePct}}%"></view>
+          <view class="bdn" style="height:{{item.expensePct}}%"></view>
+        </view>
+        <view class="blb">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="legend"><text><text class="dot" style="background:var(--green)"></text>收入</text><text><text class="dot" style="background:#E5A891"></text>支出</text></view>
+  </view>
+
+  <view class="sec-title">成本进度</view>
+  <view class="card flat">
+    <view class="kv"><text class="muted">本季已投入</text><text class="num">¥{{ov.expenseText}}</text></view>
+    <view class="kv"><text class="muted">到目前累计 / 亩</text><text class="num">¥{{ov.perMuCost}}/亩</text></view>
+    <view class="kv" bindtap="goDebt"><text class="muted">待付（应付未结）</text><text class="num" style="color:var(--debt)">¥{{debt.payableText}}</text></view>
+    <view class="kv" bindtap="goDebt"><text class="muted">待收（应收未结）</text><text class="num" style="color:var(--debt)">¥{{debt.receivableText}}</text></view>
+  </view>
+  <view class="muted" style="font-size:24rpx;margin:8rpx">
+    口径：净收益 = 收入 − 成本（均按分摊后金额）。赊账不计现金，未结款挂应收/应付，结清后才进「已收/已付」。固定资产一次计入当季，不摊折旧。
+  </view>
+</view>

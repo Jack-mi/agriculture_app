@@ -22,6 +22,40 @@ const COST_CATS = [
   { key: 'asset', name: '固定资产', color: '#6B5B95', subs: ['购买机械', '土地流转', '其他'] }
 ];
 
+// 收入类型（记账 P0 收入侧）：口径是「钱进来了」，与支出 5 类并列，不是它的子类
+// mode = 该类型的默认计算方式，记一笔选到它时自动切换
+// icon 一律用白色线性图标 + 绿底（复用 assets/icons/*_w.svg，不新增资源）
+const INCOME_CATS = [
+  { key: 'grain', name: '卖粮', color: '#2E5B34', icon: 'wheat', mode: 'perJin' },
+  { key: 'subsidy', name: '补贴', color: '#2E5B34', icon: 'shield', mode: 'fixed' },
+  { key: 'rent', name: '土地租金', color: '#2E5B34', icon: 'land', mode: 'fixed' },
+  { key: 'service', name: '农机服务', color: '#2E5B34', icon: 'tractor', mode: 'fixed' },
+  { key: 'insure', name: '保险赔付', color: '#2E5B34', icon: 'note', mode: 'fixed' },
+  { key: 'inother', name: '其他', color: '#2E5B34', icon: 'dots', mode: 'fixed' }
+];
+// 收支与欠款的语义色：全部复用现有设计系统的色值，不引入新色相
+const MONEY_COLORS = {
+  in: '#2E5B34', inBg: '#E4ECDD',
+  out: '#C4532B', outBg: '#F8E1D6',
+  debt: '#6B5B95', debtBg: '#EDE9F4'
+};
+const INCOME_COLOR = MONEY_COLORS.in;
+// 收入侧结款状态
+const SETTLE_STATES = [
+  { key: 'paid', name: '已结款' },
+  { key: 'due', name: '未结款' }
+];
+// 资金账户（钱在哪个口袋）：只做本地口径，挂在 tags 单文档，不新增云端集合
+// init = 期初余额；余额 = init + Σ收入 − Σ支出（未指定账户的账不计入任何账户）
+const DEFAULT_ACCOUNTS = [
+  { key: 'cash', name: '现金', init: 0 },
+  { key: 'wechat', name: '微信', init: 0 },
+  { key: 'bank', name: '银行卡', init: 0 },
+  { key: 'other', name: '其他', init: 0 }
+];
+// 欠款约定的相对标记（不写死日期）
+const DUE_TAGS = ['不约定', '收粮后', '卖粮后', '年底'];
+
 // 每日田间操作（PRD 5.2-1）—— 仅作"默认记事类型"，用户可在「类型管理」里增删改
 const OPS = ['播种', '施肥', '打药', '浇水', '机械作业', '除草', '巡田', '病虫害观察', '收获', '其他'];
 // costCat/costSub：该类型"保存并记花费"时默认带入的记账类别
@@ -74,9 +108,15 @@ const SUB_ICONS = {
   按天用工: 'users', 土地流转: 'land', 购买机械: 'gear', 其他: 'dots'
 };
 const CAT_ICONS = { agri: 'seed', mach: 'tractor', trans: 'truck', labor: 'users', asset: 'land' };
+const INCOME_CAT_ICONS = {};
+INCOME_CATS.forEach(c => { INCOME_CAT_ICONS[c.key] = c.icon; });
+function isIncomeCat(key) { return !!INCOME_CAT_ICONS[key]; }
 function iconOf(sub, cat, tone) {
-  const k = SUB_ICONS[sub] || CAT_ICONS[cat] || 'dots';
-  return '/assets/icons/' + k + '_' + (tone || cat || 'sub') + '.svg';
+  const k = SUB_ICONS[sub] || INCOME_CAT_ICONS[cat] || CAT_ICONS[cat] || 'dots';
+  // 收入没有专属色卡：未选中用灰图标（*_sub），选中传 tone='w' 配绿底白图标
+  // —— 与记一笔现有「未选中浅底彩图标 / 选中实底白图标」的用法一致
+  const t = tone || (isIncomeCat(cat) ? 'sub' : (cat || 'sub'));
+  return '/assets/icons/' + k + '_' + t + '.svg';
 }
 
 // 记账计算方式：固定金额 / 按亩（单价×亩数）/ 按人天（人数×日工价）
@@ -85,6 +125,16 @@ const CALC_MODES = [
   { key: 'perMu', name: '按亩计' },
   { key: 'perDay', name: '按人天' }
 ];
+// 收入计算方式：卖粮按斤×价 / 转租按亩×价 / 其余直接填
+const INCOME_CALC_MODES = [
+  { key: 'fixed', name: '直接填' },
+  { key: 'perJin', name: '按斤×价' },
+  { key: 'perMuPrice', name: '按亩×价' }
+];
+function modesFor(dir) { return dir === 'in' ? INCOME_CALC_MODES : CALC_MODES; }
+// 收入类型名 → 类型 key（用户自定义的归到「其他」，不新增 key）
+function incomeKeyOf(name) { const c = INCOME_CATS.find(x => x.name === name); return c ? c.key : 'inother'; }
+function catsFor(dir) { return dir === 'in' ? INCOME_CATS : COST_CATS; }
 // 分摊方式
 const SPLIT_MODES = [
   { key: 'area', name: '按亩均摊' },
@@ -93,6 +143,6 @@ const SPLIT_MODES = [
 ];
 
 function cropOf(key) { return CROPS.find(c => c.key === key) || CROPS[0]; }
-function catOf(key) { return COST_CATS.find(c => c.key === key) || COST_CATS[0]; }
+function catOf(key) { return COST_CATS.find(c => c.key === key) || INCOME_CATS.find(c => c.key === key) || COST_CATS[0]; }
 
-module.exports = { LOG_FIELDS, LOG_FIELD_PH, MATERIAL_UNIT_DEFAULT, VARIETIES, SUB_ICONS, CAT_ICONS, iconOf, CALC_MODES, SPLIT_MODES, CROPS, COST_CATS, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };
+module.exports = { LOG_FIELDS, LOG_FIELD_PH, MATERIAL_UNIT_DEFAULT, VARIETIES, SUB_ICONS, CAT_ICONS, INCOME_CAT_ICONS, iconOf, CALC_MODES, INCOME_CALC_MODES, modesFor, catsFor, incomeKeyOf, SPLIT_MODES, CROPS, COST_CATS, INCOME_CATS, INCOME_COLOR, MONEY_COLORS, SETTLE_STATES, DUE_TAGS, DEFAULT_ACCOUNTS, isIncomeCat, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };

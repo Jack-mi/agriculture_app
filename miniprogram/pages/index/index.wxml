@@ -4,7 +4,11 @@
       <view class="hero-date">{{todayText}}<text class="hero-week">{{week}}</text></view>
       <view class="hero-sub">{{wxLine || '今天地里干了啥、花了多少，随手记一笔'}}</view>
     </view>
-    <view wx:if="{{growing}}" class="hero-m">本月花费<view class="num hero-mv">¥{{month}}</view></view>
+    <view wx:if="{{growing}}" class="hero-m">
+      本月净收
+      <view class="num hero-mv" style="color:{{money.netPos ? '#fff' : '#FBD9C9'}}">{{money.netPos ? '＋¥' : '−¥'}}{{money.net}}</view>
+      <view class="hero-mx">收 {{money.income}} · 支 {{money.expense}}</view>
+    </view>
   </view>
   <view wx:if="{{!online}}" class="offline">当前无网络 · 记录已存手机，联网后自动同步</view>
 </view>
@@ -33,6 +37,37 @@
     </view>
 
     <!-- 有事：待办 -->
+    <!-- 钱的入口：待收待付 / 周期账待记 / 库存预警 -->
+    <view wx:if="{{debt.has}}" class="mbar" bindtap="goDebt" hover-class="btn-hover">
+      <text class="mb-ic" style="background:#EDE9F4;color:#6B5B95">欠</text>
+      <view class="flex1">
+        <view class="mb-t">待收 ¥{{debt.recv}}{{debt.payCount ? ' · 待付 ¥' + debt.pay : ''}}</view>
+        <view class="mb-s">{{debt.overdue ? '有 ' + debt.overdue + ' 笔已逾期，点开去催账 / 销账' : '点开去销账'}}</view>
+      </view>
+      <text class="tag {{debt.overdue ? 'warn' : ''}}">{{debt.overdue ? '逾期' : '去结'}}</text>
+    </view>
+    <view wx:if="{{dueCount}}" class="mbar" bindtap="goDue" hover-class="btn-hover">
+      <text class="mb-ic" style="background:var(--wheat-l);color:#7A5210">⟳</text>
+      <view class="flex1">
+        <view class="mb-t">{{dueCount}} 个周期账到期待记</view>
+        <view class="mb-s">土地流转、贷款这类固定支出，点开确认一下</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+    <view wx:if="{{stock.warn}}" class="mbar" bindtap="goStock" hover-class="btn-hover">
+      <text class="mb-ic" style="background:#F8E1D6;color:#C4532B">库</text>
+      <view class="flex1"><view class="mb-t">{{stock.text}}</view><view class="mb-s">点开去入库</view></view>
+      <text class="muted">›</text>
+    </view>
+    <view wx:if="{{budget}}" class="mbar" bindtap="goBudget" hover-class="btn-hover">
+      <text class="mb-ic" style="background:#F8E1D6;color:#C4532B">预</text>
+      <view class="flex1">
+        <view class="mb-t">{{budget.plotName}} 本季预算已用 {{budget.pct}}%</view>
+        <view class="mb-s">{{budget.over ? '已超支 ¥' + budget.remainText : '还剩 ¥' + budget.remainText + '，注意着花'}}</view>
+      </view>
+      <text class="tag {{budget.over ? 'warn' : ''}}">{{budget.over ? '超支' : '注意'}}</text>
+    </view>
+
     <view wx:if="{{v.now.length || v.week.length}}" class="card tasks">
       <block wx:if="{{v.now.length}}">
         <view class="grp"><text class="lv red">马上办</text></view>
@@ -75,6 +110,23 @@
     <view wx:for="{{v.soft}}" wx:key="id" class="soft" bindtap="goTask" data-id="{{item.id}}">{{item.plot}}：{{item.title}} ›</view>
 
     <!-- 生育期小卡 -->
+    <!-- 在种季：投入 / 已收 / 净收益 -->
+    <view wx:for="{{briefs}}" wx:key="id" class="card sbs" bindtap="goSeason" data-id="{{item.id}}" hover-class="btn-hover">
+      <view class="row">
+        <view class="crop sm {{item.cls}}"><image class="crop-img" src="{{item.icon}}" mode="aspectFit" /></view>
+        <view class="flex1" style="margin-left:16rpx;min-width:0">
+          <view class="sb-t">{{item.plotName}} · {{item.crop}}</view>
+          <view class="muted" style="font-size:24rpx">{{item.area}} 亩 · 播种第 {{item.dayN}} 天</view>
+        </view>
+        <text class="muted">›</text>
+      </view>
+      <view class="sbg">
+        <view class="sbc"><view class="muted">总投入</view><view class="num sbv" style="color:var(--heat)">¥{{item.cost}}</view><view class="muted" style="font-size:22rpx">{{item.perMu ? '¥' + item.perMu + '/亩' : ''}}</view></view>
+        <view class="sbc"><view class="muted">已收</view><view class="num sbv" style="color:var(--green)">{{item.hasIncome ? '¥' + item.income : '—'}}</view><view class="muted" style="font-size:22rpx">{{item.hasIncome ? '已结' : '未收粮'}}</view></view>
+        <view class="sbc"><view class="muted">净收益</view><view class="num sbv" style="color:{{item.netPos ? 'var(--green)' : 'var(--heat)'}}">{{item.hasIncome ? (item.netPos ? '＋' : '−') + '¥' + item.net : '—'}}</view><view class="muted" style="font-size:22rpx">{{item.hasIncome ? '本季' : '收了才有'}}</view></view>
+      </view>
+    </view>
+
     <view class="stages">
       <view wx:for="{{v.stages}}" wx:key="id" class="stc" bindtap="goSeason" data-id="{{item.id}}" hover-class="btn-hover">
         <view class="row"><view class="crop xs {{item.cls}}"><image class="crop-img" src="{{item.icon}}" mode="aspectFit" /></view><text class="stc-n">{{item.plot}}</text></view>
@@ -85,7 +137,7 @@
 
     <!-- 最近记的 -->
     <view wx:if="{{recent.length}}" class="card recent">
-      <view class="row between" style="padding:16rpx 0 4rpx"><text class="b">最近记的</text></view>
+      <view class="row between" style="padding:16rpx 0 4rpx"><text class="b">最近记的</text><text class="muted" catchtap="goLedger">全部 ›</text></view>
       <view wx:for="{{recent}}" wx:key="id" class="rc" bindtap="goRecent" data-id="{{item.id}}" data-kind="{{item.kind}}">
         <text class="muted num rc-d">{{item.dateText}}</text>
         <view class="flex1" style="min-width:0"><view class="rc-t">{{item.title}}</view><view class="muted ellipsis" style="font-size:24rpx">{{item.sub}}</view></view>
