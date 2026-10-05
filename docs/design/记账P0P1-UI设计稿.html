@@ -130,6 +130,8 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
   display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--sub);flex:none}
 .kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
 .kv:last-child{border-bottom:0}
+.kv.col{display:block}
+.kv.col>.muted{display:block;margin-bottom:7px}
 
 /* 弹层（对应 .mask / .sheet） */
 .dim{background:rgba(20,24,18,.5);border-radius:10px;padding:12px 0 0}
@@ -628,14 +630,18 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
     </div>
     <div class="c2">
       <div class="kv"><span class="muted">算出来的</span><span>单价 ¥109/袋 × 20 袋</span></div>
-      <div class="kv"><span class="muted">分摊到</span><span>东大块 52亩 · 河边地 28亩（按亩均摊）</span></div>
-      <div class="kv"><span class="muted">本季计入</span><span class="num">¥2,180</span></div>
+      <div class="kv"><span class="muted">分摊到</span><span>2 季 · 按亩分摊</span></div>
+      <div class="kv"><span class="muted">东大块 · 小麦 · 2026–2027</span><span class="num">¥1,214</span></div>
+      <div class="kv"><span class="muted">河边地 · 小麦 · 2026–2027</span><span class="num">¥966</span></div>
       <div class="kv"><span class="muted">结款</span><span style="color:var(--debt)">应付 · 欠县城农资店 · 10-31</span></div>
-      <div class="kv"><span class="muted">备注</span><span>复合肥 40kg×20 袋</span></div>
-    </div>
-    <h3 class="sect">附件（3）</h3>
-    <div class="row" style="gap:9px">
-      <div class="thumb">收据</div><div class="thumb">过磅单</div><div class="thumb">化肥袋</div><div class="thumb" style="border-style:dashed">＋</div>
+      <div class="kv"><span class="muted">备注</span><span>复合肥 40kg×20 袋 <span class="tiny">点这里改</span></span></div>
+      <div class="kv"><span class="muted">关联记事</span><span>10-05 施肥 复合肥 20 袋 ›</span></div>
+      <div class="kv col">
+        <span class="muted">附件（3）</span>
+        <div class="row" style="gap:9px">
+          <div class="thumb">收据</div><div class="thumb">过磅单</div><div class="thumb">化肥袋</div><div class="thumb" style="border-style:dashed">＋</div>
+        </div>
+      </div>
     </div>
     <div class="row" style="gap:9px">
       <div class="btn ghost grow sm">删除（进回收站）</div><div class="btn g grow sm">编辑</div>
@@ -645,7 +651,9 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <div class="cap"><h4>F8 · 流水详情<span class="tagline">P1-9</span></h4>
 <ul>
 <li>把「怎么算出来的 / 分摊到哪 / 结款状态 / 备注」四件事一次说清，替代现在只有一行的列表信息量。</li>
-<li>附件在详情里可补加、可删。</li>
+<li>分摊明细与上面的「分摊到」左右对齐（同一套 .kv，不做缩进）。</li>
+<li><b>备注就地编辑</b>：点备注行弹底部输入层，改完保存即生效，不跳「记一笔」页面。</li>
+<li>附件并入这张信息卡（不是独立版块），缩略图与补加/删除都在卡内；<b>没附件时不显示</b>，不占版面。</li>
 <li><b>操作留痕不在界面上展示</b>（用户要求，别占版面）：<code>costs[i].audit</code> 仍在写「谁在什么时候改了什么」，供回收站/对账口径用，但详情页只显示「怎么算的 / 分摊 / 结款 / 备注 / 附件」。</li>
 <li>删除走软删 → 回收站（F21），文案明确写「进回收站」而不是「删除」，减少误操作恐惧。</li>
 </ul></div></div></div>

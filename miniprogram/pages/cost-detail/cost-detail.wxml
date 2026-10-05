@@ -17,7 +17,7 @@
       <text class="muted">分摊到</text>
       <text>{{allocs.length}} 季{{allocText ? ' · ' + allocText : ''}}</text>
     </view>
-    <view wx:for="{{allocs}}" wx:key="seasonId" class="kv sub">
+    <view wx:for="{{allocs}}" wx:key="seasonId" class="kv">
       <text class="muted">{{item.name}}{{item.crop ? ' · ' + item.crop : ''}}{{item.year ? ' · ' + item.year : ''}}</text>
       <text class="num">¥{{item.amount}}</text>
     </view>
@@ -25,20 +25,16 @@
       <text class="muted">结款</text>
       <text style="color:var(--debt)">{{debt.party}} · {{debt.settled ? '已结清' : '未结'}}{{debt.paidText ? '（已结 ¥' + debt.paidText + '）' : ''}} · 约定 {{debt.dueText}} ›</text>
     </view>
-    <view class="kv" bindtap="edit">
+    <view class="kv" bindtap="openNote">
       <text class="muted">备注</text>
       <text wx:if="{{c.note}}">{{c.note}}</text>
-      <text wx:else class="link">没写备注 · 点这里去补 ›</text>
+      <text wx:else class="link">没写备注 · 点这里写 ›</text>
     </view>
     <view wx:if="{{log}}" class="kv" bindtap="goLog">
       <text class="muted">关联记事</text><text class="link">{{log.date}} {{log.text}} ›</text>
     </view>
-  </view>
-
-  <view class="sec-title">附件{{atts.length ? '（' + atts.length + '）' : ''}}</view>
-  <view class="card">
-    <view wx:if="{{!atts.length}}" class="muted">这笔没传凭证。收据、过磅单、化肥袋都可以拍到「记一笔 → 附件」里。</view>
-    <block wx:else>
+    <view wx:if="{{atts.length}}" class="kv col">
+      <text class="muted">附件（{{atts.length}}）</text>
       <view class="thumbs">
         <view wx:for="{{atts}}" wx:key="name" class="thumb" bindtap="openAtt" data-i="{{index}}">
           <image wx:if="{{item.src}}" src="{{item.src}}" mode="aspectFill" class="thumb-img" />
@@ -46,15 +42,29 @@
           <view wx:if="{{item.pending}}" class="thumb-badge">待传</view>
         </view>
       </view>
-      <view wx:if="{{pending}}" class="row between" style="margin-top:16rpx">
-        <text class="muted" style="font-size:24rpx">有 {{pending}} 张还没传上去，原图在本机，联网后自动传</text>
+      <view wx:if="{{pending}}" class="row between" style="margin-top:12rpx">
+        <text class="muted" style="font-size:24rpx">有 {{pending}} 张还没传上去，联网后自动传</text>
         <text class="link" bindtap="retryUpload">重试</text>
       </view>
-    </block>
+    </view>
   </view>
 
   <view class="row" style="margin-top:24rpx">
     <view class="btn ghost" style="flex:1" bindtap="del">删除（进回收站）</view>
     <view class="btn" style="flex:1;margin-left:20rpx" bindtap="edit">编辑</view>
+  </view>
+</view>
+
+<!-- 备注：就在这一页改，不跳转 -->
+<view wx:if="{{noteOpen}}" class="mask" bindtap="closeNote">
+  <view class="sheet" catchtap="noop">
+    <view class="sh-close" bindtap="closeNote">✕</view>
+    <view class="sheet-title">备注</view>
+    <textarea class="textarea" value="{{noteDraft}}" bindinput="onNoteDraft" maxlength="200"
+      placeholder="想到啥写啥，如：复合肥 20 袋" placeholder-class="ph" />
+    <view class="row" style="margin-top:24rpx">
+      <view class="btn ghost" style="flex:1;margin-right:16rpx" bindtap="closeNote">取消</view>
+      <view class="btn" style="flex:2" bindtap="saveNote">保存</view>
+    </view>
   </view>
 </view>

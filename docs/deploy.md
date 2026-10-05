@@ -54,6 +54,14 @@
 >   - 「这笔账」详情页的「操作留痕」整块删除（用户要求，别占版面）；`costs[i].audit` 仍在写数据（回收站/对账口径用、单测 `销账有留痕` 依赖它），只是界面不再展示
 >   - 设计稿同步：F8 标题「流水详情（含留痕）」→「流水详情」、F21「回收站 + 操作留痕」→「回收站」（并把两处 mock 里的留痕块删掉）、覆盖清单 P1-12 改为「误删恢复（回收站）；操作留痕只写数据、界面不展示」、口径表留痕一行补「只写不展示」
 >   - 自检：51/51 + 25 页静态检查；模拟器复核 `docs/design/verify/cost-detail.jpg`（留痕块已消失）
+> - **2026-10-06：体验版 `0.7.6` 已上传**（「这笔账」详情页三条真机反馈，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+>   - **分摊明细那行没对齐**：`cost-detail.wxss` 里 `.kv.sub { padding-left: 24rpx }` 把「东大块 · 小麦 · 2026–2027」整行缩进了，「分摊到」却不缩进 → 两行左右都错位。删掉 `.sub` 缩进，分摊明细统一用普通 `.kv`，与上行左右对齐
+>   - **备注编辑不再跳页**：原来点备注行会 `navigateTo` 到「记一笔」页。改成**当前页就地编辑**——点备注行弹底部输入层（`.mask` + `.sheet` + ✕ + 取消/保存），保存直接回写 `costs[i].note`，人不动地方
+>   - **附件不再单独罗列**：原来附件自成一个 `sec-title` + 独立卡片，**没附件时还显示一大段说明**。改成并入上面那张信息卡（`kv col`，缩略图 + `待传` 小标 + 重试链接都在卡内），**没附件就整块不显示**
+>   - 数据口径不变：备注改动仍走 `store.costs.save()`（写 `updatedAt` + outbox + 留痕），`store.js` 的 `save()` 补了一条 `改备注` 留痕分支（原来改金额/分类/日期之外的改动不留痕）。留痕只写数据、界面不展示（沿用 0.7.5 口径）
+>   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 25 页 + keypad 全通过；设计稿 F8 mock 同步（附件并入信息卡、无附件不显示、分摊行不缩进、备注就地编辑），`div` 开合平衡、仍是 28 屏
+>   - 模拟器真机路径复核：`.link` 点开备注层（不跳页）→ 输入 → `.sheet .btn.ghost ~ .btn` 点保存 → 本地库 `note` 落地且 `audit` 出现 `改备注`；另给该笔临时塞 2 张附件复核卡内布局（`docs/design/verify/cost-detail-att.jpg`），验完已把本地库与云端恢复原状（`note=""`、无附件）
+>   - **上传记录**：2026-10-06 `upload --upload-version 0.7.6`，代码包 522,885 B（TOTAL 1 个包），`taskId=confirmation_upload_bc97d399…` → `execution_success`
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`

@@ -433,6 +433,7 @@ const costs = {
       if (Math.abs((+exist.amount || 0) - c.amount) > 0.005) pushAudit(c, '改金额', U.money(exist.amount), U.money(c.amount));
       else if (exist.cat !== c.cat || exist.sub !== c.sub) pushAudit(c, '改分类', exist.sub || C.catOf(exist.cat).name, c.sub || C.catOf(c.cat).name);
       else if (exist.date !== c.date) pushAudit(c, '改日期', exist.date, c.date);
+      else if ((exist.note || '') !== (c.note || '')) pushAudit(c, '改备注', exist.note || '', c.note || '');
     } else {
       pushAudit(c, '新建', '', '');
     }

@@ -7,7 +7,7 @@ const U = require('../../utils/util.js');
 const attach = require('../../utils/attach.js');
 
 Page({
-  data: { id: '', c: {}, allocs: [], allocText: '', atts: [], debt: null, pending: 0, log: null },
+  data: { id: '', c: {}, allocs: [], allocText: '', atts: [], debt: null, pending: 0, log: null, noteOpen: false, noteDraft: '' },
 
   onLoad(q) { if (q.id) this.setData({ id: q.id }); },
   onShow() { this.render(); },
@@ -47,6 +47,21 @@ Page({
   },
 
   edit() { wx.navigateTo({ url: '/pages/cost-edit/cost-edit?id=' + this.data.id }); },
+  noop() {},
+  // 备注就在这一页改：开弹层 → 保存回写（不跳「记一笔」）
+  openNote() { this.setData({ noteOpen: true, noteDraft: this.data.c.note || '' }); },
+  closeNote() { this.setData({ noteOpen: false }); },
+  onNoteDraft(e) { this.setData({ noteDraft: e.detail.value }); },
+  saveNote() {
+    const c = store.costs.get(this.data.id);
+    if (!c) { this.setData({ noteOpen: false }); return; }
+    const note = (this.data.noteDraft || '').trim();
+    // 传副本，store.costs.save 才拿得到"旧值"做留痕比对（留痕只在数据里，界面不展示）
+    store.costs.save(Object.assign({}, c, { note }));
+    this.setData({ noteOpen: false, noteDraft: note });
+    U.toast('备注保存了');
+    this.render();
+  },
   openAtt(e) {
     const a = this.data.atts[e.currentTarget.dataset.i];
     if (a && a.src) wx.previewImage({ urls: this.data.atts.map(x => x.src).filter(Boolean), current: a.src });
