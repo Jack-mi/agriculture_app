@@ -81,6 +81,7 @@
 >   - **「云备份」改名「数据同步」并说人话**：数据本来就在云开发数据库里，这行报的是同步状态（已同步到云端 · N 分钟前 / N 条正在上传 / 当前离线 N 条待传 / 没连云环境）。点一下立刻 `login→pull→flush`。本轮实测云端 `costs`=6 / `logs`=2 / `seasons`=1 与本地一致，`guyuji_synced_at` 有值 —— **同步确实是通的**，之前只是文案让人以为是另一个开关
 >   - **记账入口全部从「我的」搬到「账本」**（用户：我的上面基本都是记账相关的）。账本页顶变成两排 6 个入口（报表 / 欠款 / 库存 / 预算 / 资金账户 / 资产负债，每格带实时结论）+ 一行设置（类型管理 / 周期账 / 记账键盘 / 回收站）；「我的」只剩 账号+数据量 / 数据同步 / 推荐给朋友 / 关于
 >   - **「品种」和「整地情况」改成用户自己的清单**：新增 `store.varieties`（`tags.variety[作物]`）与 `store.tillage`（`tags.tillage`），初始 = `const.VARIETIES` / `const.DEFAULT_TILLAGE`；开季页两处都加了「＋ 自定义」，**长按任意一项可删（内置的也能删）**。不新增云端集合，随 `tags` 单文档同步
+>   - **上传记录**：2026-10-07 `upload --upload-version 0.7.8`，代码包 524,548 B（TOTAL 1 个包），`taskId=confirmation_upload_f0afc7e8…` 经 IDE 确认（`MCP 客户端授权` → 允许）后 `execution_success`
 >   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51（品种用例重写：清单可加可删、`all = 用过的(去重) + 清单`；新增整地清单加删断言）；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
 >   - 模拟器逐页复核截图存 `docs/design/verify/`（`cost-edit`、`cost-edit-acct`、`ledger`、`ledger-daysheet`、`mine`、`season-new`、`season-new-till`、`keypanel`）；品种/整地的加删走的是真实 `store` 写入，**验证用的「测试品种A / 测试整地A」已删干净**
 >   - 设计稿同步：F1（去掉最近用过/常用账行 + 账户可自建 + 金额区高度写死）、F6（账本变记账总入口，加第二排入口与设置行）、F20（我的简化 + 数据同步 + 分享行对齐）、F26（账户可增删改 + 老库只补缺）、覆盖清单 P1-8/P1-14、现行→目标表「我的」行、口径表（新增「资金账户」「品种 / 整地」两行）、第 13 节新增第 11 条；仍是 28 屏、`div` 开合平衡
