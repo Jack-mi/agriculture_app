@@ -93,6 +93,13 @@
 >   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
 >   - 模拟器复核：账本页（6 个图标入口 + 周期账卡「周期账 1 个 / 下次 10月1日 · 土地流转」+ 设置行已消失）、我的页（记账设置组 3 行 + 账号组 3 行，`›` 全部右对齐）、资产负债页（两处合计与两处说明框都没了）截图存 `docs/design/verify/ledger.jpg`、`mine.jpg`、`balance.jpg`；**验证用的那 1 个测试周期账已从本地库和云端一起清掉**（云端 `tags.recurring` 回到 `[]`）
 >   - 设计稿同步：F6（第二排入口换图标 + 设置行改周期账状态卡 + caption）、F20（新增「记账设置」组 + caption）、F27（删两处合计 + 两处说明框 + caption）、新增 `i-target` / `i-wallet` / `i-scale` 三个 symbol、现行→目标表「我的」行、第 13 节新增第 12 条；仍是 28 屏、`div` 开合平衡
+> - **2026-10-06：体验版 `0.7.18` 已上传**（「我的 → 记账设置」收成一行，点进去的二级页才是 类型管理 / 记账键盘 / 回收站；二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+>   - 新增页 `pages/ledger-settings/ledger-settings`：三行原样搬过去（图标、文案、回收站那行的活数据说明都不变），返回箭头是微信自带的
+>   - `pages/mine/mine`：三行合成一行「记账设置」，去掉重复的 section 小标题，入口图标用 `kb_green.svg`
+>   - 设计稿同步：新增 **F20b · 记账设置**（三行 + caption），F20 改成一行，caption 与对照表口径一起改（28 屏 → 29 屏）
+>   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 25 页 + keypad 全通过
+>   - 模拟器复核：「我的」一行入口 + 「记账设置」二级页三行，都截图看过
+>   - 顺带（本轮另做）：`scripts/wxrun.sh` + `scripts/wx-allow.swift` —— wechatide 的「MCP 客户端授权」弹窗自动点掉（不是靠开关，那个开关在这个版本是死的），详见第 8 节
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
@@ -173,24 +180,30 @@
 
 ## 8. 无人值守跑 wechatide（自动点掉「MCP 客户端授权」弹窗）
 
-**为什么要这个**：微信开发者工具对 MCP/skill 客户端每次写操作都会弹一次「MCP 客户端授权」（标题下面的正文是 `"codex" 请求执行 上传代码包`）要人工点「允许」。反编译核到 2.02.2608070 版的结论：
+**为什么要这个**：微信开发者工具对 MCP/skill 客户端每次写操作都会弹一次「MCP 客户端授权」（正文 `"codex" 请求执行 上传代码包`）要人工点「允许」。反编译核到 2.02.2608070 版的结论：
 
 - 弹窗只在「本次操作有风险提示」时才弹（`resolveMcpUploadStatusWording`）：上传时因为**上次提交已被选为体验版**必然有提示，所以每次 `upload` 都会弹；`simulator_*` / `build_npm` / `project_import` 这类不弹。
-- 这个版本**没有**「始终允许此操作」开关：主进程还把 `toggleText/showToggle` 传进弹窗 URL，但弹窗组件（`js/electron/mcp-action-auth.popup.js` → `js/d426818bc…js`）只渲染「拒绝 / 允许」两个按钮，`toggled` 传回主进程后也被丢弃。所以没法靠配置关掉。
-- System Events（AppleScript）**看不到**这个窗口，必须用原生 AX API（`AXUIElement`）才能拿到并按下按钮。
+- 这个版本**没有**「始终允许此操作」开关：文案资源 `MCP_TOOL_CONFIRM_ALWAYS` 还在、主进程也还把 `toggleText/showToggle` 传进弹窗 URL，但弹窗组件（`js/electron/mcp-action-auth.popup.js` → `js/d426818bc…js`）只渲染「拒绝 / 允许」两个按钮；`toggled` 传回主进程后直接被丢弃。**没有配置项、没有 CLI 参数、没有可预置的 key。**
+- 弹窗的 a11y 树默认是空的（Chromium 只在检测到辅助功能客户端时才建树），**AppleScript / System Events 连这个窗口都列不出来**，必须用原生 AX API（`AXUIElement`）。
 
 **用法**（令牌不入库：`export WECHATIDE_TOKEN=…` 或写 `~/.wechatide-token`，权限 600）：
 
 ```bash
 # 上传体验版：自动点「允许」，并等异步任务跑完再返回最终 JSON
-scripts/wxrun.sh upload --project /Users/miller/Projects/Agriculture --upload-version 0.7.16 --desc "说明"
+scripts/wxrun.sh upload --project /Users/miller/Projects/Agriculture --upload-version 0.7.19 --desc "说明"
 
-# 任意 wechatide 工具都能走，没弹窗就是普通同步调用
+# 任意 wechatide 工具都能走；不需要确认的工具就是普通同步调用
 scripts/wxrun.sh simulator_refresh --project /Users/miller/Projects/Agriculture
 ```
 
-实现：`scripts/wx-allow.swift`（原生 AX，找含「请求」文案的窗口里标题为「允许」的按钮并 AXPress，默认 2 秒超时）＋ `scripts/wxrun.sh`（跑工具 → 任务类型是 `confirmation_*` 就点弹窗 → 轮询 `polling_task_result` 到终态）。首次运行会把 Swift 编译到 `/tmp/wx-allow-bin`；调 `WX_ALLOW_DEBUG=1` 可打印它看到的窗口树。
+实现两个文件：
 
-**实测**：2026-10-06 `upload --upload-version 0.7.15`，工具调用返回后 **437 ms** 弹窗即被按下（IDE 日志 `win-close-trace mcp_action_auth_codex_upload_*`），`detail=execution_success`，全程无人点击。
+- `scripts/wx-allow.swift`：找到微信开发者工具进程 → 只挑「无标题 + 300~700 宽 × 150~500 高」的窗口（项目主窗口直接跳过，那棵 AX 树上千节点会把扫描拖死）→ 优先原生 AXPress 标题为「允许」的按钮；a11y 树是空的时候按几何坐标点（`modal-bd` padding 20/30 + 按钮高 22、右对齐 ⇒ 按钮中心在窗口右下 `x = maxX-67, y = maxY-36`，AX 实测 997,643 吻合）。
+- `scripts/wxrun.sh`：跑工具 → 只要 `taskType` 是 `confirmation_*` 才去点弹窗（别的工具不碰）→ 轮询 `polling_task_result` 到终态。首次运行会把 Swift 编译到 `/tmp/wx-allow-bin`；`WX_ALLOW_DEBUG=1` 可以看它每轮看到的窗口。
 
-> 注意：`app.asar` 里的授权弹窗组件是 IDE 自带的，升级开发者工具后本脚本不受影响（走的是系统 AX API，不改动 App 包体）。
+**实测**：
+
+- 2026-10-06 `project_remove`：工具返回后 **1.3 s** 弹窗被点掉（日志 `win-close-trace mcp_action_auth_*`），任务 `execution_success`，全程无人点击。
+- 2026-10-06 `upload`：同样 `execution_success`（0.7.16 / 0.7.17 / 0.7.18 三次连续上传都没让人碰鼠标）。
+
+> 升级开发者工具后本脚本不受影响（走系统 AX/CGEvent，不改动 App 包体）；只有弹窗的尺寸/偏移变了才需要调 `wx-allow.swift` 里那两个常数。

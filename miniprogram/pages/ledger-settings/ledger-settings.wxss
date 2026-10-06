@@ -1,0 +1,7 @@
+/* 与「我的」那套列表行保持同一视觉：浅绿圆角底图标 + 标题 + 说明 + › */
+.list { padding: 4rpx 32rpx; }
+.item { display: flex; align-items: center; padding: 26rpx 0; border-bottom: 2rpx solid var(--line); }
+.item:last-child { border-bottom: none; }
+.it { font-size: 34rpx; font-weight: 600; }
+.it-ic { width: 60rpx; height: 60rpx; border-radius: 18rpx; background: var(--green-l); display: flex; align-items: center; justify-content: center; margin-right: 20rpx; flex-shrink: 0; }
+.it-img { width: 34rpx; height: 34rpx; }

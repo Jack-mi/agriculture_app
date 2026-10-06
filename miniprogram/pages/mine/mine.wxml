@@ -10,29 +10,12 @@
     </view>
   </view>
 
-  <view class="sec-title">记账设置</view>
   <view class="card list">
-    <view class="item" bindtap="goTags">
-      <view class="it-ic"><image class="it-img" src="/assets/icons/note_green.svg" /></view>
-      <view class="flex1">
-        <view class="it">记账 / 记事类型管理</view>
-        <view class="muted" style="font-size:26rpx">分类、颜色、收入类型、常用账</view>
-      </view>
-      <text class="muted">›</text>
-    </view>
-    <view class="item" bindtap="goKeypanel">
+    <view class="item" bindtap="goLedgerSettings">
       <view class="it-ic"><image class="it-img" src="/assets/icons/kb_green.svg" /></view>
       <view class="flex1">
-        <view class="it">记账键盘</view>
-        <view class="muted" style="font-size:26rpx">布局、左下功能键、震动与千分位</view>
-      </view>
-      <text class="muted">›</text>
-    </view>
-    <view class="item" bindtap="goTrash">
-      <view class="it-ic"><image class="it-img" src="/assets/icons/trash_green.svg" /></view>
-      <view class="flex1">
-        <view class="it">回收站</view>
-        <view class="muted" style="font-size:26rpx">{{trash ? trash + ' 项 · 30 天内可恢复' : '空的'}}</view>
+        <view class="it">记账设置</view>
+        <view class="muted" style="font-size:26rpx">类型管理、记账键盘、回收站</view>
       </view>
       <text class="muted">›</text>
     </view>

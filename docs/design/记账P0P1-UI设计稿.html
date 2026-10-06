@@ -235,7 +235,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <div class="wrap">
 <h1>谷雨记 · 记账 P0+P1 UI 设计稿<small>随手记对齐版 · 全量落地（无 MVP）</small></h1>
 <div class="meta">2026-10-06 · 覆盖：收入侧 / 债权债务 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 误删恢复（回收站）<br>
-共 <b>28 屏</b>。视觉与当前线上版本 <b>1:1 对齐</b>（沿用 <code>app.wxss</code> 的色板 / 圆角 / 字号 / 组件尺寸，1px = 2rpx），<b>不引入任何新色相</b>——收支与欠款只用既有色值。<b>导出模块已按你的要求删除。</b></div>
+共 <b>29 屏</b>。视觉与当前线上版本 <b>1:1 对齐</b>（沿用 <code>app.wxss</code> 的色板 / 圆角 / 字号 / 组件尺寸，1px = 2rpx），<b>不引入任何新色相</b>——收支与欠款只用既有色值。<b>导出模块已按你的要求删除。</b></div>
 
 <h2 class="sec">0. 设计系统（与当前线上版本 1:1 对齐）</h2>
 <p class="secnote">不换皮、不发明组件：所有尺寸都从 <code>miniprogram/app.wxss</code> 按 <b>1px = 2rpx</b> 换算过来，所有颜色都是文件里已有的变量。<b>本稿没有引入任何新色相。</b></p>
@@ -271,7 +271,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>TabBar</td><td>今天 / 地块 / 我的</td><td><b>今天 / 账本 / 地块 / 我的</b></td></tr>
 <tr><td>账本 tab</td><td>—</td><td>顶部三入口卡（报表 · 欠款 · 库存）+ 全部地块统一流水（可切列表/月历/周历）+ 搜索与筛选</td></tr>
 <tr><td>今天</td><td>本月花费 + 在种季 + 常用账 + recently + dock</td><td>本月<b>净收</b>（收入−支出）+ <b>待收/待付</b>条 + 在种季卡（卡上新增净收益）+ 常用账 + dock</td></tr>
-<tr><td>我的</td><td>计数 + 类型管理 + 分享 + 关于</td><td>账号（称号 + 数据量）+ <b>记账设置</b>（类型管理 / 记账键盘 / 回收站）+ 数据同步 / 分享 / 关于。看账的入口全在「账本」页</td></tr>
+<tr><td>我的</td><td>计数 + 类型管理 + 分享 + 关于</td><td>账号（称号 + 数据量）+ <b>记账设置</b>（一行，点进去二级页才是 类型管理 / 记账键盘 / 回收站，见 F20b）+ 数据同步 / 分享 / 关于。看账的入口全在「账本」页</td></tr>
 <tr><td>季详情 · 账本 tab</td><td>分类占比 + 流水（列表/日历）</td><td>保留，并新增「本季净收益」「待收/待付」；日历升级为 月/周 切换 + 连续补账入口（进记一笔的补账模式）</td></tr>
 </table>
 
@@ -597,7 +597,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <li>每行左侧图标底色即方向：收入绿 / 支出橙红 / 赊账紫；带附件的行显示缩略块，带赊账的显示「应付/应收」标。</li>
 <li><b>记账相关的一切都收在这一页</b>：上面两排 6 个入口（报表 / 欠款 / 库存 / 预算 / 资金账户 / 资产负债），<b>每格是「浅绿圆角底 + 绿线图标」+ 标题 + 一句实时结论</b>（不再用单个汉字当图标）。</li>
 <li><b>周期账单独一张状态卡</b>（不是小 chip）：时钟图标 + 「周期账 N 个」+「下次 X月X日 · 名字」，一眼能看到下次哪天；真到期了上面那条橙色 bar 会先说「N 个周期账到期待记 · 去记」。没有周期账时这张卡就是引导文案。</li>
-<li>类型管理 / 记账键盘 / 回收站属于<b>设置</b>，已经挪到「我的 → 记账设置」（见 F20），不再占账本页的位置。</li>
+<li>类型管理 / 记账键盘 / 回收站属于<b>设置</b>，已经挪到「我的 → 记账设置」（见 F20 / F20b），不再占账本页的位置。</li>
 <li>「列表 / 月历 / 周历」三者切换（日历见 F9 F10）。</li>
 </ul></div></div>
 
@@ -1260,11 +1260,8 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
         <div class="grow"><div style="font-size:16px;font-weight:800">我的农田账本</div><div class="tiny">2026 年 · 地块 2 · 种植季 3 · 账目 38 · 记事 61</div></div>
       </div>
     </div>
-    <div class="tiny" style="margin:10px 4px 0">记账设置</div>
     <div class="c2 pad0" style="padding:0 14px">
-      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg></div><div class="grow"><div style="font-weight:700">记账 / 记事类型管理</div><div class="tiny">分类、颜色、收入类型、常用账</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic b">⌨</div><div class="grow"><div style="font-weight:700">记账键盘</div><div class="tiny">布局、左下功能键、震动与千分位</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-trash"/></svg></div><div class="grow"><div style="font-weight:700">回收站</div><div class="tiny">2 项 · 30 天内可恢复</div></div><span class="muted">›</span></div>
+      <div class="flow" style="border-bottom:0"><div class="fic b">⚙</div><div class="grow"><div style="font-weight:700">记账设置</div><div class="tiny">类型管理、记账键盘、回收站</div></div><span class="muted">›</span></div>
     </div>
     <div class="c2 pad0" style="padding:0 14px">
       <div class="flow"><div class="grow"><div style="font-weight:700">数据同步</div><div class="tiny">已同步到云端 · 3 分钟前</div></div><span class="tiny" style="color:var(--in);font-weight:700">已同步 ›</span></div>
@@ -1277,10 +1274,29 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <div class="cap"><h4>F20 · 我的<span class="tagline">P0-3 P0-5</span></h4>
 <ul>
 <li>只剩账号本身 + 设置：称号 + 数据量一行。</li>
-<li><b>「记账设置」组</b>：类型管理（含收入类型、常用账）、记账键盘、回收站——这三样从「账本」页挪过来（用户要求：账本上只留看账的入口，设置归「我的」）。每行行首一个「浅绿圆角底 + 绿线图标」。</li>
+<li><b>「记账设置」只占一行</b>：点进去才是三个子入口（类型管理 / 记账键盘 / 回收站，见 F20b）——一级页不铺设置项。</li>
 <li>净收益卡、报表 / 欠款 / 库存 / 预算 / 资金账户 / 资产负债入口全部在「账本」页（见 F6）。</li>
 <li>「云备份」改名 <b>数据同步</b>，说人话：数据本来就在云开发数据库里，这行报的是状态——「已同步到云端 · N 分钟前」/「N 条正在上传」/「当前离线，N 条等联网」/「没连云环境，数据只在本机」；点一下立刻拉一次 + 推一次。</li>
 <li>「推荐给种地的朋友」整行跟上下两行同一套布局（普通 view 行 + 一层透明 button 只接分享点击），<code>›</code> 严格右对齐——之前直接把 <code>&lt;button&gt;</code> 当行容器，被 button 的默认居中/内边距挤到中间去了。</li>
+</ul></div></div>
+
+<div class="frame"><div class="dev">
+  <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+  <div class="nav"><span class="ic">‹</span><span class="grow">记账设置</span><span class="ic r"></span></div>
+  <div class="body">
+    <div class="c2 pad0" style="padding:0 14px">
+      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg></div><div class="grow"><div style="font-weight:700">记账 / 记事类型管理</div><div class="tiny">分类、颜色、收入类型、常用账</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="fic b">⌨</div><div class="grow"><div style="font-weight:700">记账键盘</div><div class="tiny">布局、左下功能键、震动与千分位</div></div><span class="muted">›</span></div>
+      <div class="flow" style="border-bottom:0"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-trash"/></svg></div><div class="grow"><div style="font-weight:700">回收站</div><div class="tiny">2 项 · 30 天内可恢复</div></div><span class="muted">›</span></div>
+    </div>
+  </div>
+</div>
+<div class="cap"><h4>F20b · 记账设置<span class="tagline">P0-3 P0-5</span></h4>
+<ul>
+<li>「我的」里压成一行「记账设置」，点进来才是这三个子入口：一级页只留结论，设置项收进二级页。</li>
+<li>三行各自还是独立页：类型管理（<code>pages/tags/tags</code>）、记账键盘（<code>pages/keypanel/keypanel</code>）、回收站（<code>pages/trash/trash</code>），返回就是「我的」。</li>
+<li>回收站那行说明是活数据：「N 项 · 30 天内可恢复」；空的时候写「空的」。</li>
+<li>视觉沿用「我的」那张卡的列表行：浅绿圆角底 + 绿线图标 + 标题 + 说明 + <code>›</code>，字号/间距不变。</li>
 </ul></div></div>
 
 <div class="frame"><div class="dev">
@@ -1469,6 +1485,8 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 允许把非本季地块加进来（比如同一季里又包了别人一块地），不做限制。</div>
 <div class="note done" style="margin-top:12px"><b>9. <code>design_handoff/</code> 里的旧导出代码 —— 已删除。</b><br>
 原型页与 handoff 版 <code>mine</code> 的「导出为文字」全部移除，与本稿第 13 节第 5 条口径一致。</div>
+<div class="note done" style="margin-top:12px"><b>13. 真机反馈（2026-10-07，体验版 0.7.16）—— 「记账设置」收成一行。</b><br>
+「我的」上原来直接铺三行（类型管理 / 记账键盘 / 回收站），一级页太啰嗦 → <b>压成一行「记账设置」</b>，点进去才是二级页（见 <b>F20b</b>）；三行内容原样搬过去，图标、文案、回收站那行的活数据说明都不变。新增页 <code>pages/ledger-settings/ledger-settings</code>，<code>pages/mine/mine</code> 只留一个入口。</div>
 <div class="note done" style="margin-top:12px"><b>12. 真机反馈（2026-10-07，体验版 0.7.9）—— 三件事都改了。</b><br>
 ①账本页那行小 chip（类型管理 / 周期账 / 记账键盘 / 回收站）拆开：<b>周期账保留在账本，但换成一张状态卡</b>（时钟图标 + 「周期账 N 个」+「下次 X月X日 · 名字」）；类型管理 / 记账键盘 / 回收站属于设置，<b>挪到「我的 → 记账设置」</b>。<br>
 ②6 个入口原来用单个汉字（报 / 欠 / 库 / 预 / 资 / 产）当图标，太丑 → <b>全部换成绿线图标</b>（新画了 chart / box / wallet / target / scale / trash / sync / info，并补了 users 的绿色版），浅绿圆角底 + 绿线图标，和记账分类同一套视觉；「我的」两个设置组也一起上了图标。<br>

@@ -40,18 +40,19 @@ printf '%s\n' "$out"
 task="$(printf '%s' "$out" | jget 'd.get("result",{}).get("taskId","")')"
 [ -z "$task" ] && { echo "[wxrun] 同步完成"; exit 0; }
 
+# 只有 IDE 明确要求人工确认的任务才去点弹窗（别的工具不碰）
 taskType="$(printf '%s' "$out" | jget 'd.get("result",{}).get("taskType","")')"
-case "$taskType" in
-  confirmation_*) NEED_CONFIRM=1 ;;
-  *) NEED_CONFIRM=0 ;;
-esac
+case "$taskType" in confirmation_*) NEED_CONFIRM=1 ;; *) NEED_CONFIRM=0 ;; esac
 
 echo "[wxrun] 异步任务 ${task}，等执行结果…"
-for _ in $(seq 1 40); do
-  # 需要用户点「允许」的弹窗：直接按下去，不等人工
+for _ in $(seq 1 60); do
   if [ "$NEED_CONFIRM" = 1 ]; then
-    clicker="$("$BIN" 2 2>&1)"
-    case "$clicker" in *clicked*) printf '%s\n' "$clicker" | sed 's/^/[wxallow] /' ;; esac
+    ck="$("$BIN" 3 2>&1)"
+    case "$ck" in
+      *"弹窗已消失"*|*"by AX"*)
+        printf '%s\n' "$ck" | grep clicked | sed 's/^/[wxallow] /'
+        NEED_CONFIRM=0 ;;   # 确认点掉了就不再重复点
+    esac
   fi
   res="$(wechatide -c "$CLIENT" polling_task_result --task-id "$task" --token "$TOKEN")"
   status="$(printf '%s' "$res" | jget 'd.get("result",{}).get("status","")')"

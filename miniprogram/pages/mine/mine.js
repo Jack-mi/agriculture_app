@@ -14,7 +14,7 @@ function ago(ts) {
 }
 
 Page({
-  data: { counts: {}, year: '', trash: 0, sync: { state: '', ok: false } },
+  data: { counts: {}, year: '', sync: { state: '', ok: false } },
 
   onShow() {
     const d = store.db();
@@ -36,7 +36,6 @@ Page({
         costs: d.costs.filter(c => !c.deletedAt).length,
         logs: d.logs.filter(l => !l.deletedAt).length
       },
-      trash: store.trash.count(),
       sync: { state, ok }
     });
   },
@@ -51,10 +50,8 @@ Page({
       .catch(() => U.toast('同步失败，联网后会自动重试'));
   },
 
-  // 记账设置：从「账本」挪过来（用户要求：我的只留设置，看账的入口归账本）
-  goTags() { wx.navigateTo({ url: '/pages/tags/tags' }); },
-  goKeypanel() { wx.navigateTo({ url: '/pages/keypanel/keypanel' }); },
-  goTrash() { wx.navigateTo({ url: '/pages/trash/trash' }); },
+  // 记账设置：压成一行，点进去才是 类型管理 / 记账键盘 / 回收站（用户要求）
+  goLedgerSettings() { wx.navigateTo({ url: '/pages/ledger-settings/ledger-settings' }); },
 
   about() {
     wx.showModal({

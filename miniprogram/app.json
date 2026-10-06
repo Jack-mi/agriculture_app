@@ -20,6 +20,7 @@
     "pages/cost-detail/cost-detail",
     "pages/log-edit/log-edit",
     "pages/harvest/harvest",
+    "pages/ledger-settings/ledger-settings",
     "pages/tags/tags",
     "pages/task/task",
     "pages/alert/alert",
