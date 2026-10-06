@@ -100,6 +100,7 @@
 >   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 25 页 + keypad 全通过
 >   - 模拟器复核：「我的」一行入口 + 「记账设置」二级页三行，都截图看过
 >   - 顺带（本轮另做）：`scripts/wxrun.sh` + `scripts/wx-allow.swift` —— wechatide 的「MCP 客户端授权」弹窗自动点掉（不是靠开关，那个开关在这个版本是死的），详见第 8 节
+> - **版本号约定（2026-10-06 确认）**：0.7.x 到 `0.7.18` 收口（`0.7.10`~`0.7.15` 是弹窗自动化验证时的空上传，内容同 `0.7.9`）；**下一处真改动直接跳 `0.8.0`**，不再在 0.7 上加水位。
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
