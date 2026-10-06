@@ -30,9 +30,6 @@ page { height: 100%; overflow: hidden; }
 /* ② 记的是什么 */
 .head { background: var(--card); border-bottom: 2rpx solid var(--line); padding: 14rpx 32rpx 18rpx; flex-shrink: 0; }
 
-/* 最近用过 + 常用账入口 */
-.recents { flex: 1; min-width: 0; white-space: nowrap; display: flex; }
-.tplbtn { flex-shrink: 0; margin-left: 12rpx; height: 60rpx; line-height: 56rpx; padding: 0 20rpx; border-radius: 30rpx; border: 2rpx solid var(--wheat); background: var(--wheat-l); color: #7A5210; font-size: 25rpx; font-weight: 700; }
 .chip.small { height: 60rpx; line-height: 56rpx; font-size: 26rpx; padding: 0 22rpx; border-radius: 30rpx; margin: 0 12rpx 0 0; border: 2rpx solid var(--line); background: #fff; color: var(--ink); display: inline-block; }
 
 .hcat { display: flex; align-items: center; font-size: 32rpx; font-weight: 700; min-width: 0; margin-top: 12rpx; }
@@ -47,14 +44,17 @@ page { height: 100%; overflow: hidden; }
 .modes { display: flex; margin-top: 14rpx; }
 .mode { height: 54rpx; line-height: 50rpx; padding: 0 20rpx; border-radius: 27rpx; border: 2rpx solid var(--line); font-size: 25rpx; color: var(--sub); margin-right: 12rpx; background: #fff; }
 .mode.on { border-color: var(--wheat); color: #7A5210; background: var(--wheat-l); font-weight: 700; }
-.formula { display: flex; align-items: center; justify-content: flex-end; margin-top: 12rpx; }
+/* 金额区（公式行 / 算式行 + 大金额）：**高度写死**。
+   原来算式行只在有 + − 时才出现，一按键就多出一行把下面全推下去 —— 看起来就是整页在晃。 */
+.amtbox { height: 166rpx; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+.formula { display: flex; align-items: center; justify-content: flex-end; height: 62rpx; margin-top: 12rpx; }
 .fx { height: 62rpx; line-height: 58rpx; padding: 0 20rpx; border-radius: 31rpx; background: #FBF8EF; border: 2rpx solid var(--line); font-size: 27rpx; color: var(--sub); }
 .fx .b { font-weight: 800; color: var(--ink); font-size: 30rpx; margin: 0 4rpx; }
 .fx.on { border-color: var(--wheat); background: var(--wheat-l); box-shadow: 0 0 0 4rpx rgba(201,139,30,.18); }
 .x { margin: 0 12rpx; font-size: 30rpx; }
-.expr { text-align: right; color: var(--sub); font-size: 27rpx; min-height: 36rpx; margin-top: 10rpx; }
-.big { text-align: right; font-size: 80rpx; font-weight: 800; line-height: 1.1; margin-top: 2rpx; }
-.big .yen { font-size: 44rpx; color: var(--wheat); margin-right: 8rpx; }
+.expr { text-align: right; color: var(--sub); font-size: 27rpx; height: 62rpx; line-height: 62rpx; margin-top: 12rpx; overflow: hidden; }
+.big { text-align: right; font-size: 72rpx; font-weight: 800; line-height: 1.25; height: 90rpx; white-space: nowrap; overflow: hidden; }
+.big .yen { font-size: 42rpx; color: var(--wheat); margin-right: 8rpx; }
 .big.zero { color: #B9B3A2; }
 .big.in { color: var(--green); }
 .big.out { color: var(--heat); }

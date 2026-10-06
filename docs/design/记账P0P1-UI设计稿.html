@@ -268,7 +268,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>TabBar</td><td>今天 / 地块 / 我的</td><td><b>今天 / 账本 / 地块 / 我的</b></td></tr>
 <tr><td>账本 tab</td><td>—</td><td>顶部三入口卡（报表 · 欠款 · 库存）+ 全部地块统一流水（可切列表/月历/周历）+ 搜索与筛选</td></tr>
 <tr><td>今天</td><td>本月花费 + 在种季 + 常用账 + recently + dock</td><td>本月<b>净收</b>（收入−支出）+ <b>待收/待付</b>条 + 在种季卡（卡上新增净收益）+ 常用账 + dock</td></tr>
-<tr><td>我的</td><td>计数 + 类型管理 + 分享 + 关于</td><td>年度收支与净收益 + 计数 + 报表/欠款/库存/回收站/周期账/键盘设置/类型管理/分享/关于</td></tr>
+<tr><td>我的</td><td>计数 + 类型管理 + 分享 + 关于</td><td>只留账号（称号 + 数据量）、数据同步状态、分享、关于——记账相关入口全部移到「账本」页</td></tr>
 <tr><td>季详情 · 账本 tab</td><td>分类占比 + 流水（列表/日历）</td><td>保留，并新增「本季净收益」「待收/待付」；日历升级为 月/周 切换 + 连续补账入口（进记一笔的补账模式）</td></tr>
 </table>
 
@@ -289,7 +289,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>P1-11</td><td>全部地块统一流水页（跨季跨地块）</td><td>F6</td></tr>
 <tr><td>P1-12</td><td>误删恢复（回收站）；操作留痕只写数据、界面不展示（用户要求）</td><td>F21</td></tr>
 <tr><td>P1-13</td><td>预算：按季总预算 / 每亩目标 / 分类预算、进度与超支提醒</td><td>F25</td></tr>
-<tr><td>P1-14</td><td>资金账户：现金 / 微信 / 银行卡，期初 + 实收 − 实付 = 余额，按账户筛流水</td><td>F26</td></tr>
+<tr><td>P1-14</td><td>资金账户：默认 现金 / 微信 / 支付宝 / 银行卡 / 其他（可自己增删改），期初 + 实收 − 实付 = 余额，按账户筛流水</td><td>F26</td></tr>
 <tr><td>P1-15</td><td>资产负债总览：账户余额 + 库存估值 + 应收 − 应付 = 净资产</td><td>F27</td></tr>
 </table>
 
@@ -314,12 +314,6 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
     <div class="seg" style="margin-top:9px"><div class="on">直接填</div><div>按亩计</div><div>按人天</div></div>
     <div class="row" style="justify-content:flex-end;margin-top:2px">
       <div class="amt out"><span class="yen">−¥</span>2,180</div>
-    </div>
-    <div class="row between" style="margin-top:8px">
-      <span class="tiny">常记的账会出现在这儿</span><span class="chip hl">★ 常用账</span>
-    </div>
-    <div class="chips" style="margin-top:6px">
-      <span class="chip hl">化肥 · 复合肥</span><span class="chip">飞防</span><span class="chip">雇工</span>
     </div>
     <div class="c2 pad0">
       <div class="gi4" style="padding:10px 0">
@@ -348,9 +342,11 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <li>顶部新增 <b>支出 / 收入</b> 分段（默认支出）。收入态见 F2，同一页双态，不另开页面。</li>
 <li><b>时间放最上面</b>：日期（点开日历选）＋ 周期（F4）并排一行，回答「这笔是哪天的、要不要重复」。</li>
 <li><b>归到哪个种植季贴在分类名右边</b>（<code>⇆ 东大块 ›</code>）：点开就是分摊弹层（F5）。多季共用时变麦色并显示「N 季 · 按亩均摊」。</li>
-<li><b>「常记的账」＋「★ 常用账」</b>合成一行放在分类区顶部：前 4 个最近用过的 <code>cat+sub</code> 一键切过去，「常用账」弹层里放存好的模板。「记忆上次分类」保留为兜底默认。</li>
+<li><b>不设「最近用过 / 常用账」那一行</b>（用户反馈：夹在金额和分类之间没意义、太杂）。选分类就靠大类分段 + 细分宫格两步。常用账模板保留：类型管理 → 常用账，或把键盘左下角那颗键设成「常用账」。</li>
 <li><b>备注与附件并成一栏</b>放在分类宫格下面，<b>就地写、就地看</b>，不再跳弹层：备注一行输入框；附件是个小圆钮（有附件时显示张数，有图就在下面铺缩略图，点 ✕ 删）。</li>
 <li><b>账户与赊账（钱怎么走的）留在键盘上方一条</b>，记账时不用往上翻：左边选账户，右边一键挂应收/应付（F3）。</li>
+<li><b>账户不是写死的</b>：默认 现金 / 微信 / 支付宝 / 银行卡 / 其他；账户弹层里直接有「＋ 增删改账户」进资金账户页，不用先猜到要绕去哪里。</li>
+<li>金额区（公式行 / 算式行 + 大金额）<b>高度写死</b>：算式行只在有 <code>+ −</code> 时才出现的话，一按键就多一行把下面全推下去，看起来就是整页在晃。</li>
 <li>金额显示带方向：支出 <code>−¥</code> 橙红、收入 <code>＋¥</code> 收入绿。</li>
 <li>键盘默认是现有 4×4；自定义布局见 F22，本屏是默认布局。</li>
 </ul></div></div>
@@ -525,7 +521,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <li>删除附件是软删（进回收站，F21），和账目删除同一套留痕口径。</li>
 </ul></div></div></div>
 <h2 class="sec">4. 账本（P1-7 / P1-11 / P1-9）</h2>
-<p class="secnote">新增一级 tab，承担「全部地块统一流水」。三个入口卡（报表/欠款/库存）放最上面，下面才是流水本体，筛选和搜索常驻。</p>
+<p class="secnote">新增一级 tab，承担「全部地块统一流水」，同时是<b>记账的总入口</b>（用户要求：记账相关的东西别堆在「我的」里）。上面两排入口 + 一行设置，下面才是流水本体，筛选和搜索常驻。</p>
 
 <div class="grid">
 
@@ -537,6 +533,14 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
       <a><div class="ic"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-chart"/></svg></div><div class="n">报表</div><div class="s">今年净收 ¥3.2万</div></a>
       <a><div class="ic"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg></div><div class="n">欠款</div><div class="s">待收 1.5万 · 待付 0.4万</div></a>
       <a><div class="ic"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div><div class="n">库存</div><div class="s">化肥剩 12 袋</div></a>
+    </div>
+    <div class="hub">
+      <a><div class="ic">预</div><div class="n">预算</div><div class="s">本季已用 62%</div></a>
+      <a><div class="ic">资</div><div class="n">资金账户</div><div class="s">¥18,640</div></a>
+      <a><div class="ic">产</div><div class="n">资产负债</div><div class="s">净资产 ¥42,300</div></a>
+    </div>
+    <div class="chips">
+      <span class="chip">类型管理</span><span class="chip">周期账 2</span><span class="chip">记账键盘</span><span class="chip">回收站 2</span>
     </div>
     <div class="row" style="gap:8px">
       <div class="srch grow"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-search"/></svg> 搜备注 / 对方 / 品名</div>
@@ -586,6 +590,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <li>搜索框覆盖 <b>备注 / 对方 / 品名</b>；已生效的筛选以「可删的 chip」回显，点 × 移除。</li>
 <li>列表按日分组，组头显示当天收入与支出两个数（原来只有支出合计）。</li>
 <li>每行左侧图标底色即方向：收入绿 / 支出橙红 / 赊账紫；带附件的行显示缩略块，带赊账的显示「应付/应收」标。</li>
+<li><b>记账相关的一切都收在这一页</b>：上面两排 6 个入口（报表 / 欠款 / 库存 / 预算 / 资金账户 / 资产负债，每格带一句实时结论），再一行设置（类型管理 / 周期账 / 记账键盘 / 回收站）。「我的」只留账号、同步状态、分享、关于。</li>
 <li>「列表 / 月历 / 周历」三者切换（日历见 F9 F10）。</li>
 </ul></div></div>
 
@@ -1233,8 +1238,8 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 
 </div>
 
-<h2 class="sec">10. 我的与设置（P0-2 / P0-3 / P0-5 / P1-6 / P1-10 / P1-12）</h2>
-<p class="secnote">我的页从「几个计数」变成入口汇总；键盘自定义、回收站、类型管理都落在这里。</p>
+<h2 class="sec">10. 我的（P0-3 / P0-5）</h2>
+<p class="secnote">「我的」只放账号本身：称号 + 数据量、数据同步状态、分享、关于。<b>记账相关的一切（报表 / 欠款 / 库存 / 预算 / 资金账户 / 资产负债 / 类型管理 / 周期账 / 记账键盘 / 回收站）都在「账本」页</b>——用户反馈「我的上面基本都是记账相关的，不能放记账页吗」。</p>
 
 <div class="grid">
 
@@ -1245,39 +1250,22 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
     <div class="c2">
       <div class="row" style="gap:12px">
         <div class="fic" style="width:48px;height:48px;border-radius:15px;font-size:18px;background:var(--green-l);color:var(--green-d)">谷</div>
-        <div class="grow"><div style="font-size:16px;font-weight:800">我的农田账本</div><div class="tiny">2026 年</div></div>
+        <div class="grow"><div style="font-size:16px;font-weight:800">我的农田账本</div><div class="tiny">2026 年 · 地块 2 · 种植季 3 · 账目 38 · 记事 61</div></div>
       </div>
-      <div class="row between" style="margin-top:12px">
-        <div><div class="tiny">今年净收益</div><div class="num" style="font-size:22px;color:var(--in)">＋¥10,260</div></div>
-        <div class="right"><div class="tiny">收 / 支</div><div class="num" style="font-size:13px">15,120 / 4,860</div></div>
-      </div>
-      <div class="stack" style="margin-top:9px"><i style="width:76%;background:var(--in)"></i><i style="width:24%;background:#E5A891"></i></div>
     </div>
     <div class="c2 pad0" style="padding:0 14px">
-      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-chart"/></svg></div><div class="grow"><div style="font-weight:700">统计报表</div><div class="tiny">收支 / 结构 / 趋势 / 成本进度</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic d"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-receipt"/></svg></div><div class="grow"><div style="font-weight:700">欠款台账</div><div class="tiny">待收 ¥15,120 · 待付 ¥1,500</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic o"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div><div class="grow"><div style="font-weight:700">库存</div><div class="tiny">农资 3 种 · 粮食 12,600 斤</div></div><span class="muted">›</span></div>
+      <div class="flow"><div class="grow"><div style="font-weight:700">数据同步</div><div class="tiny">已同步到云端 · 3 分钟前</div></div><span class="tiny" style="color:var(--in);font-weight:700">已同步 ›</span></div>
+      <div class="flow"><div class="grow"><div style="font-weight:700">推荐给种地的朋友</div><div class="tiny">分享给一起种地的邻居</div></div><span class="muted">›</span></div>
+      <div class="flow" style="border-bottom:0"><div class="grow"><div style="font-weight:700">关于谷雨记</div><div class="tiny">谷雨种谷，雨生百谷</div></div><span class="muted">›</span></div>
     </div>
-    <div class="c2 pad0" style="padding:0 14px">
-      <div class="flow"><div class="fic b">类</div><div class="grow"><div style="font-weight:700">记账 / 记事类型管理</div><div class="tiny">分类、颜色、收入类型</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic b">周</div><div class="grow"><div style="font-weight:700">周期账与分期</div><div class="tiny">2 个周期账 · 下次 11-01</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic b">⌨</div><div class="grow"><div style="font-weight:700">记账键盘</div><div class="tiny">默认布局 · 最近分类 4 个</div></div><span class="muted">›</span></div>
-      <div class="flow"><div class="fic b"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-trash"/></svg></div><div class="grow"><div style="font-weight:700">回收站</div><div class="tiny">2 项 · 30 天后彻底删除</div></div><span class="muted">›</span></div>
-    </div>
-    <div class="c2 pad0" style="padding:0 14px">
-      <div class="flow"><div class="fic b">份</div><div class="grow"><div style="font-weight:700">云备份</div><div class="tiny">已开 · 3 分钟前同步</div></div><span class="chip hl">已开</span></div>
-      <div class="flow" style="border-bottom:0"><div class="fic b">荐</div><div class="grow"><div style="font-weight:700">推荐给种地的朋友</div></div><span class="muted">›</span></div>
-    </div>
-    <div class="muted" style="text-align:center;font-size:12px">地块 2 · 种植季 3 · 账目 38 · 记事 61</div>
   </div>
   <div class="tabb"><div><em>▦</em>今天</div><div><em>▤</em>账本</div><div><em>◲</em>地块</div><div class="on"><em>☺</em>我的</div></div>
 </div>
-<div class="cap"><h4>F20 · 我的<span class="tagline">P0-3 P0-5 P1-10 P1-12</span></h4>
+<div class="cap"><h4>F20 · 我的<span class="tagline">P0-3 P0-5</span></h4>
 <ul>
-<li>顶部从「计数」换成 <b>今年净收益 + 收支 + 占比条</b>，计数降为页脚一行小字。</li>
-<li>三个入口卡：统计报表 / 欠款 / 库存，每个都带一句实时结论，不是裸链接。</li>
-<li>设置组：类型管理（含收入类型）、周期账与分期、记账键盘、回收站（带待清理数量）。</li>
-<li>云备份状态显性化（原来只在同步里存在，用户看不见）。</li>
+<li>只剩账号本身：称号 + 数据量一行。<b>净收益卡、报表/欠款/库存/预算/账户/资产负债/类型/周期账/键盘/回收站入口，全部挪到「账本」页</b>（见 F6）。</li>
+<li>「云备份」改名 <b>数据同步</b>，说人话：数据本来就在云开发数据库里，这行报的是状态——「已同步到云端 · N 分钟前」/「N 条正在上传」/「当前离线，N 条等联网」/「没连云环境，数据只在本机」；点一下立刻拉一次 + 推一次。</li>
+<li>「推荐给种地的朋友」整行跟上下两行同一套布局（普通 view 行 + 一层透明 button 只接分享点击），<code>›</code> 严格右对齐——之前直接把 <code>&lt;button&gt;</code> 当行容器，被 button 的默认居中/内边距挤到中间去了。</li>
 </ul></div></div>
 
 <div class="frame"><div class="dev">
@@ -1433,6 +1421,8 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>欠款</td><td>新集合 <b>不做</b>；欠款挂在 <code>costs</code> 的 <code>debt:{party,dueDate|dueTag,settled,settledAt,paidAmount}</code> 上，随账目一起同步</td></tr>
 <tr><td>库存</td><td>存在 <code>tags.stock</code> 单文档：<code>[{name,unit,onHand,warnAt,lastPrice}]</code>；出入库流水不复制数据，由 <code>costs</code>（采购）与 <code>logs.materials</code>（用量）派生 + 手动修正条</td></tr>
 <tr><td>附件</td><td><code>costs[i].attachments=[{name,localPath,fileID,size}]</code>；先本机后云端，上传失败保留 localPath 并在列表标「待传」</td></tr>
+<tr><td>资金账户</td><td><code>tags.accounts=[{key,name,init}]</code>，默认 现金 / 微信 / 支付宝 / 银行卡 / 其他；<b>账户是用户自己的清单</b>（可加/改名/删），默认表升级只补缺的（<code>tags.accountsVer</code>），用户改过的一律不动</td></tr>
+<tr><td>品种 / 整地</td><td><code>tags.variety[作物]</code>（初始 = <code>const.VARIETIES</code>）、<code>tags.tillage</code>（初始 = <code>const.DEFAULT_TILLAGE</code>）：两份都是<b>用户自己的快捷清单</b>，可自己加、长按删（内置项也能删）。不新增云端集合，随 tags 单文档同步</td></tr>
 <tr><td>周期账</td><td><code>tags.recurring=[{id,name,cat,sub,mode,freq,day|dueTag,amount,startAt,endAt,lastFiredAt,enabled}]</code>；到期只生成待记，不自动落账</td></tr>
 <tr><td>分期</td><td>同上，加 <code>installment:{total,periods,index}</code>；每期金额 = 总额/期数，尾差进最后一期（复用现有 <code>splitBy</code>）</td></tr>
 <tr><td>回收站</td><td><code>costs/logs</code> 加 <code>deletedAt</code>；所有列表过滤掉带 <code>deletedAt</code> 的；30 天后启动时本机清理</td></tr>
@@ -1464,6 +1454,15 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 允许把非本季地块加进来（比如同一季里又包了别人一块地），不做限制。</div>
 <div class="note done" style="margin-top:12px"><b>9. <code>design_handoff/</code> 里的旧导出代码 —— 已删除。</b><br>
 原型页与 handoff 版 <code>mine</code> 的「导出为文字」全部移除，与本稿第 13 节第 5 条口径一致。</div>
+<div class="note done" style="margin-top:12px"><b>11. 真机反馈（2026-10-07，体验版 0.7.8）—— 八件事都改了。</b><br>
+①账户默认加「支付宝」，并且账户<b>可自己增删改</b>（记一笔账户弹层里就有「＋ 增删改账户」入口）。<br>
+②记一笔中间那行「最近用过 + ★常用账」<b>删掉</b>——夹在金额和分类之间没意义。连带「记账键盘 → 最近用过」那组设置也撤了（没有对应界面了）。常用账模板还在：类型管理 → 常用账，或把键盘左下角那颗键设成「常用账」。<br>
+③月历点某天的按钮「这天补记一笔」→「<b>这天记一笔</b>」。<br>
+④「推荐给种地的朋友」那一行的 <code>›</code> 没跟上下对齐：根因是拿 <code>&lt;button&gt;</code> 直接当行容器，被 button 默认的居中/内边距挤偏。改成普通 view 行 + 一层透明 button 只接点击。<br>
+⑤键盘震动保留，去掉「晃动」：根因是算式行（<code>12 + 3</code>）只在有 <code>+ −</code> 时才出现，一按键就多出一行把下面全推下去。改成金额区高度写死，算式/公式行任何时候占同样高度。<br>
+⑥「云备份」改名「数据同步」，并说人话（见 F20）。<br>
+⑦记账相关入口全部从「我的」移到「账本」，见 F6 / F20。<br>
+⑧「品种」和「整地情况」的快捷项改成<b>用户自己的清单</b>：初始是内置常见项，可以自己加（＋ 自定义）、长按删掉任意一项（内置的也能删），存在 <code>tags.variety[作物]</code> / <code>tags.tillage</code>，不新增云端集合。</div>
 <div class="note done" style="margin-top:12px"><b>10. 真机反馈（2026-10-06，体验版 0.7.7）—— 三件事都改了。</b><br>
 ①「存成周期账」里选每季/每年，下面还是让人选「几号」，锚月写死在 1 月 → 改成按频率换行：每周=周几、每月=几号、<b>每季=哪个月+几号（每 3 个月一次）</b>、每年=哪个月+几号，并当场回显口径与「下次提醒」。<br>
 ②记一笔页面把日期/分摊/备注/附件/周期/赊账/账户/常用账 8 个 chip 挤在一行 → 拆开内嵌到整页（见 F1）。<br>
@@ -1530,6 +1529,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <div class="cap"><h4>F26 · 资金账户<span class="tagline">P1-14</span></h4>
 <ul>
 <li>记一笔多一个「账户」chip；账本筛选抽屉里多一组账户 chip，能只看某个口袋的流水。</li>
+<li><b>账户是用户自己的清单</b>：默认 现金 / 微信 / 支付宝 / 银行卡 / 其他，随时能加、改名、删；记一笔的账户弹层里直接给「＋ 增删改账户」入口，不用先猜到要来这里。老库升级只补缺的默认账户（例如新增的「支付宝」），用户自己加过、改过名的一律不动。</li>
 <li><b>余额 = 期初 + 实收 − 实付</b>；挂了赊账的只算<b>已销账金额</b>——钱没到手就不进账户，避免和应收重复计算。</li>
 <li>没挂账户的账不计入任何账户，页面明确提示「还有 N 笔没挂账户」，不做静默吞掉。</li>
 <li>存 <code>tags.accounts = [{key,name,init}]</code>、账目挂 <code>costs[i].account</code>，都随现有单文档同步。</li>

@@ -157,11 +157,28 @@ test('品种（二级类目）：选填落库，快捷选项 = 用过的在前 +
   const b = stats.seasonBrief(store.seasons.get('sa'));
   assert.strictEqual(b.variety, '登海605');
   assert.strictEqual(b.cropFull, '玉米 · 登海605');
+  // 品种清单是「用户自己那份」，初始就是内置常见品种，可自己加、自己删
   const v = store.seasons.varieties('corn');
-  assert.deepStrictEqual(v.used, ['登海605', '自留种']);
-  assert.ok(v.preset.indexOf('登海605') < 0, '用过的不重复出现在建议里');
-  assert.ok(v.preset.indexOf('郑单958') >= 0);
+  assert.deepStrictEqual(v.used, ['自留种'], '用过的、且不在清单里的才单列在前面');
+  assert.ok(v.list.indexOf('登海605') >= 0, '用过的本来就在清单里');
+  assert.ok(v.list.indexOf('郑单958') >= 0, '内置常见品种在清单里');
+  assert.deepStrictEqual(v.all, ['自留种'].concat(v.list), 'all = 用过的(去重) + 清单');
   assert.deepStrictEqual(store.seasons.varieties('wheat').used, []);
+  // 自己加一个：进清单、进 all、自动去重
+  store.varieties.add('wheat', '自留麦种');
+  store.varieties.add('wheat', '自留麦种');
+  assert.deepStrictEqual(store.varieties.list('wheat').filter(x => x === '自留麦种').length, 1);
+  assert.ok(store.seasons.varieties('wheat').all.indexOf('自留麦种') >= 0);
+  // 自己删一个：内置的也能删，删完不再出现
+  store.varieties.remove('wheat', '济麦22');
+  assert.ok(store.varieties.list('wheat').indexOf('济麦22') < 0);
+  assert.ok(store.seasons.varieties('wheat').all.indexOf('济麦22') < 0);
+  // 整地情况：同样是用户自己的清单，初始 = 内置，可加可删
+  assert.deepStrictEqual(store.tillage.list(), ['旋耕', '深翻', '深松', '免耕', '秸秆还田']);
+  store.tillage.add('耙地');
+  assert.ok(store.tillage.list().indexOf('耙地') >= 0);
+  store.tillage.remove('免耕');
+  assert.ok(store.tillage.list().indexOf('免耕') < 0);
   // 清空
   store.seasons.save({ id: 'sa', variety: '' });
   assert.strictEqual(stats.seasonBrief(store.seasons.get('sa')).cropFull, '玉米');

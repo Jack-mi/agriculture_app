@@ -48,6 +48,7 @@
       <view wx:for="{{modes}}" wx:key="key" class="mode {{mode === item.key ? 'on' : ''}}" bindtap="pickMode" data-m="{{item.key}}">{{item.name}}</view>
     </view>
 
+    <view class="amtbox">
     <view wx:if="{{mode === 'perMu'}}" class="formula">
       <view class="fx {{field === 'price' ? 'on' : ''}}" bindtap="pickField" data-f="price">单价 <text class="num b">¥{{priceText}}</text>/亩</view>
       <text class="muted x">×</text>
@@ -73,19 +74,11 @@
     <view class="big num {{dir === 'in' ? 'in' : 'out'}} {{total > 0 ? '' : 'zero'}}">
       <text class="yen">{{dir === 'in' ? '＋' : '−'}}¥</text>{{totalText}}
     </view>
+    </view>
   </view>
 
   <!-- ③ 分类 + 备注 + 附件（都在这页里，不再挤成一行 chip） -->
   <scroll-view scroll-y class="mid">
-    <!-- 常记的账 / 常用账：和分类挨着，一键带出 -->
-    <view class="row" style="align-items:center;padding:16rpx 28rpx 0">
-      <scroll-view wx:if="{{recents.length}}" scroll-x class="recents">
-        <view wx:for="{{recents}}" wx:key="key" class="chip small" bindtap="pickRecent" data-i="{{index}}">{{item.label || item.cat}}</view>
-      </scroll-view>
-      <view wx:else class="muted flex1" style="font-size:24rpx">常记的账会出现在这儿</view>
-      <view class="tplbtn" bindtap="openTpl">★ 常用账</view>
-    </view>
-
     <block wx:if="{{dir === 'out'}}">
       <view class="seg">
         <view wx:for="{{cats}}" wx:key="key" class="sg {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
@@ -227,6 +220,8 @@
       <view wx:for="{{acctList}}" wx:key="key" class="chip {{account === item.key ? 'on' : ''}}" bindtap="pickAcct" data-k="{{item.key}}">{{item.name}}</view>
     </view>
     <view wx:if="{{account}}" class="btn ghost" bindtap="clearAcct">不指定账户</view>
+    <view class="btn ghost" bindtap="goAcctManage">＋ 增删改账户</view>
+    <view class="muted" style="font-size:24rpx;margin-top:12rpx">默认是现金 / 微信 / 支付宝 / 银行卡，可以自己加、改名、删掉。</view>
   </view>
 </view>
 

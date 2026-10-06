@@ -18,10 +18,11 @@
       </view>
     </view>
     <view class="field">
-      <view class="label">品种 <text class="muted" style="font-weight:400">· 选填，知道就记上</text></view>
-      <view wx:if="{{varUsed.length || varPreset.length}}" class="chips" style="margin-bottom:16rpx">
+      <view class="label">品种 <text class="muted" style="font-weight:400">· 选填；点「＋」自己加，长按清单里的能删</text></view>
+      <view class="chips" style="margin-bottom:16rpx">
         <view wx:for="{{varUsed}}" wx:key="*this" class="chip vchip {{variety === item ? 'on' : ''}}" bindtap="pickVariety" data-v="{{item}}">{{item}}<text class="vused">用过</text></view>
-        <view wx:for="{{varPreset}}" wx:key="*this" class="chip vchip {{variety === item ? 'on' : ''}}" bindtap="pickVariety" data-v="{{item}}">{{item}}</view>
+        <view wx:for="{{varList}}" wx:key="*this" class="chip vchip {{variety === item ? 'on' : ''}}" bindtap="pickVariety" bindlongpress="delVariety" data-v="{{item}}">{{item}}</view>
+        <view class="chip add" bindtap="addVariety">＋ 自定义</view>
       </view>
       <input class="input" placeholder="{{crop === 'corn' ? '如：登海605，不知道可不填' : '如：济麦22，不知道可不填'}}" placeholder-class="ph" value="{{variety}}" bindinput="onVariety" maxlength="20" />
     </view>
@@ -39,9 +40,10 @@
       </view>
     </view>
     <view class="field" style="margin-bottom:0">
-      <view class="label">整地情况</view>
+      <view class="label">整地情况 <text class="muted" style="font-weight:400">· 点一下加到下面；长按能删，也能自己加</text></view>
       <view class="chips" style="margin-bottom:16rpx">
-        <view wx:for="{{tillageQuick}}" wx:key="*this" class="chip" bindtap="addTill" data-w="{{item}}">+ {{item}}</view>
+        <view wx:for="{{tillageList}}" wx:key="*this" class="chip" bindtap="addTill" bindlongpress="delTill" data-w="{{item}}">+ {{item}}</view>
+        <view class="chip add" bindtap="addTillNew">＋ 自定义</view>
       </view>
       <textarea class="textarea" placeholder="如：玉米秸秆还田后旋耕两遍" placeholder-class="ph" value="{{tillage}}" bindinput="onTill" maxlength="300" />
     </view>

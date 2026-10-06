@@ -72,6 +72,18 @@
 >   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51（周期账用例补了「季=每 3 个月、锚月可指定」「年=哪个月」「nextOn 下次提醒」，并修掉一条写死日期的倒计时用例）；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
 >   - **上传记录**：2026-10-06 `upload --upload-version 0.7.7`，代码包 524,603 B（TOTAL 1 个包），`taskId=confirmation_upload_39b59d9b…` → `execution_success`
 >   - 模拟器真机路径复核：`.k` 在自定义组件里选不到，所以金额用页面事件驱动，**保存走的是真实 `save()` 分支**——补账模式记 2026-10-06 后本地库出现 `date=2026-10-06 / src=catchup`，并自动跳到下一天（8 天进度：第 1/8 天 → 存 9-24 → 进度变 1/7、日期跳到 9-25）；截图存 `docs/design/verify/cost-edit.jpg`、`cost-edit-in.jpg`、`cost-edit-rec.jpg`、`cost-edit-rec-year.jpg`、`cost-edit-batch.jpg`、`recurring-edit.jpg`；**验证用的 2 笔假账已从本地库和云端一起清掉**（云端 costs 计数回到 6）
+> - **2026-10-07：体验版 `0.7.8` 已上传**（八条真机反馈，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+>   - **账户**：默认表加「支付宝」（`const.DEFAULT_ACCOUNTS` + `ACCOUNTS_VER=2`）。老库升级只补缺的默认账户、按默认表的前后关系插到正确位置（现金/微信/支付宝/银行卡/其他），**用户自己加过或改过名的一律不动**。记一笔的账户弹层加了「＋ 增删改账户」直达资金账户页 —— 账户本来就能加/改名/删，只是没人找得到入口
+>   - **记一笔删掉中间那行**「最近用过 + ★常用账」（用户反馈夹在金额和分类之间没意义）。连带把「记账键盘 → 最近用过（显示几个 / 带细分）」那组设置撤掉（已经没有对应界面，留着就是个按了没反应的开关）。常用账模板仍在：类型管理 → 常用账，或把键盘左下角那颗键设成「常用账」
+>   - **月历点某天**的按钮「这天补记一笔」→「**这天记一笔**」
+>   - **「推荐给种地的朋友」那行没对齐**：根因是拿 `<button>` 直接当行容器，被 button 默认的居中 + 内边距挤偏，`›` 跑到中间。改成普通 `view` 行（和上下两行同一套 `.item` 布局）+ 一层绝对定位的透明 `button` 只接分享点击
+>   - **键盘不「晃动」**：震动保留。根因是算式行（`12 + 3`）只在出现 `+ −` 时才渲染，一按键就多出一行把下面整块推下去 → 看起来整页在抖。改成金额区 `.amtbox` **高度写死 + 内部 `justify-content: flex-end`**，算式/公式行任何时候占同样高度；大金额 `white-space: nowrap` 不再换行。模拟器实测：`.head` / `.mid` 高度与 `.big` 的 top 在「空 / 12 / 12+3 / 12+34 / 320+180-5」五个状态下**完全一致**
+>   - **「云备份」改名「数据同步」并说人话**：数据本来就在云开发数据库里，这行报的是同步状态（已同步到云端 · N 分钟前 / N 条正在上传 / 当前离线 N 条待传 / 没连云环境）。点一下立刻 `login→pull→flush`。本轮实测云端 `costs`=6 / `logs`=2 / `seasons`=1 与本地一致，`guyuji_synced_at` 有值 —— **同步确实是通的**，之前只是文案让人以为是另一个开关
+>   - **记账入口全部从「我的」搬到「账本」**（用户：我的上面基本都是记账相关的）。账本页顶变成两排 6 个入口（报表 / 欠款 / 库存 / 预算 / 资金账户 / 资产负债，每格带实时结论）+ 一行设置（类型管理 / 周期账 / 记账键盘 / 回收站）；「我的」只剩 账号+数据量 / 数据同步 / 推荐给朋友 / 关于
+>   - **「品种」和「整地情况」改成用户自己的清单**：新增 `store.varieties`（`tags.variety[作物]`）与 `store.tillage`（`tags.tillage`），初始 = `const.VARIETIES` / `const.DEFAULT_TILLAGE`；开季页两处都加了「＋ 自定义」，**长按任意一项可删（内置的也能删）**。不新增云端集合，随 `tags` 单文档同步
+>   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51（品种用例重写：清单可加可删、`all = 用过的(去重) + 清单`；新增整地清单加删断言）；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
+>   - 模拟器逐页复核截图存 `docs/design/verify/`（`cost-edit`、`cost-edit-acct`、`ledger`、`ledger-daysheet`、`mine`、`season-new`、`season-new-till`、`keypanel`）；品种/整地的加删走的是真实 `store` 写入，**验证用的「测试品种A / 测试整地A」已删干净**
+>   - 设计稿同步：F1（去掉最近用过/常用账行 + 账户可自建 + 金额区高度写死）、F6（账本变记账总入口，加第二排入口与设置行）、F20（我的简化 + 数据同步 + 分享行对齐）、F26（账户可增删改 + 老库只补缺）、覆盖清单 P1-8/P1-14、现行→目标表「我的」行、口径表（新增「资金账户」「品种 / 整地」两行）、第 13 节新增第 11 条；仍是 28 屏、`div` 开合平衡
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`

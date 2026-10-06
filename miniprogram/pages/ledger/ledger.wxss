@@ -7,6 +7,11 @@
 .hub .s.warn { color: var(--heat); font-weight: 700; }
 .hub .s.debt { color: var(--debt); font-weight: 700; }
 
+/* 记账设置：类型 / 周期账 / 键盘 / 回收站，一行四个小chip */
+.tools { display: flex; flex-wrap: wrap; margin: 0 -6rpx 20rpx; }
+.tools .t { margin: 6rpx; padding: 0 22rpx; height: 64rpx; line-height: 64rpx; border-radius: 32rpx; background: var(--card); border: 2rpx solid var(--line); font-size: 26rpx; color: var(--sub); }
+.tools .t:active { opacity: .75; }
+
 .bars { padding: 0 8rpx 8rpx; }
 .bar { display: flex; align-items: center; border-radius: 20rpx; padding: 20rpx 24rpx; margin-bottom: 20rpx; font-size: 29rpx; }
 .bar.warn { background: #FBE9E1; border: 2rpx solid #EDBFAC; color: #7D2E12; }

@@ -1,73 +1,40 @@
 <view class="wrap">
+  <!-- 只留「这人是啥/数据有多少」；记账相关的一切都在「账本」页 -->
   <view class="card">
     <view class="row" style="gap:24rpx">
       <view class="avatar">谷</view>
       <view class="flex1">
         <view style="font-size:36rpx;font-weight:800">我的农田账本</view>
-        <view class="muted">{{year}} 年</view>
+        <view class="muted">{{year}} 年 · 地块 {{counts.plots}} · 种植季 {{counts.seasons}} · 账目 {{counts.costs}} · 记事 {{counts.logs}}</view>
       </view>
     </view>
-    <view class="row between" style="margin-top:24rpx">
-      <view>
-        <view class="muted">今年净收益</view>
-        <view class="num" style="font-size:48rpx;font-weight:800;color:{{y.netPos ? 'var(--green)' : 'var(--heat)'}}">{{y.netPos ? '＋¥' : '−¥'}}{{y.net}}</view>
-      </view>
-      <view style="text-align:right">
-        <view class="muted">收 / 支</view>
-        <view class="num" style="font-size:28rpx">¥{{y.income}} / ¥{{y.expense}}</view>
-      </view>
-    </view>
-    <view class="stack" style="margin-top:20rpx">
-      <view style="width:{{y.inPct}}%;background:var(--green)"></view>
-      <view style="width:{{100 - y.inPct}}%;background:#E5A891"></view>
-    </view>
-  </view>
-
-  <view class="cards">
-    <view class="cc" bindtap="goReport" hover-class="btn-hover">
-      <view class="cci">报</view><view class="ccn">统计报表</view>
-      <view class="ccs">收支 / 结构 / 趋势</view>
-    </view>
-    <view class="cc" bindtap="goDebt" hover-class="btn-hover">
-      <view class="cci">欠</view><view class="ccn">欠款台账</view>
-      <view class="ccs {{debt.count ? 'debt' : ''}}">{{debt.has ? '待收 ¥' + debt.recv + (debt.pay !== '0' ? ' · 待付 ¥' + debt.pay : '') : '没有欠款'}}</view>
-    </view>
-    <view class="cc" bindtap="goStock" hover-class="btn-hover">
-      <view class="cci">库</view><view class="ccn">库存</view>
-      <view class="ccs {{stock.low ? 'warn' : ''}}">{{stock.low ? stock.low + ' 项低于预警' : (stock.count ? '在库 ' + stock.count + ' 种' : '还没入库')}}</view>
-    </view>
-  </view>
-
-  <view class="cards">
-    <view class="cc" bindtap="goBudget" hover-class="btn-hover">
-      <view class="cci">预</view><view class="ccn">预算</view>
-      <view class="ccs {{budget && budget.over ? 'warn' : ''}}">{{budget ? '本季已用 ' + budget.pct + '%' : '按季设成本目标'}}</view>
-    </view>
-    <view class="cc" bindtap="goFunds" hover-class="btn-hover">
-      <view class="cci">资</view><view class="ccn">资金账户</view>
-      <view class="ccs">现金 / 微信 / 银行卡</view>
-    </view>
-    <view class="cc" bindtap="goBalance" hover-class="btn-hover">
-      <view class="cci">产</view><view class="ccn">资产负债</view>
-      <view class="ccs {{bs.netNeg ? 'warn' : ''}}">净资产 ¥{{bs.net}}</view>
-    </view>
-  </view>
-
-  <view class="card list">
-    <view class="item" bindtap="goTags"><view class="flex1"><view class="it">记账 / 记事类型管理</view><view class="muted" style="font-size:26rpx">自定义细分类型、收入类型和颜色</view></view><text class="muted">›</text></view>
-    <view class="item" bindtap="goRecurring"><view class="flex1"><view class="it">周期账与分期</view><view class="muted" style="font-size:26rpx">{{recCount ? recCount + ' 个 · ' + recNext : '土地流转、贷款这类固定支出'}}</view></view><text class="muted">›</text></view>
-    <view class="item" bindtap="goKeypanel"><view class="flex1"><view class="it">记账键盘</view><view class="muted" style="font-size:26rpx">布局、最近分类、震动与千分位</view></view><text class="muted">›</text></view>
-    <view class="item" bindtap="goTrash"><view class="flex1"><view class="it">回收站</view><view class="muted" style="font-size:26rpx">{{trash ? trash + ' 项 · 30 天内可恢复' : '空的'}}</view></view><text class="muted">›</text></view>
   </view>
 
   <view class="card list">
     <view class="item" bindtap="syncNow">
-      <view class="flex1"><view class="it">云备份</view><view class="muted" style="font-size:26rpx">{{sync.enabled ? (sync.pending ? sync.pending + ' 条待同步' : '已同步') : '未开启（本地保存，换手机需重填环境 ID）'}}</view></view>
-      <text class="tag {{sync.enabled ? '' : 'done'}}">{{sync.enabled ? '已开' : '未开'}}</text>
+      <view class="flex1">
+        <view class="it">数据同步</view>
+        <view class="muted" style="font-size:26rpx">{{sync.state}}</view>
+      </view>
+      <text class="muted" style="color:{{sync.ok ? 'var(--green)' : 'var(--sub)'}}">{{sync.ok ? '已同步 ›' : '立即同步 ›'}}</text>
     </view>
-    <button class="item share" open-type="share"><view class="flex1 it" style="text-align:left">推荐给种地的朋友</view><text class="muted">›</text></button>
-    <view class="item" bindtap="about"><view class="flex1 it">关于谷雨记</view><text class="muted">›</text></view>
-  </view>
 
-  <view class="muted" style="text-align:center;font-size:24rpx">地块 {{counts.plots}} · 种植季 {{counts.seasons}} · 账目 {{counts.costs}} · 记事 {{counts.logs}}</view>
+    <!-- 分享行：整行跟上面的 item 完全同一套布局，按钮只做一层透明点击层（不然 `›` 会被 button 的默认居中挤到中间） -->
+    <view class="item share-row">
+      <view class="flex1">
+        <view class="it">推荐给种地的朋友</view>
+        <view class="muted" style="font-size:26rpx">分享给一起种地的邻居</view>
+      </view>
+      <text class="muted">›</text>
+      <button class="share-hit" open-type="share" hover-class="none"></button>
+    </view>
+
+    <view class="item" bindtap="about">
+      <view class="flex1">
+        <view class="it">关于谷雨记</view>
+        <view class="muted" style="font-size:26rpx">谷雨种谷，雨生百谷</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
 </view>

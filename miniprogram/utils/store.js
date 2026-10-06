@@ -79,6 +79,20 @@ function migrate(cache) {
   if (!Array.isArray(cache.tags.log)) cache.tags.log = [];
   if (!Array.isArray(cache.tags.templates)) cache.tags.templates = [];
   if (!Array.isArray(cache.tags.accounts) || !cache.tags.accounts.length) cache.tags.accounts = C.DEFAULT_ACCOUNTS.map(a => Object.assign({}, a));
+  // 默认账户表升级：只把缺的默认账户补进去，位置按默认表的前后关系插（用户自己加过/改过名的一律不动）
+  if (cache.tags.accountsVer !== C.ACCOUNTS_VER) {
+    C.DEFAULT_ACCOUNTS.forEach((d, di) => {
+      if (cache.tags.accounts.some(a => a && a.name === d.name)) return;
+      // 找到默认表里它前面那个已经存在的账户，插到它后面；一个都没有就放最前面
+      let at = 0;
+      for (let i = di - 1; i >= 0; i--) {
+        const j = cache.tags.accounts.findIndex(a => a && a.name === C.DEFAULT_ACCOUNTS[i].name);
+        if (j >= 0) { at = j + 1; break; }
+      }
+      cache.tags.accounts.splice(at, 0, Object.assign({}, d));
+    });
+    cache.tags.accountsVer = C.ACCOUNTS_VER;
+  }
   // 默认记事类型补齐（老库新增「播种/收获/病虫害观察」等）
   C.DEFAULT_LOG_TAGS.forEach(t => {
     if (!cache.tags.log.some(x => x.name === t.name)) cache.tags.log.push(Object.assign({}, t));
@@ -302,8 +316,10 @@ const seasons = {
   varieties(crop) {
     const used = [];
     seasons.all().forEach(s => { const v = (s.variety || '').trim(); if (s.crop === crop && v && used.indexOf(v) < 0) used.push(v); });
-    const preset = (C.VARIETIES[crop] || []).filter(v => used.indexOf(v) < 0);
-    return { used, preset, all: used.concat(preset) };
+    // 品种清单 = 用户自己那份（可加可删，初始就是内置常见品种）+ 历史用过的
+    const list = varieties.list(crop);
+    const usedOnly = used.filter(v => list.indexOf(v) < 0);
+    return { used: usedOnly, list, all: usedOnly.concat(list) };
   },
   // 周期结束日：已收获取收获日，否则取今天
   endDate(s) { return s.status === 'done' && s.harvestDate ? s.harvestDate : U.today(); },
@@ -613,6 +629,53 @@ const recurring = {
   fire(id, date) { const r = recurring.get(id); if (!r) return null; return recurring.save(Object.assign({}, r, { lastFiredAt: date || U.today() })); }
 };
 
+// ---------- 品种 / 整地情况（用户可自选，挂在 tags 单文档里，不新增云端集合） ----------
+// 两份清单都是「用户自己的」：初始值 = 内置常见项，之后可以自己加、自己删
+const varieties = {
+  list(crop) {
+    const t = db().tags;
+    if (!t.variety || typeof t.variety !== 'object') t.variety = {};
+    if (!Array.isArray(t.variety[crop])) t.variety[crop] = (C.VARIETIES[crop] || []).slice();
+    return t.variety[crop];
+  },
+  add(crop, name) {
+    name = String(name || '').trim().slice(0, 20);
+    if (!name) return varieties.list(crop);
+    const list = varieties.list(crop);
+    if (list.indexOf(name) < 0) list.push(name);
+    save(); notify('tags', 'upsert', 'tags');
+    return list;
+  },
+  remove(crop, name) {
+    const t = db().tags;
+    t.variety[crop] = varieties.list(crop).filter(x => x !== name);
+    save(); notify('tags', 'upsert', 'tags');
+    return t.variety[crop];
+  }
+};
+
+const tillage = {
+  list() {
+    const t = db().tags;
+    if (!Array.isArray(t.tillage)) t.tillage = C.DEFAULT_TILLAGE.slice();
+    return t.tillage;
+  },
+  add(name) {
+    name = String(name || '').trim().slice(0, 12);
+    if (!name) return tillage.list();
+    const list = tillage.list();
+    if (list.indexOf(name) < 0) list.push(name);
+    save(); notify('tags', 'upsert', 'tags');
+    return list;
+  },
+  remove(name) {
+    const t = db().tags;
+    t.tillage = tillage.list().filter(x => x !== name);
+    save(); notify('tags', 'upsert', 'tags');
+    return t.tillage;
+  }
+};
+
 // ---------- 天气 ----------
 const weather = {
   ofPlot(plotId) { const d = db(); return d.weather[plotId] || (d.weather[plotId] = {}); },
@@ -790,4 +853,4 @@ const tags = {
   tags[fn] = function () { const r = orig.apply(tags, arguments); notify('tags', 'upsert', 'tags'); return r; };
 });
 
-module.exports = { tasks, memory, tags, costs, stock, accounts, recurring, trash, logs, weather, plots, seasons, db, save, replaceAll, notify, outbox, weatherId, dirOf, isIncome, isDebtOpen, allocTotal, pushAudit, setAuditSrc, TRASH_DAYS, KEY, OUTBOX_KEY };
+module.exports = { tasks, memory, tags, costs, stock, accounts, recurring, trash, logs, weather, plots, seasons, varieties, tillage, db, save, replaceAll, notify, outbox, weatherId, dirOf, isIncome, isDebtOpen, allocTotal, pushAudit, setAuditSrc, TRASH_DAYS, KEY, OUTBOX_KEY };

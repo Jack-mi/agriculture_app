@@ -435,6 +435,8 @@ Page({
   openAcct() { this.setData({ sheet: 'acct', acctList: store.accounts.items() }); },
   pickAcct(e) { const k = e.currentTarget.dataset.k; this.setData({ account: k, acctName: store.accounts.name(k), sheet: '' }); },
   clearAcct() { this.setData({ account: '', acctName: '', sheet: '' }); },
+  // 账户不是写死的 4 个：去资金账户页自己加/改名/删
+  goAcctManage() { this.setData({ sheet: '' }); wx.navigateTo({ url: '/pages/funds/funds' }); },
 
   // ---------- 周期账 ----------
   openRec() {

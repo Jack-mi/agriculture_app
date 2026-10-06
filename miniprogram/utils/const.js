@@ -13,6 +13,9 @@ const VARIETIES = {
   peanut: ['花育25', '山花9号']
 };
 
+// 整地情况的初始快捷项（用户可以自己加、自己删，存 tags.tillage）
+const DEFAULT_TILLAGE = ['旋耕', '深翻', '深松', '免耕', '秸秆还田'];
+
 // 记账 5 类（PRD 5.1）
 const COST_CATS = [
   { key: 'agri', name: '农资投入', color: '#2E5B34', subs: ['种子', '农药', '化肥', '其他'] },
@@ -50,9 +53,12 @@ const SETTLE_STATES = [
 const DEFAULT_ACCOUNTS = [
   { key: 'cash', name: '现金', init: 0 },
   { key: 'wechat', name: '微信', init: 0 },
+  { key: 'alipay', name: '支付宝', init: 0 },
   { key: 'bank', name: '银行卡', init: 0 },
   { key: 'other', name: '其他', init: 0 }
 ];
+// 账户默认表版本：升到 2 时给老库补上「支付宝」（只补缺的，用户自己加/改的都不动）
+const ACCOUNTS_VER = 2;
 // 欠款约定的相对标记（不写死日期）
 const DUE_TAGS = ['不约定', '收粮后', '卖粮后', '年底'];
 
@@ -145,4 +151,4 @@ const SPLIT_MODES = [
 function cropOf(key) { return CROPS.find(c => c.key === key) || CROPS[0]; }
 function catOf(key) { return COST_CATS.find(c => c.key === key) || INCOME_CATS.find(c => c.key === key) || COST_CATS[0]; }
 
-module.exports = { LOG_FIELDS, LOG_FIELD_PH, MATERIAL_UNIT_DEFAULT, VARIETIES, SUB_ICONS, CAT_ICONS, INCOME_CAT_ICONS, iconOf, CALC_MODES, INCOME_CALC_MODES, modesFor, catsFor, incomeKeyOf, SPLIT_MODES, CROPS, COST_CATS, INCOME_CATS, INCOME_COLOR, MONEY_COLORS, SETTLE_STATES, DUE_TAGS, DEFAULT_ACCOUNTS, isIncomeCat, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };
+module.exports = { LOG_FIELDS, LOG_FIELD_PH, MATERIAL_UNIT_DEFAULT, VARIETIES, DEFAULT_TILLAGE, SUB_ICONS, CAT_ICONS, INCOME_CAT_ICONS, iconOf, CALC_MODES, INCOME_CALC_MODES, modesFor, catsFor, incomeKeyOf, SPLIT_MODES, CROPS, COST_CATS, INCOME_CATS, INCOME_COLOR, MONEY_COLORS, SETTLE_STATES, DUE_TAGS, DEFAULT_ACCOUNTS, ACCOUNTS_VER, isIncomeCat, OPS, DEFAULT_LOG_TAGS, TAG_COLORS, MOISTURE, MATERIAL_TYPES, MATERIAL_UNITS, cropOf, catOf };

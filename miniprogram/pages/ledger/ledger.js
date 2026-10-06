@@ -112,8 +112,15 @@ Page({
       debt: ds.hasAny ? { n: '欠款', s: (ds.receivable.count ? '待收 ' + ds.receivable.totalText : '') + (ds.payable.count ? (ds.receivable.count ? ' · ' : '') + '待付 ' + ds.payable.totalText : ''), warn: ds.receivable.overdueCount + ds.payable.overdueCount > 0 }
         : { n: '欠款', s: '没有欠款' },
       stock: ss.lowCount ? { n: '库存', s: ss.items[0].name + '只剩 ' + ss.items[0].onHandText + ss.items[0].unit, warn: true }
-        : { n: '库存', s: ss.count ? '在库 ' + ss.count + ' 种' : '还没入库' }
+        : { n: '库存', s: ss.count ? '在库 ' + ss.count + ' 种' : '还没入库' },
+      budget: (bp => (bp && bp.hasBudget)
+        ? { n: '预算', s: '本季已用 ' + bp.pct + '%', warn: bp.over }
+        : { n: '预算', s: '按季设成本目标' })(stats.budgetProgress((store.seasons.growing()[0] || store.seasons.all()[0] || {}).id)),
+      funds: { n: '资金账户', s: '¥' + stats.accountRows(null).totalBalanceText },
+      balance: (bs => ({ n: '资产负债', s: '净资产 ¥' + bs.netText, warn: bs.net < 0 }))(stats.balanceSheet())
     };
+    const trash = store.trash.count();
+    const recCount = store.recurring.items().length;
     // 生效筛选 chip
     const chips = [];
     const f = this.data.f;
@@ -135,7 +142,7 @@ Page({
       days, total, hub, due, chips, subList: subs, plots, scopeName, acctList: store.accounts.items(),
       cal, calYm, wk, wkStart,
       offline: gd.online === false, unsynced: store.outbox().length,
-      itemCount: list.length
+      itemCount: list.length, trash, recCount
     });
   },
 
@@ -159,6 +166,14 @@ Page({
   goReport() { wx.navigateTo({ url: '/pages/report/report' }); },
   goDebt() { wx.navigateTo({ url: '/pages/debt/debt' }); },
   goStock() { wx.navigateTo({ url: '/pages/stock/stock' }); },
+  goBudget() { wx.navigateTo({ url: '/pages/budget/budget' }); },
+  goFunds() { wx.navigateTo({ url: '/pages/funds/funds' }); },
+  goBalance() { wx.navigateTo({ url: '/pages/balance/balance' }); },
+  // 记账设置也收在这页（「我的」只留账号/分享/关于）
+  goTags() { wx.navigateTo({ url: '/pages/tags/tags' }); },
+  goRecurring() { wx.navigateTo({ url: '/pages/recurring/recurring' }); },
+  goKeypanel() { wx.navigateTo({ url: '/pages/keypanel/keypanel' }); },
+  goTrash() { wx.navigateTo({ url: '/pages/trash/trash' }); },
   // 连续补账 = 记一笔的「补账模式」：同一套录入能力，日期跟着进度条走
   goCatchup() { wx.navigateTo({ url: '/pages/cost-edit/cost-edit?batch=1' }); },
   goDue() { wx.navigateTo({ url: '/pages/recurring/recurring?due=1' }); },
