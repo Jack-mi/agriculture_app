@@ -49,10 +49,11 @@
   <block wx:if="{{tab === 'advisor' && adv}}">
     <!-- AI 入口：参谋的核心就是对话，做成整页最显眼的大卡片 -->
     <view class="ai-hero" bindtap="talkSeason" hover-class="btn-hover">
-      <view class="ai-mic"><image src="/assets/icons/mic_w.svg" class="ai-mic-img" mode="aspectFit" /></view>
+      <view class="ai-ribbon">✨ AI</view>
+      <view class="ai-mic ai-mic-glow"><image src="/assets/icons/mic_w.svg" class="ai-mic-img" mode="aspectFit" /></view>
       <view class="flex1">
         <view class="ai-t">跟参谋说</view>
-        <view class="ai-s">问建议 · 记一笔 · 改任务，张嘴就行</view>
+        <view class="ai-s"><text class="ai-spark">✨ </text><text class="ai-s-ai">AI 语音参谋</text> · 问建议 · 记一笔 · 改任务</view>
       </view>
       <text class="ai-go">›</text>
     </view>

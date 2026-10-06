@@ -24,7 +24,8 @@
     "pages/tags/tags",
     "pages/task/task",
     "pages/alert/alert",
-    "pages/chat/chat"
+    "pages/chat/chat",
+    "pages/profile-setup/profile-setup"
   ],
   "window": {
     "navigationBarBackgroundColor": "#2E5B34",
@@ -60,6 +61,12 @@
   "permission": {
     "scope.userLocation": {
       "desc": "用于确定地块位置，自动获取当地每日气温和降雨"
+    }
+  },
+  "plugins": {
+    "WechatSI": {
+      "version": "0.3.5",
+      "provider": "wx069ba97219f66d99"
     }
   },
   "requiredPrivateInfos": [

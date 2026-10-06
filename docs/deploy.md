@@ -124,6 +124,9 @@
 >   - **连续补账/记一笔中间区重设计**：分类大类从换行两行改单行横滑；宫格 134→112rpx 紧凑化；金额区 166→138rpx；batch 头部「第 N/M 天」只在 N/M > 1 时显示（只有 1 天时显示「只缺这一天」+ 范围）。备注/附件行在 iPhone 小屏上完整可见
 >   - 自检：54/54 + 25 页静态检查；模拟器逐页截图复核（信息 tab / 月历 / 连续补账 / 记一笔 / 思考中两态）
 > - **2026-10-06：体验版 `0.8.0` 已上传**（架构安全加固，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+> - **2026-10-06：体验版 `0.8.1` 已上传**（AI 标识 + 语音输入，二维码 `docs/trial-qr-0.8.1.png`，10月13日前有效）
+>   - 「跟参谋说」卡片加 AI 标识：金色描边 + 右上「✨AI」飘带 + 副标「✨ AI 语音参谋」+ 麦克风呼吸光晕（season.wxml/wxss）
+>   - 启用 WechatSI 语音识别：`app.json` 声明 `WechatSI@0.3.5`，聊天页「按住说话」真 ASR（后台服务市场添加，详见第 4 节）
 >   - **云函数鉴权与隔离**：`advisorChat` 全部 action 强制 OPENID 鉴权（原来完全没有鉴权，任何人可篡改全局 Key/baseUrl）；AI 配置改 per-user 文档 `config/advisor_ai_<openid>`，历史全局 `advisor_ai` 只读兜底；baseUrl 强制 https；`advisorChat`/`advisorAgent` 按用户限流（chat 100 次/天、agent 30 次/天，`config/rl_*` 计数）
 >   - **天气 `_openid` 修复**：`weatherBackfill`/`weatherDaily` 写 weather 带属主 `_openid`（原来 admin 裸写，「仅创建者可读写」下客户端和 advisorAgent 都读不到）；`weatherBackfill` 加地块归属校验；存量数据用 `scripts/repair-weather-openid.js` 修复 10 条 + 清理孤儿 6 条
 >   - **同步可靠性**：outbox 单条失败超 5 次进死信（`guyuji_deadletter`，「我的 → 数据同步」可见可重试），不再一条错误卡死全队列；plots/seasons/tasks/memory 硬删除每天对账一次，清掉别台设备已删的本地幽灵；pull 水位线回退 10 分钟重叠，防设备时钟偏快漏拉
@@ -143,6 +146,9 @@
 
 架构：小程序端离线优先（本地 Storage 为缓存），云开发做后台——云数据库 7 个集合 + 3 个云函数。
 账号体系 = `wx.login` openid 静默建档，无注册流程；所有集合按 `_openid` 天然隔离。
+头像昵称走微信现行「头像昵称填写」能力（chooseAvatar + `type="nickname"` 输入框，在「我的」页即改即存）：
+头像先传云存储 `avatars/`，`login` 云函数可选收 `nickName/avatarUrl` 更新 `users` 文档。
+微信已废弃 `getUserProfile`，无法静默拿到真实头像昵称，这是唯一的合规路径。
 
 ## 1. 前置（一次性，约 10 分钟）
 
@@ -188,6 +194,10 @@
 - **接口设置**（开发管理 → 接口设置）：`wx.chooseLocation`、`wx.getFuzzyLocation` 已于 2026-09-30 开通，`app.json` 的 `requiredPrivateInfos` 同步声明这两个；`wx.getLocation` 暂无自助申请通道（见第 7 节）。
 - **上线前必做**：`wx.getLocation` 一旦开通，需在隐私指引补声明「精确位置」，并把 `plot-edit.js` 里的 `PRECISE_LOCATION` 开关置 `true` 后重新上传。
 - **服务器域名**：无需配置 Open-Meteo（天气已改走云函数，服务端直连）。无其他 request 域名。
+- **语音识别插件（WechatSI，2026-10-06 已启用）**：聊天页「按住说话」用微信同声传译插件做 ASR，`app.json` 已声明 `WechatSI@0.3.5`（provider `wx069ba97219f66d99`）。
+  - 添加路径：mp 后台插件管理搜索搜不到（类目原因，官方口径），实际走**服务市场**添加：`fuwu.weixin.qq.com/service/detail/0000c6950745e87d6c5a143845c815` → 添加插件 → 选「田祖记」→ 确定，即时「已通过」。
+  - 顺序有坑：**必须先后台添加、再声明 app.json**，否则模拟器直接启动失败（`插件未授权使用, user uin can not visit app`）。
+  - 隐私：首次按住说话会由插件触发麦克风授权弹窗；若后续上线审核问到，在用户隐私保护指引补「麦克风（用于语音输入转文字）」。
 
 ## 5. 数据流说明（排障用）
 
