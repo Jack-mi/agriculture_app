@@ -136,5 +136,8 @@ page {
 .sheet-lb { font-size: 28rpx; color: var(--sub); font-weight: 600; margin-bottom: 12rpx; }
 .link { color: var(--green); font-weight: 700; }
 
+/* ---------- 周期账：「多久一次」的口径一句话说清 ---------- */
+.rechint { margin-top: 20rpx; background: var(--wheat-l); border: 2rpx solid #E8CC8E; color: #7A5210; border-radius: 14rpx; padding: 14rpx 20rpx; font-size: 27rpx; font-weight: 600; }
+
 /* ---------- 收支占比条 ---------- */
 .stack { display: flex; height: 20rpx; border-radius: 10rpx; overflow: hidden; background: var(--line); }

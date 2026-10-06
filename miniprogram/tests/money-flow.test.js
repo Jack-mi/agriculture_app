@@ -156,8 +156,21 @@ test('周期账：按月/季/年/周到期，fire 后不再重复到期', () => 
   const q = store.recurring.save({ name: '贷款', freq: 'quarter', day: 5, startAt: '2026-01-01' });
   assert.strictEqual(store.recurring.dueOn(q, '2026-07-05'), true);
   assert.strictEqual(store.recurring.dueOn(q, '2026-08-05'), false);
+  // 每季 = 每 3 个月一次，锚月可指定（不指定就按起点月）
+  const q2 = store.recurring.save({ name: '水费', freq: 'quarter', month: 11, day: 25, startAt: '2026-01-01' });
+  assert.strictEqual(store.recurring.dueOn(q2, '2026-11-25'), true, '11 月是锚月');
+  assert.strictEqual(store.recurring.dueOn(q2, '2027-02-25'), true, '每 3 个月：11 / 2 / 5 / 8');
+  assert.strictEqual(store.recurring.dueOn(q2, '2026-12-25'), false);
+  assert.strictEqual(store.recurring.dueOn(q2, '2026-07-25'), false, '不能在锚月之外空落');
   const y = store.recurring.save({ name: '租金年付', freq: 'year', day: 3, startAt: '2026-01-01' });
   assert.strictEqual(store.recurring.dueOn(y, '2027-01-03'), true);
+  const y2 = store.recurring.save({ name: '土地流转', freq: 'year', month: 6, day: 30, startAt: '2026-01-01' });
+  assert.strictEqual(store.recurring.dueOn(y2, '2027-06-30'), true, '指定 6 月');
+  assert.strictEqual(store.recurring.dueOn(y2, '2027-01-30'), false);
+  assert.strictEqual(store.recurring.dueOn(y2, '2027-02-28'), false, '6-30 不会落到 2 月');
+  // 下次落在哪天（口径预览用）
+  assert.strictEqual(store.recurring.nextOn(q2, '2026-10-06'), '2026-11-25');
+  assert.strictEqual(store.recurring.nextOn(y2, '2026-10-06'), '2027-06-30');
   const w = store.recurring.save({ name: '周账', freq: 'week', day: 1, startAt: '2026-01-01' });
   assert.strictEqual(store.recurring.dueOn(w, '2026-11-02'), true, '2026-11-02 是周一');
   assert.strictEqual(store.recurring.dueOn(w, '2026-11-03'), false);
@@ -219,7 +232,11 @@ test('账本日历：收支分色、未记判定、周历 7 格与小计', () =>
   assert.strictEqual(c5.incomeText, '1.5万');
   assert.strictEqual(c5.unrecorded, false, '有记账就不算未记');
   assert.strictEqual(cal.cells.find(c => c.date === '2026-10-04').unrecorded, true, '过去、在季、没记没账');
-  assert.strictEqual(cal.cells.find(c => c.date === '2026-10-06').unrecorded, false, '未来日期不提示未记');
+  // 未来日期不提示未记（按"今天"判定，所以断言要跟着日期走，别写成固定日子）
+  const tomorrow = U.addDays(U.today(), 1);
+  if (tomorrow.slice(0, 7) === '2026-10') {
+    assert.strictEqual(cal.cells.find(c => c.date === tomorrow).unrecorded, false, '未来日期不提示未记');
+  }
   assert.strictEqual(cal.cells.find(c => c.date === '2026-10-08').hasLog, true);
   assert.strictEqual(cal.monthIncome, 15120);
   assert.strictEqual(cal.monthNet, 12940);

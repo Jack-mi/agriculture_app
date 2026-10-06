@@ -1,5 +1,0 @@
-{
-  "navigationBarTitleText": "连续补账",
-  "disableScroll": true,
-  "usingComponents": { "keypad": "/components/keypad/keypad" }
-}

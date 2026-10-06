@@ -561,6 +561,14 @@ const accounts = {
 
 // ---------- 周期账 / 分期 ----------
 // 到期只生成「待记」，不自动落账；lastFiredAt 记最近一次生成日期，纯本机判断
+// 季/年的"落在哪个月"：优先用户选的 month，其次按起点所在月推算（老数据兼容）
+function monthOf(r) {
+  const m = +r.month;
+  if (m >= 1 && m <= 12) return m;
+  if (r.startAt) return U.parse(r.startAt).getMonth() + 1;
+  return 1;
+}
+
 const recurring = {
   items() { const t = db().tags; if (!Array.isArray(t.recurring)) t.recurring = []; return t.recurring; },
   get(id) { return recurring.items().find(x => x.id === id); },
@@ -575,6 +583,7 @@ const recurring = {
   },
   remove(id) { db().tags.recurring = recurring.items().filter(x => x.id !== id); save(); notify('tags', 'upsert', 'tags'); },
   // 到期判定：起止区间内，按 freq 落到应记日；已 fire 过就跳过
+  // month 语义：周 = 周几(0-6)；月 = 几号；季/年 = 落在哪个月（quarter 每 3 个月一次，从 month 起算）
   dueOn(r, date) {
     if (!r || r.enabled === false) return false;
     if (r.startAt && date < r.startAt) return false;
@@ -582,11 +591,23 @@ const recurring = {
     if (r.lastFiredAt && r.lastFiredAt >= date) return false;
     const day = +r.day || 1;
     const d = U.parse(date);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     if (r.freq === 'week') return d.getDay() === (day % 7);
-    if (r.freq === 'month') return d.getDate() === Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate());
-    if (r.freq === 'quarter') return [1, 4, 7, 10].indexOf(d.getMonth() + 1) >= 0 && d.getDate() === Math.min(day, 28);
-    if (r.freq === 'year') return d.getMonth() + 1 === 1 && d.getDate() === Math.min(day, 28);
+    if (r.freq === 'month') return d.getDate() === Math.min(day, lastDay);
+    const anchor = monthOf(r);
+    if (r.freq === 'quarter') return (((d.getMonth() + 1 - anchor) % 3) + 3) % 3 === 0 && d.getDate() === Math.min(day, lastDay);
+    if (r.freq === 'year') return d.getMonth() + 1 === anchor && d.getDate() === Math.min(day, lastDay);
     return false;
+  },
+  // 下一次会落在哪天（从 from 起往后找，最多找 3 年）；找不到返回 ''
+  nextOn(r, from) {
+    if (!r) return '';
+    let cur = (r.startAt && (!from || from < r.startAt)) ? r.startAt : (from || U.today());
+    for (let i = 0; i < 1100; i++) {
+      if (recurring.dueOn(Object.assign({}, r, { lastFiredAt: '' }), cur)) return cur;
+      cur = U.addDays(cur, 1);
+    }
+    return '';
   },
   dueList(date) { return recurring.items().filter(r => recurring.dueOn(r, date)); },
   fire(id, date) { const r = recurring.get(id); if (!r) return null; return recurring.save(Object.assign({}, r, { lastFiredAt: date || U.today() })); }

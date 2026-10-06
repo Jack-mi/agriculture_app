@@ -3,18 +3,18 @@ const store = require('../../utils/store.js');
 const stats = require('../../utils/stats.js');
 const C = require('../../utils/const.js');
 const U = require('../../utils/util.js');
+const R = require('../../utils/rec.js');
 
-const FREQS = [{ k: 'week', n: '每周' }, { k: 'month', n: '每月' }, { k: 'quarter', n: '每季' }, { k: 'year', n: '每年' }];
+const FREQS = R.FREQS;
 const DIRS = [{ k: 'out', n: '支出' }, { k: 'in', n: '收入' }];
 const TAGS = C.DUE_TAGS;
-const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6].map(d => ({ d, n: ['日', '一', '二', '三', '四', '五', '六'][d] }));
-const MONTH_DAYS = [1, 5, 10, 15, 20, 25];
 
 Page({
   data: {
     freqs: FREQS, dirs: DIRS, dueTags: TAGS, today: '',
     list: [], due: [], empty: true,
-    weekDays: WEEK_DAYS, monthDays: MONTH_DAYS,
+    weekDays: R.WEEK_DAYS, monthOpts: R.MONTH_OPTS, dayOpts: R.DAY_OPTS,
+    editNeedMonth: false, editRule: '', editNext: '',
     sheet: '', edit: null, costCats: C.COST_CATS, incomeCats: C.INCOME_CATS, subList: []
   },
   onLoad() { this.setData({ today: U.today() }); },
@@ -31,7 +31,7 @@ Page({
         amountText: r.mode === 'fixed' ? U.money(r.amount)
           : U.money(r.unitPrice) + (r.mode === 'perMu' ? '/亩' : r.mode === 'perJin' ? '/斤' : '/人·天'),
         dueText: r.lastFiredAt ? '最近生成 ' + r.lastFiredAt : '还没生成过',
-        dayText: (r.freq === 'week' ? '周' + ['日', '一', '二', '三', '四', '五', '六'][(+r.day || 0) % 7] : '每月 ' + (r.day || 1) + ' 号'),
+        dayText: R.dayText(r),
         installmentText: r.installment ? ('分 ' + r.installment.periods + ' 期 · 第 ' + r.installment.index + ' 期') : ''
       });
     });
@@ -43,24 +43,45 @@ Page({
     const sub = (store.tags.cost('asset')[0] || '');
     this.setData({
       sheet: 'edit',
-      edit: { id: '', name: '', dir: 'out', cat: 'asset', sub, mode: 'fixed', amount: '', unitPrice: '', freq: 'month', day: 1, dueTag: '不约定', startAt: U.today(), endAt: '', enabled: true, installTotal: '', installPeriods: '' },
+      edit: { id: '', name: '', dir: 'out', cat: 'asset', sub, mode: 'fixed', amount: '', unitPrice: '', freq: 'month', day: 1, month: U.parse(U.today()).getMonth() + 1, dueTag: '不约定', startAt: U.today(), endAt: '', enabled: true, installTotal: '', installPeriods: '' },
       subList: store.tags.cost('asset').slice()
     });
+    this.editView();
   },
   openEdit(e) {
     const r = store.recurring.get(e.currentTarget.dataset.id);
     if (!r) return;
     this.setData({
       sheet: 'edit',
-      edit: Object.assign({ amount: '', unitPrice: '', installTotal: '', installPeriods: '' }, r),
+      edit: Object.assign({ amount: '', unitPrice: '', installTotal: '', installPeriods: '' }, r, { month: R.anchorMonth(r) }),
       subList: r.dir === 'in' ? store.tags.income() : store.tags.cost(r.cat).slice()
     });
+    this.editView();
   },
   closeSheet() { this.setData({ sheet: '', edit: null }); },
   noop() {},
   onField(e) { this.setData({ ['edit.' + e.currentTarget.dataset.k]: e.detail.value }); },
-  pickFreq(e) { this.setData({ 'edit.freq': e.currentTarget.dataset.k }); },
-  pickDay(e) { this.setData({ 'edit.day': +e.currentTarget.dataset.d }); },
+  // 「多久一次」下面那行要填什么，随频率变：周几 / 几号 / 哪个月 + 几号
+  editView() {
+    const e = this.data.edit || {};
+    this.setData({
+      editNeedMonth: R.NEED_MONTH(e.freq),
+      editRule: R.ruleText(e),
+      editNext: R.nextText(Object.assign({}, e, { startAt: e.startAt || this.data.today }))
+    });
+  },
+  pickFreq(e) {
+    const freq = e.currentTarget.dataset.k;
+    const patch = { 'edit.freq': freq };
+    if (R.NEED_MONTH(freq) && !R.NEED_MONTH(this.data.edit.freq)) {
+      patch['edit.month'] = U.parse(this.data.edit.startAt || this.data.today).getMonth() + 1;
+    }
+    this.setData(patch);
+    this.editView();
+  },
+  pickDay(e) { this.setData({ 'edit.day': +e.currentTarget.dataset.d }); this.editView(); },
+  pickDayIdx(e) { this.setData({ 'edit.day': (+e.detail.value || 0) + 1 }); this.editView(); },
+  pickMonthIdx(e) { this.setData({ 'edit.month': (+e.detail.value || 0) + 1 }); this.editView(); },
   pickDir(e) {
     const dir = e.currentTarget.dataset.k;
     const cat = dir === 'in' ? C.INCOME_CATS[0].key : 'asset';
@@ -79,7 +100,7 @@ Page({
   pickSub(e) { this.setData({ 'edit.sub': e.currentTarget.dataset.n }); },
   pickMode(e) { this.setData({ 'edit.mode': e.currentTarget.dataset.k }); },
   pickTag(e) { this.setData({ 'edit.dueTag': e.currentTarget.dataset.n }); },
-  onDate(e) { this.setData({ ['edit.' + e.currentTarget.dataset.k]: e.detail.value }); },
+  onDate(e) { this.setData({ ['edit.' + e.currentTarget.dataset.k]: e.detail.value }); this.editView(); },
   toggleEnabled() { this.setData({ 'edit.enabled': !this.data.edit.enabled }); },
 
   save() {
@@ -90,7 +111,10 @@ Page({
     const rec = {
       id: e.id || undefined, name: e.name.trim(), dir: e.dir, cat: e.cat, sub: e.sub || '', mode: e.mode,
       amount: parseFloat(e.amount) || 0, unitPrice: parseFloat(e.unitPrice) || 0,
-      freq: e.freq, day: +e.day || 1, dueTag: e.dueTag, startAt: e.startAt, endAt: e.endAt || '',
+      freq: e.freq, day: +e.day || 1,
+      // 季 / 年必须记住落在哪个月，否则等于每次都在 1 月提醒
+      month: R.NEED_MONTH(e.freq) ? (e.month || 1) : undefined,
+      dueTag: e.dueTag, startAt: e.startAt, endAt: e.endAt || '',
       enabled: e.enabled !== false
     };
     const periods = parseInt(e.installPeriods, 10);

@@ -231,7 +231,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 
 <div class="wrap">
 <h1>谷雨记 · 记账 P0+P1 UI 设计稿<small>随手记对齐版 · 全量落地（无 MVP）</small></h1>
-<div class="meta">2026-10-05 · 覆盖：收入侧 / 债权债务 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 误删恢复（回收站）<br>
+<div class="meta">2026-10-06 · 覆盖：收入侧 / 债权债务 / 报表趋势 / 库存 / 键盘自定义+最近分类 / 流水多维筛选 / 日历周月+连续补账 / 附件留证 / 周期账与分期 / 全部地块统一流水 / 误删恢复（回收站）<br>
 共 <b>28 屏</b>。视觉与当前线上版本 <b>1:1 对齐</b>（沿用 <code>app.wxss</code> 的色板 / 圆角 / 字号 / 组件尺寸，1px = 2rpx），<b>不引入任何新色相</b>——收支与欠款只用既有色值。<b>导出模块已按你的要求删除。</b></div>
 
 <h2 class="sec">0. 设计系统（与当前线上版本 1:1 对齐）</h2>
@@ -269,7 +269,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>账本 tab</td><td>—</td><td>顶部三入口卡（报表 · 欠款 · 库存）+ 全部地块统一流水（可切列表/月历/周历）+ 搜索与筛选</td></tr>
 <tr><td>今天</td><td>本月花费 + 在种季 + 常用账 + recently + dock</td><td>本月<b>净收</b>（收入−支出）+ <b>待收/待付</b>条 + 在种季卡（卡上新增净收益）+ 常用账 + dock</td></tr>
 <tr><td>我的</td><td>计数 + 类型管理 + 分享 + 关于</td><td>年度收支与净收益 + 计数 + 报表/欠款/库存/回收站/周期账/键盘设置/类型管理/分享/关于</td></tr>
-<tr><td>季详情 · 账本 tab</td><td>分类占比 + 流水（列表/日历）</td><td>保留，并新增「本季净收益」「待收/待付」；日历升级为 月/周 切换 + 连续补账入口</td></tr>
+<tr><td>季详情 · 账本 tab</td><td>分类占比 + 流水（列表/日历）</td><td>保留，并新增「本季净收益」「待收/待付」；日历升级为 月/周 切换 + 连续补账入口（进记一笔的补账模式）</td></tr>
 </table>
 
 <h2 class="sec">2. 覆盖清单（P0 + P1 全量）</h2>
@@ -283,7 +283,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>P0-5</td><td>库存：农资库存 / 粮食库存、入库出库、余量</td><td>F17 F18 F20</td></tr>
 <tr><td>P1-6</td><td>键盘可自定义 + 最近用过的分类置顶</td><td>F1 F22</td></tr>
 <tr><td>P1-7</td><td>流水多维筛选：类型多选、金额区间、时间、备注/对方搜索</td><td>F6 F7</td></tr>
-<tr><td>P1-8</td><td>日历 周/月 切换 + 连续补账</td><td>F9 F10 F11</td></tr>
+<tr><td>P1-8</td><td>日历 周/月 切换 + 连续补账（F1 的补账模式，不是另一个页面）</td><td>F9 F10 F11</td></tr>
 <tr><td>P1-9</td><td>附件 / 拍照留证：多张、缩略图、九宫格查看</td><td>F5 F8</td></tr>
 <tr><td>P1-10</td><td>周期账 / 分期：每次/每月/每季自动待记、分 N 期</td><td>F4</td></tr>
 <tr><td>P1-11</td><td>全部地块统一流水页（跨季跨地块）</td><td>F6</td></tr>
@@ -293,8 +293,8 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>P1-15</td><td>资产负债总览：账户余额 + 库存估值 + 应收 − 应付 = 净资产</td><td>F27</td></tr>
 </table>
 
-<h2 class="sec">3. 记一笔（P0-1 / P0-2 / P1-6 / P1-9 / P1-10）</h2>
-<p class="secnote">沿用现有的一屏三明治结构：金额头 → 分类 → chip 行 → 键盘。改动集中在：顶部加「支出/收入」分段、分类行上方加「最近」、chip 行加附件/赊账/周期。</p>
+<h2 class="sec">3. 记一笔（P0-1 / P0-2 / P1-6 / P1-8 / P1-9 / P1-10）</h2>
+<p class="secnote">一屏三明治结构不变，但<b>原先挤在键盘上方的那一行 8 个 chip 拆开、各自回到该去的位置</b>：时间相关（日期 / 周期）在最上面，归到哪个种植季贴在分类名右侧，备注与附件并成一栏放在分类下面，账户与赊账（钱怎么走的）留在键盘上方。屏幕变长了一点，但每一项都能一眼看到，不再互相挤。</p>
 
 <div class="grid">
 
@@ -303,32 +303,37 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
   <div class="nav"><span class="ic">‹</span><span class="grow">记一笔</span><span class="ic r">···</span></div>
   <div class="body">
     <div class="seg"><div class="on">支出</div><div>收入</div></div>
-    <h3 class="sect">最近用过</h3>
-    <div class="chips">
-      <span class="chip hl">化肥 · 复合肥</span><span class="chip">飞防</span><span class="chip">雇工</span><span class="chip">拉粮</span>
+    <div class="row" style="margin-top:8px;gap:7px">
+      <span class="chip">📅 今天</span><span class="chip grow" style="flex:1;text-align:center">⟳ 周期</span>
     </div>
-    <div class="row" style="gap:10px;margin-top:2px">
+    <div class="row" style="gap:10px;margin-top:11px">
       <div class="fic o"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div>
-      <div class="grow"><div style="font-weight:800">农资投入 · 化肥</div><div class="tiny">东大块 · 小麦 · 第 104 天</div></div>
-      <div class="chip">分摊 ⇆</div>
+      <div class="grow"><div style="font-weight:800">农资投入 · 化肥</div></div>
+      <span class="chip">⇆ 东大块 ›</span>
     </div>
-    <div class="row between" style="align-items:flex-end">
-      <div class="muted">复合肥 40kg×20 袋</div>
+    <div class="seg" style="margin-top:9px"><div class="on">直接填</div><div>按亩计</div><div>按人天</div></div>
+    <div class="row" style="justify-content:flex-end;margin-top:2px">
       <div class="amt out"><span class="yen">−¥</span>2,180</div>
     </div>
-    <div class="seg"><div class="on">直接填</div><div>按亩计</div><div>按人天</div></div>
+    <div class="row between" style="margin-top:8px">
+      <span class="tiny">常记的账会出现在这儿</span><span class="chip hl">★ 常用账</span>
+    </div>
+    <div class="chips" style="margin-top:6px">
+      <span class="chip hl">化肥 · 复合肥</span><span class="chip">飞防</span><span class="chip">雇工</span>
+    </div>
     <div class="c2 pad0">
       <div class="gi4" style="padding:10px 0">
         <div class="gi"><div class="gic">种</div>种子</div><div class="gi"><div class="gic">药</div>农药</div>
         <div class="gi on"><div class="gic">肥</div>化肥</div><div class="gi"><div class="gic">其</div>其他</div>
-        <div class="gi"><div class="gic">有</div>有机肥</div><div class="gi"><div class="gic dash">＋</div>自定义</div>
+        <div class="gi"><div class="gic dash">＋</div>自定义</div>
       </div>
     </div>
-    <div class="chips">
-      <span class="chip">今天 ▾</span><span class="chip">⇆ 东大块</span><span class="chip">✎ 备注</span>
-      <span class="chip"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-cam"/></svg> 附件</span>
-      <span class="chip"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-clock"/></svg> 周期</span>
-      <span class="chip debt">赊账</span><span class="chip">★ 常用账</span>
+    <div class="c2 flat">
+      <div class="row between"><span class="tiny">✎ 备注</span><span class="chip">▣ 附件 2</span></div>
+      <div class="chips" style="margin-top:6px"><span class="chip">复合肥 40kg×20 袋</span></div>
+    </div>
+    <div class="row" style="gap:8px">
+      <span class="chip">⌂ 现金</span><span class="chip debt">应付 · 县城农资店</span>
     </div>
     <div class="keys">
       <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">⌫</div>
@@ -341,8 +346,11 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <div class="cap"><h4>F1 · 记一笔 · 支出态<span class="tagline">P0-1 / P1-6 / P1-9</span></h4>
 <ul>
 <li>顶部新增 <b>支出 / 收入</b> 分段（默认支出）。收入态见 F2，同一页双态，不另开页面。</li>
-<li>分类宫格上方新增 <b>「最近用过」</b> 4 个 chip：取最近 4 个 <code>cat+sub</code>（本机记录），点一下直接切到该分类，不再宫格翻找。原来的「记忆上次分类」保留为兜底默认。</li>
-<li>chip 行新增 <b>附件</b>（F5）、<b>周期</b>（F4）、<b>赊账</b>（F3）。行内可横滑，不够就滑。</li>
+<li><b>时间放最上面</b>：日期（点开日历选）＋ 周期（F4）并排一行，回答「这笔是哪天的、要不要重复」。</li>
+<li><b>归到哪个种植季贴在分类名右边</b>（<code>⇆ 东大块 ›</code>）：点开就是分摊弹层（F5）。多季共用时变麦色并显示「N 季 · 按亩均摊」。</li>
+<li><b>「常记的账」＋「★ 常用账」</b>合成一行放在分类区顶部：前 4 个最近用过的 <code>cat+sub</code> 一键切过去，「常用账」弹层里放存好的模板。「记忆上次分类」保留为兜底默认。</li>
+<li><b>备注与附件并成一栏</b>放在分类宫格下面，<b>就地写、就地看</b>，不再跳弹层：备注一行输入框；附件是个小圆钮（有附件时显示张数，有图就在下面铺缩略图，点 ✕ 删）。</li>
+<li><b>账户与赊账（钱怎么走的）留在键盘上方一条</b>，记账时不用往上翻：左边选账户，右边一键挂应收/应付（F3）。</li>
 <li>金额显示带方向：支出 <code>−¥</code> 橙红、收入 <code>＋¥</code> 收入绿。</li>
 <li>键盘默认是现有 4×4；自定义布局见 F22，本屏是默认布局。</li>
 </ul></div></div>
@@ -452,11 +460,15 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
         <div class="muted">周期账：到日子自动生成一条「待记」，你确认一下才落账——不偷偷改你的账。</div>
         <div>
           <div class="tiny" style="margin-bottom:5px">多久一次</div>
-          <div class="chips"><span class="chip">每周</span><span class="chip hl">每月</span><span class="chip">每季</span><span class="chip">每年</span></div>
+          <div class="chips"><span class="chip">每周</span><span class="chip">每月</span><span class="chip hl">每季</span><span class="chip">每年</span></div>
         </div>
-        <div>
-          <div class="tiny" style="margin-bottom:5px">每月哪天</div>
-          <div class="chips"><span class="chip hl">1 号</span><span class="chip">收粮后</span><span class="chip">选日期 ▾</span></div>
+        <div class="row" style="gap:9px">
+          <div class="grow"><div class="tiny" style="margin-bottom:5px">哪个月</div><div class="chip" style="display:block;text-align:center">10 月 ▾</div></div>
+          <div class="grow"><div class="tiny" style="margin-bottom:5px">几号</div><div class="chip" style="display:block;text-align:center">1 号 ▾</div></div>
+        </div>
+        <div class="c2 flat" style="margin:0;background:#FBF3DE;border-color:#E7CF9A">
+          <div style="font-weight:700;color:#7A5210;font-size:13px">每 3 个月一次 · 1 / 4 / 7 / 10 月的 1 号</div>
+          <div class="tiny" style="margin-top:4px">下次提醒：2027年1月1日 周五</div>
         </div>
         <div class="c2 flat" style="margin:0">
           <div class="kv"><span class="muted">每期金额</span><span class="num">¥1,800</span></div>
@@ -474,7 +486,9 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 </div>
 <div class="cap"><h4>F4 · 周期账 / 分期<span class="tagline">P1-10</span></h4>
 <ul>
-<li><b>周期账</b>：每周/每月/每季/每年 + 固定日或「收粮后」相对标记。到期只生成待记提醒（今天页 + 账本页红点），<b>不自动落账</b>，避免金额猜错污染统计。</li>
+<li><b>周期账</b>：每周/每月/每季/每年。到期只生成待记提醒（今天页 + 账本页红点），<b>不自动落账</b>，避免金额猜错污染统计。</li>
+<li><b>「多久一次」下面那行必须跟着变</b>（以前季/年也只让选「几号」，锚月写死在 1 月，等于没得选）：每周 → 周几；每月 → 几号；<b>每季 → 哪个月 + 几号</b>（每 3 个月一次，从选的月份起算，例如选 10 月就是 1 / 4 / 7 / 10 月）；<b>每年 → 哪个月 + 几号</b>。选完当场用一句话回显口径，并算出<b>下次提醒是哪天</b>，写错了立刻看得出来。</li>
+<li>每月/每季/每年的「几号」都按实际月份天数收敛（选 31 号，落到 2 月就是 28/29 号），不会整月不提醒。</li>
 <li><b>分期付款</b>：填总额 + 期数 → 自动按每期均分（尾差进最后一期），每期到期生成一条待记，沿用现有「分摊尾差」的算法口径。</li>
 <li>周期账挂在 <code>tags</code> 单文档里（和常用账同一处，不新增云端集合），到期状态用 <code>lastFiredAt</code> 记录，本机判断，不依赖云函数。</li>
 </ul></div></div>
@@ -714,7 +728,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <li>四个角标：右下绿点=有记事，右上蓝点=下雨，右上麦金点=有待办/周期账到期（新增），格内「未记」灰字保持现状。</li>
 <li>季外日期置灰不可点（沿用），但「全部地块」模式下不再受限，只区分「有无记录」。</li>
 <li>月份下方新增本月合计 + 收入/支出占比条，翻月即变。</li>
-<li>底部「连续补账」进 F11。</li>
+<li>底部「连续补账」进 F11（= 记一笔的补账模式）。</li>
 </ul></div></div>
 
 <div class="frame"><div class="dev">
@@ -764,41 +778,47 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
   <div class="nav"><span class="ic">‹</span><span class="grow">连续补账</span><span class="ic r">退出</span></div>
   <div class="body">
     <div class="c2 flat">
-      <div class="row between"><span class="tiny">补账进度</span><span class="tiny">第 2 / 4 天</span></div>
-      <div class="steps" style="margin-top:7px"><i class="on"></i><i class="on"></i><i></i><i></i></div>
-      <div class="tiny" style="margin-top:7px">只补「没记事也没记账」的日子，有记录的直接跳过。</div>
+      <div class="row between"><span class="tiny">第 1 / 8 天</span><span class="tiny">本月至今 · 全部地块</span></div>
+      <div class="steps" style="margin-top:7px"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </div>
-    <div class="row between">
-      <div class="row" style="gap:9px"><span style="font-size:20px">‹</span><b style="font-size:17px">10月6日 周一</b><span style="font-size:20px">›</span></div>
-      <span class="tiny">第 105 天 · 待补</span>
+    <div class="seg"><div class="on">支出</div><div>收入</div></div>
+    <div class="row" style="margin-top:8px;gap:7px">
+      <span class="chip">‹ 9月24日 周四 ›</span><span class="chip" style="flex:1;text-align:center">⟳ 周期</span>
     </div>
-    <div class="c2">
-      <div class="chips">
-        <span class="chip hl">记支出</span><span class="chip">记收入</span><span class="chip">只写记事</span><span class="chip">这天没事</span>
+    <div class="row" style="gap:10px;margin-top:11px">
+      <div class="fic o"><svg class="ic-s" viewBox="0 0 22 22"><use href="#i-box"/></svg></div>
+      <div class="grow"><div style="font-weight:800">农资投入 · 化肥</div></div>
+      <span class="chip">⇆ 东大块 ›</span>
+    </div>
+    <div class="seg" style="margin-top:9px"><div class="on">直接填</div><div>按亩计</div><div>按人天</div></div>
+    <div class="row" style="justify-content:flex-end;margin-top:2px">
+      <div class="amt out"><span class="yen">−¥</span>680</div>
+    </div>
+    <div class="c2 pad0">
+      <div class="gi4" style="padding:8px 0">
+        <div class="gi"><div class="gic">种</div>种子</div><div class="gi"><div class="gic">药</div>农药</div>
+        <div class="gi on"><div class="gic">肥</div>化肥</div><div class="gi"><div class="gic">其</div>其他</div>
+        <div class="gi"><div class="gic dash">＋</div>自定义</div>
       </div>
     </div>
     <div class="c2 flat">
-      <div class="tiny" style="margin-bottom:6px">快速选类型（点一下直接进记一笔，日期已填好）</div>
-      <div class="chips">
-        <span class="chip">化肥</span><span class="chip">农药</span><span class="chip">飞防</span><span class="chip">收获</span><span class="chip">拉粮</span><span class="chip">雇工</span><span class="chip">卖粮</span>
-      </div>
+      <div class="row between"><span class="tiny">✎ 备注</span><span class="chip">▣ 附件</span></div>
     </div>
-    <div class="c2 flat">
-      <div class="tiny" style="margin-bottom:6px">已补 10月4日</div>
-      <div class="kv"><span class="row"><span class="fic o" style="width:26px;height:26px;font-size:11px">肥</span>化肥 ¥680</span><span class="tiny">✓ 已保存</span></div>
+    <div class="row" style="gap:8px"><span class="chip">⌂ 现金</span><span class="chip">赊账</span></div>
+    <div class="keys">
+      <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">⌫</div>
+      <div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key fn">＋</div>
+      <div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key fn">－</div>
+      <div class="key fn">C</div><div class="key">0</div><div class="key">.</div><div class="key ok">保存并下一天</div>
     </div>
-    <div class="row" style="gap:9px">
-      <div class="btn ghost grow sm">跳过这天</div><div class="btn g grow sm">下一天 ›</div>
-    </div>
-    <div class="muted" style="text-align:center;font-size:12px">全部补完自动退出；中途退出已保存的不丢</div>
   </div>
 </div>
 <div class="cap"><h4>F11 · 连续补账<span class="tagline">P1-8</span></h4>
 <ul>
-<li>解决「隔了半个月才想起来记账」：列出缺记的日子，一天一屏，补完自动跳下一天。</li>
-<li>四种动作：记支出 / 记收入 / 只写记事 / 这天没事。「这天没事」会写一条空标记，日历上不再提示未记。</li>
-<li>顶部进度条 + 「第 N / M 天」，随时可退出，已补的不丢（每保存一笔立即落库）。</li>
-<li>类型 chip 直接带参进记一笔，日期预填，省掉重复选日期。</li>
+<li><b>它不是另一个页面，就是「记一笔」的补账模式</b>（<code>cost-edit?batch=1</code>）：顶上多一条「第 N / M 天 + 进度条 + ‹ 日期 ›」，其余录入区（分类宫格、按亩计/按人天、分摊、备注、附件、账户、赊账、常用账）和 F1 完全一样，键盘右下角变成「保存并下一天」。<b>两边能力必须一致，没有只有一边能填的字段。</b></li>
+<li>它的价值只在两处：① 隔了半个月才想起来记账时，一次把缺记的日子补齐，不用反复「退出 → 进记一笔 → 再选日期」；② 日期能左右翻、也能点开直接选年月日，跳到哪天就补哪天。</li>
+<li>缺记的日子由「这段区间里既没记事也没记账」算出来，有记录的直接跳过。顶上的日期也能选区间外的某天，选了就插进进度里一起补。</li>
+<li>每保存一天立即落库；全部补完自动退出，中途退出已保存的不丢。没有再单列「常用」——最近用过的账和常用账就在分类区顶部，和记一笔同一处。</li>
 </ul></div></div></div>
 <h2 class="sec">6. 报表与趋势（P0-3）</h2>
 <p class="secnote">现有只有一个「5 类占比条」。报表页做两屏：总览 + 结构趋势。所有图表都用纯 CSS（占比条 + flex 柱）画，不引图表库、不用 canvas。</p>
@@ -1418,7 +1438,7 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 <tr><td>回收站</td><td><code>costs/logs</code> 加 <code>deletedAt</code>；所有列表过滤掉带 <code>deletedAt</code> 的；30 天后启动时本机清理</td></tr>
 <tr><td>留痕</td><td><code>costs[i].audit=[{at,action,from,to,src:'local'|'cloud'}]</code>，只记关键动作；<b>只写不展示</b>（用户在真机上要求删掉「操作留痕」版块）</td></tr>
 <tr><td>日历</td><td>月/周共用 <code>stats.costMonth</code>；周视图新增 <code>stats.costWeek</code>，输出与月一致的格结构</td></tr>
-<tr><td>连续补账</td><td>由「季内日历缺记日」派生，纯前端状态机，每保存一天立即落库</td></tr>
+<tr><td>连续补账</td><td>不是独立页面，是记一笔的补账模式（<code>cost-edit?batch=1</code>）：缺记日 = 区间内既没记事也没记账的日子，纯前端算；日期由进度条驱动，其余录入区和记一笔完全一致，每保存一天立即落库</td></tr>
 <tr><td>筛选</td><td>纯前端过滤（数据量在千级以内），条件对象 <code>{dir,cats[],subs[],amtMin,amtMax,from,to,onlyDebt,onlyAttach,onlyLinked,q}</code></td></tr>
 <tr><td>报表</td><td>全部由 <code>stats.js</code> 纯函数产出；图表用 CSS flex 柱 + 占比条，不引图表库、不用 canvas</td></tr>
 <tr><td>同步</td><td>新字段（dir/debt/attachments/recurring/stock/deletedAt/audit）随现有 <code>costs</code>/<code>tags</code> 单文档走 outbox；<b>不新增云端集合</b>；仍要剔除 <code>undefined</code> 字段（已知坑）</td></tr>
@@ -1444,6 +1464,10 @@ h3.sect{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;mar
 允许把非本季地块加进来（比如同一季里又包了别人一块地），不做限制。</div>
 <div class="note done" style="margin-top:12px"><b>9. <code>design_handoff/</code> 里的旧导出代码 —— 已删除。</b><br>
 原型页与 handoff 版 <code>mine</code> 的「导出为文字」全部移除，与本稿第 13 节第 5 条口径一致。</div>
+<div class="note done" style="margin-top:12px"><b>10. 真机反馈（2026-10-06，体验版 0.7.7）—— 三件事都改了。</b><br>
+①「存成周期账」里选每季/每年，下面还是让人选「几号」，锚月写死在 1 月 → 改成按频率换行：每周=周几、每月=几号、<b>每季=哪个月+几号（每 3 个月一次）</b>、每年=哪个月+几号，并当场回显口径与「下次提醒」。<br>
+②记一笔页面把日期/分摊/备注/附件/周期/赊账/账户/常用账 8 个 chip 挤在一行 → 拆开内嵌到整页（见 F1）。<br>
+③连续补账原来是另一套表单（能力比记一笔少、还多一个「常用」模块）→ <b>改成记一笔的补账模式</b>（见 F11），两边能力完全一致，那个「常用」不再单列。</div>
 </div>
 
 <h2 class="sec">14. 新增：预算 / 资金账户 / 资产负债（本轮补齐的 3 个记账缺口）</h2>

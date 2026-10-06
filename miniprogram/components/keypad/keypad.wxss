@@ -1,6 +1,6 @@
 .kp {
   background: #E9E3D3; padding: 12rpx 12rpx calc(12rpx + env(safe-area-inset-bottom));
-  display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 108rpx; gap: 12rpx;
+  display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 100rpx; gap: 12rpx;
 }
 .k {
   background: #fff; border-radius: 16rpx; display: flex; align-items: center; justify-content: center;
@@ -10,6 +10,8 @@
 .k.fn { background: #D8D0BC; font-size: 44rpx; }
 .k.sm { font-size: 30rpx; font-family: inherit; font-weight: 700; }
 .k.ok { background: #C98B1E; color: #fff; font-size: 38rpx; font-weight: 700; letter-spacing: 4rpx; font-family: inherit; }
+/* 长文案（如「保存并下一天」）换两行，别撑出格子 */
+.k.ok.long { font-size: 26rpx; letter-spacing: 0; line-height: 1.2; padding: 0 6rpx; text-align: center; white-space: nowrap; }
 .k.dis { opacity: .45; }
 /* 按压反馈：只改透明度。不用 filter/transform——iOS 上 filter 会让整个键盘重绘，看起来在抖 */
 .k-on { opacity: .62; }

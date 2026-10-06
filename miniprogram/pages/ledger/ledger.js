@@ -159,7 +159,8 @@ Page({
   goReport() { wx.navigateTo({ url: '/pages/report/report' }); },
   goDebt() { wx.navigateTo({ url: '/pages/debt/debt' }); },
   goStock() { wx.navigateTo({ url: '/pages/stock/stock' }); },
-  goCatchup() { wx.navigateTo({ url: '/pages/catchup/catchup' }); },
+  // 连续补账 = 记一笔的「补账模式」：同一套录入能力，日期跟着进度条走
+  goCatchup() { wx.navigateTo({ url: '/pages/cost-edit/cost-edit?batch=1' }); },
   goDue() { wx.navigateTo({ url: '/pages/recurring/recurring?due=1' }); },
   goAll() { this.setData({ q: '', f: Object.assign({}, EMPTY), timeKey: 'all' }); this.render(); },
 

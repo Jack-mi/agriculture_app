@@ -8,11 +8,10 @@ const K = require('../../utils/keypad.js');
 const stats = require('../../utils/stats.js');
 const pref = require('../../utils/pref.js');
 const attach = require('../../utils/attach.js');
+const R = require('../../utils/rec.js');
 
 const LAST_KEY = 'guyuji_last_cat';
 const PARTY_KEY = 'guyuji_debt_parties';
-const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6].map(d => ({ d, n: ['日', '一', '二', '三', '四', '五', '六'][d] }));
-const MONTH_DAYS = [1, 5, 10, 15, 20, 25];
 // 三种计算方式对应的键盘字段
 function fieldOf(mode) {
   if (mode === 'perMu') return 'price';
@@ -39,11 +38,14 @@ Page({
   data: {
     id: '', isEdit: false, logId: '', dir: 'out', dirs: [{ k: 'out', n: '支出' }, { k: 'in', n: '收入' }],
     cats: [], incList: [], cat: 'agri', catName: '', catColor: '', sub: '', subs: [],
-    modes: [], mode: 'fixed', splitModes: C.SPLIT_MODES,
+    modes: C.CALC_MODES, mode: 'fixed', splitModes: C.SPLIT_MODES,
     field: 'amount', amountExpr: '', priceExpr: '', muExpr: '', peopleExpr: '', qtyExpr: '', muTouched: false,
     unit: '斤',
     total: 0, totalText: '0', exprShow: '', kpExpr: '',
-    date: '', today: '', dateText: '', note: '',
+    date: '', today: '', dateText: '', note: '', notePh: '选填',
+    weekText: '',
+    // 连续补账模式：日期由进度条驱动，其余录入能力和「记一笔」完全一样
+    batch: false, batchFrom: '', batchTo: '', batchSeasonId: '', batchDays: [], batchIdx: 0, batchTotal: 0, batchScope: '',
     seasonOpts: [], picked: [], split: 'area', manual: {}, allocView: [], allocText: '', allocErr: '',
     headLabel: '', subIcon: '', iconOn: '',
     sheet: '', noteDraft: '', templates: [], recents: [],
@@ -53,8 +55,8 @@ Page({
     // 赊账
     debt: null, party: '', partyList: [], dueTag: '不约定', dueDate: '',
     // 周期
-    rec: null, recFreqs: [{ k: 'week', n: '每周' }, { k: 'month', n: '每月' }, { k: 'quarter', n: '每季' }, { k: 'year', n: '每年' }],
-    weekDays: WEEK_DAYS, monthDays: MONTH_DAYS,
+    rec: null, recFreqs: R.FREQS, weekDays: R.WEEK_DAYS, monthOpts: R.MONTH_OPTS, dayOpts: R.DAY_OPTS,
+    recNeedMonth: false, recRule: '', recNext: '', recSaved: '', recLabel: '周期',
     dueTags: C.DUE_TAGS,
     kpPref: {}
   },
@@ -67,6 +69,9 @@ Page({
     });
     const kpPref = pref.all();
     this.setData({ seasonOpts, today, kpPref, acctList: store.accounts.items() });
+
+    // 连续补账模式：算出这段里有哪几天没记，日期跟着进度条走
+    if (q.batch) this.initBatch(q, today);
 
     if (q.id) {
       const c = store.costs.get(q.id);
@@ -118,6 +123,54 @@ Page({
     this.setData({ partyList: parties() });
   },
 
+  // ---------- 连续补账 ----------
+  initBatch(q, today) {
+    const sid = q.seasonId || '';
+    let from = today.slice(0, 7) + '-01';
+    let scope = '本月至今 · 全部地块';
+    if (sid) {
+      const s = store.seasons.get(sid);
+      if (s) {
+        from = s.sowDate > today ? today : s.sowDate;
+        scope = (store.plots.get(s.plotId) || {}).name + ' · ' + C.cropOf(s.crop).name;
+      }
+    }
+    const days = stats.missingDays(from, today, sid);
+    const date = days.length ? days[0] : today;
+    this.setData({
+      batch: true, batchFrom: from, batchTo: today, batchSeasonId: sid, batchScope: scope,
+      batchDays: days, batchIdx: 0, batchTotal: days.length, date
+    });
+    if (sid) this.setData({ picked: [sid] });
+    wx.setNavigationBarTitle({ title: '连续补账' });
+  },
+  batchMissing() { return stats.missingDays(this.data.batchFrom, this.data.batchTo, this.data.batchSeasonId); },
+  // 补完一天 → 跳到下一个还没记的日子；一个都不剩就退出
+  batchAdvance() {
+    const days = this.batchMissing();
+    if (!days.length) {
+      U.toast('这批都补完了', 'success');
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
+    const cur = this.data.date;
+    const next = days.filter(d => d > cur)[0] || days[0];
+    this.setData({ batchDays: days, batchTotal: days.length, batchIdx: days.indexOf(next), date: next });
+    this.recalcAlloc();
+  },
+  batchPrev() {
+    if (this.data.batchIdx <= 0) return;
+    const i = this.data.batchIdx - 1;
+    this.setData({ batchIdx: i, date: this.data.batchDays[i] });
+    this.recalcAlloc();
+  },
+  batchNext() {
+    if (this.data.batchIdx + 1 >= this.data.batchTotal) { U.toast('这批都补完了', 'success'); setTimeout(() => wx.navigateBack(), 600); return; }
+    const i = this.data.batchIdx + 1;
+    this.setData({ batchIdx: i, date: this.data.batchDays[i] });
+    this.recalcAlloc();
+  },
+
   onShow() { if (this.data.cat) { this.syncCat(); this.setData({ kpPref: pref.all(), recents: pref.recentFor(this.data.dir, pref.all().recentCount, pref.all().recentSub) }); } },
 
   // ---------- 方向 ----------
@@ -127,7 +180,7 @@ Page({
     const cat = dir === 'in' ? C.incomeKeyOf(store.tags.income()[0] || '卖粮') : C.COST_CATS[0].key;
     this.setData({
       dir, cat, sub: dir === 'in' ? (store.tags.income()[0] || '卖粮') : '', mode: C.catOf(cat).mode || 'fixed', field: 'amount',
-      amountExpr: this.data.amountExpr, priceExpr: '', peopleExpr: '', qtyExpr: ''
+      amountExpr: this.data.amountExpr, priceExpr: '', peopleExpr: '', qtyExpr: '', modes: C.modesFor(dir)
     });
     this.setData({ recents: pref.recentFor(dir, this.data.kpPref.recentCount, this.data.kpPref.recentSub) });
     this.syncCat(); this.recalc();
@@ -137,12 +190,16 @@ Page({
   syncCat() {
     const dir = this.data.dir, cat = this.data.cat;
     const c = C.catOf(cat);
+    const notePh = dir === 'in' ? '选填，如：卖出小麦 12,600 斤'
+      : cat === 'agri' ? '选填，如：复合肥 20 袋'
+        : cat === 'mach' ? '选填，如：老王家的收割机' : '选填';
     let list, subs = [];
     if (dir === 'in') {
       const names = store.tags.income();
       const cur = (this.data.sub && names.indexOf(this.data.sub) >= 0) ? this.data.sub : (names[0] || '卖粮');
       const key = C.incomeKeyOf(cur);
       this.setData({
+        notePh, modes: C.modesFor('in'),
         incList: names.map(n => { const k = C.incomeKeyOf(n); return { name: n, key: k, icon: C.iconOf('', k), iconOn: C.iconOf('', k, 'w') }; }),
         cat: key, catName: cur, sub: cur, catColor: C.INCOME_COLOR,
         subIcon: C.iconOf('', key), iconOn: C.iconOf('', key, 'w'),
@@ -155,6 +212,7 @@ Page({
     if (sub && list.indexOf(sub) < 0) list.push(sub);
     if (!sub) sub = list[0] || '';
     this.setData({
+      notePh, modes: C.modesFor('out'),
       incList: [],
       sub, catName: c.name, catColor: c.color,
       subIcon: C.iconOf(sub, cat), iconOn: C.iconOf(sub, cat, 'w'),
@@ -289,7 +347,8 @@ Page({
         return Object.assign({}, o, { on: d.picked.indexOf(o.id) >= 0, amountText: a ? U.money(a.amount) : '', manual: d.manual[o.id] || '' });
       }),
       headLabel: d.picked.length === 1 ? opt(d.picked[0]).name : (d.picked.length ? d.picked.length + ' 个种植季' : '未选种植季'),
-      dateText: d.date === d.today ? '今天' : U.cnDate(d.date)
+      dateText: d.date === d.today ? '今天' : U.cnDate(d.date),
+      weekText: U.weekday(d.date)
     });
   },
   openAlloc() { this.setData({ sheet: 'alloc' }); },
@@ -317,13 +376,24 @@ Page({
   noop() {},
 
   // ---------- 日期 / 备注 ----------
-  onDate(e) { this.setData({ date: e.detail.value }); this.recalcAlloc(); },
-  openNote() { this.setData({ sheet: 'note', noteDraft: this.data.note }); },
-  onNoteDraft(e) { this.setData({ noteDraft: e.detail.value }); },
-  saveNote() { this.setData({ note: this.data.noteDraft.trim(), sheet: '' }); },
+  // 连续补账里手选日期：不在缺记列表里也允许补（把它插进列表，进度条才对得上）
+  onDate(e) {
+    const date = e.detail.value;
+    const patch = { date };
+    if (this.data.batch) {
+      const days = this.data.batchDays.slice();
+      let idx = days.indexOf(date);
+      if (idx < 0) { days.push(date); days.sort(); idx = days.indexOf(date); }
+      Object.assign(patch, { batchDays: days, batchTotal: days.length, batchIdx: idx });
+    }
+    this.setData(patch);
+    this.recalcAlloc();
+  },
+  onNote(e) { this.setData({ note: e.detail.value }); },
 
   // ---------- 附件 ----------
-  openAtt() { this.setData({ sheet: 'att' }); },
+  // 附件就在页面里，键盘上的功能键直接进「拍照 / 选图」
+  openAtt() { this.addAtt(); },
   addAtt() {
     wx.chooseMedia({
       count: 9 - this.data.attachments.length, mediaType: ['image'], sourceType: ['camera', 'album'], sizeType: ['original'],
@@ -367,9 +437,31 @@ Page({
   clearAcct() { this.setData({ account: '', acctName: '', sheet: '' }); },
 
   // ---------- 周期账 ----------
-  openRec() { this.setData({ sheet: 'rec', rec: this.data.rec || { freq: 'month', day: 1, enabled: true } }); },
-  pickFreq(e) { this.setData({ 'rec.freq': e.currentTarget.dataset.k }); },
-  pickDay(e) { this.setData({ 'rec.day': +e.currentTarget.dataset.d }); },
+  openRec() {
+    // 默认锚月 = 这笔账所在的月，用户一看就懂
+    const rec = this.data.rec || { freq: 'month', day: 1, month: U.parse(this.data.date).getMonth() + 1, enabled: true };
+    this.setData({ sheet: 'rec', rec });
+    this.recView();
+  },
+  recView() {
+    const rec = this.data.rec || {};
+    this.setData({
+      recNeedMonth: R.NEED_MONTH(rec.freq),
+      recRule: R.ruleText(rec),
+      recNext: R.nextText(Object.assign({}, rec, { startAt: this.data.date }))
+    });
+  },
+  pickFreq(e) {
+    const freq = e.currentTarget.dataset.k;
+    const patch = { 'rec.freq': freq };
+    // 季/年要锚月；从别的频率切过来时给个合理默认（就取起点那个月）
+    if (R.NEED_MONTH(freq) && !R.NEED_MONTH(this.data.rec.freq)) patch['rec.month'] = U.parse(this.data.date).getMonth() + 1;
+    this.setData(patch);
+    this.recView();
+  },
+  pickDay(e) { this.setData({ 'rec.day': +e.currentTarget.dataset.d }); this.recView(); },
+  pickDayIdx(e) { this.setData({ 'rec.day': (+e.detail.value || 0) + 1 }); this.recView(); },
+  pickMonthIdx(e) { this.setData({ 'rec.month': (+e.detail.value || 0) + 1 }); this.recView(); },
   saveRec() {
     const d = this.data;
     if (!(d.total > 0)) return U.toast('先输入金额');
@@ -377,15 +469,16 @@ Page({
     store.recurring.save({
       name, dir: d.dir, cat: d.cat, sub: d.sub, mode: d.mode,
       amount: d.mode === 'fixed' ? d.total : 0, unitPrice: K.evalExpr(d.priceExpr),
-      freq: d.rec.freq, day: d.rec.day, dueTag: d.dueTag, startAt: d.date, enabled: true
+      freq: d.rec.freq, day: d.rec.day, month: R.NEED_MONTH(d.rec.freq) ? (d.rec.month || 1) : undefined,
+      dueTag: d.dueTag, startAt: d.date, enabled: true
     });
     U.toast('存成周期账了，到日子会提醒');
-    this.setData({ sheet: '' });
+    this.setData({ sheet: '', recSaved: name, recLabel: '已成周期账' });
   },
   applyRecurring(id) {
     const r = store.recurring.get(id);
     if (!r) return;
-    const patch = { dir: r.dir, cat: r.cat, sub: r.sub, mode: r.mode, field: fieldOf(r.mode), note: this.data.note || '' };
+    const patch = { dir: r.dir, cat: r.cat, sub: r.sub, mode: r.mode, field: fieldOf(r.mode), note: this.data.note || '', recSaved: r.name || '周期账', recLabel: '已成周期账' };
     if (r.mode === 'fixed') patch.amountExpr = K.fromNumber(r.amount);
     else patch.priceExpr = K.fromNumber(r.unitPrice);
     this.setData(patch);
@@ -446,7 +539,7 @@ Page({
       : d.mode === 'perDay' ? { mode: 'perDay', unitPrice: v(d.priceExpr), people: v(d.peopleExpr) }
         : d.mode === 'perJin' ? { mode: 'perJin', unitPrice: v(d.priceExpr), qty: v(d.qtyExpr), unit: d.unit }
           : d.mode === 'perMuPrice' ? { mode: 'perMuPrice', unitPrice: v(d.priceExpr), mu: v(d.muExpr) } : null;
-    store.setAuditSrc(d.attachments.length ? 'attach' : 'local');
+    store.setAuditSrc(d.batch ? 'catchup' : (d.attachments.length ? 'attach' : 'local'));
     const saved = store.costs.save({
       id: d.id || undefined, dir: d.dir, seasonId: d.picked[0], logId: d.logId, date: d.date, cat: d.cat, sub: d.sub, allocations,
       calc: calc || undefined,
@@ -463,7 +556,16 @@ Page({
     if (saved && d.attachments.length) attach.flush(saved.id).catch(() => null);
     wx.setStorageSync(LAST_KEY, { dir: d.dir, cat: d.cat, sub: d.sub });
     pref.pushRecent(d.cat, d.sub, d.dir);
-    if (again && !d.isEdit) {
+    if (d.batch) {
+      // 补账：清金额接着补下一天，分类/方向留着（连着几天记同一类账时少点几下）
+      U.toast('记好了', 'success');
+      this.setData({
+        exprMemo: '', amountExpr: '', priceExpr: d.mode === 'fixed' ? '' : d.priceExpr,
+        peopleExpr: '', note: '', attachments: [], debt: null, field: fieldOf(d.mode)
+      });
+      this.recalc();
+      this.batchAdvance();
+    } else if (again && !d.isEdit) {
       U.toast('记好了，接着记');
       this.setData({
         exprMemo: '', amountExpr: '', priceExpr: d.mode === 'fixed' ? '' : d.priceExpr, peopleExpr: '', qtyExpr: d.mode === 'perJin' ? '' : this.data.qtyExpr,

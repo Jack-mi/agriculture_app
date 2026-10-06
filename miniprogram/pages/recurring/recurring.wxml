@@ -84,15 +84,36 @@
     <view class="chips">
       <view wx:for="{{freqs}}" wx:key="k" class="chip {{edit.freq === item.k ? 'on' : ''}}" bindtap="pickFreq" data-k="{{item.k}}">{{item.n}}</view>
     </view>
-    <view class="sheet-lb" style="margin-top:16rpx">哪天</view>
-    <view class="chips">
-      <block wx:if="{{edit.freq === 'week'}}">
+    <block wx:if="{{edit.freq === 'week'}}">
+      <view class="sheet-lb" style="margin-top:16rpx">周几</view>
+      <view class="chips">
         <view wx:for="{{weekDays}}" wx:key="d" class="chip {{edit.day === item.d ? 'on' : ''}}" bindtap="pickDay" data-d="{{item.d}}">周{{item.n}}</view>
-      </block>
-      <block wx:else>
-        <view wx:for="{{monthDays}}" wx:key="*this" class="chip {{edit.day === item ? 'on' : ''}}" bindtap="pickDay" data-d="{{item}}">{{item}} 号</view>
-      </block>
-    </view>
+      </view>
+    </block>
+    <block wx:elif="{{editNeedMonth}}">
+      <view class="row" style="margin-top:16rpx;align-items:flex-end">
+        <view class="col" style="flex:1">
+          <view class="sheet-lb">哪个月</view>
+          <picker mode="selector" range="{{monthOpts}}" value="{{edit.month - 1}}" bindchange="pickMonthIdx">
+            <view class="picker num">{{edit.month}} 月</view>
+          </picker>
+        </view>
+        <view class="col" style="flex:1;margin-left:20rpx">
+          <view class="sheet-lb">几号</view>
+          <picker mode="selector" range="{{dayOpts}}" value="{{edit.day - 1}}" bindchange="pickDayIdx">
+            <view class="picker num">{{edit.day}} 号</view>
+          </picker>
+        </view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="sheet-lb" style="margin-top:16rpx">几号</view>
+      <picker mode="selector" range="{{dayOpts}}" value="{{edit.day - 1}}" bindchange="pickDayIdx">
+        <view class="picker num">{{edit.day}} 号</view>
+      </picker>
+    </block>
+    <view class="rechint">{{editRule}}</view>
+    <view wx:if="{{editNext}}" class="muted" style="font-size:24rpx;margin-top:8rpx">下次提醒：{{editNext}}</view>
 
     <view class="sheet-lb" style="margin-top:24rpx">起止</view>
     <view class="row">

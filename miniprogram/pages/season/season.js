@@ -139,7 +139,7 @@ Page({
   calNext() { if (this.data.cal.canNext) { this.setData({ calYm: stats.shiftYm(this.data.calYm, 1) }); this.render(); } },
   weekPrev() { this.setData({ wkStart: U.addDays(this.data.wkStart, -7) }); this.render(); },
   weekNext() { this.setData({ wkStart: U.addDays(this.data.wkStart, 7) }); this.render(); },
-  goCatchup() { wx.navigateTo({ url: '/pages/catchup/catchup?seasonId=' + this.data.id }); },
+  goCatchup() { wx.navigateTo({ url: '/pages/cost-edit/cost-edit?batch=1&seasonId=' + this.data.id }); },
   goDebt() { wx.navigateTo({ url: '/pages/debt/debt' }); },
   goBudget() { wx.navigateTo({ url: '/pages/budget/budget?seasonId=' + this.data.id }); },
   // 点日历某天：弹出当天记事 + 账目，可按该日期补记

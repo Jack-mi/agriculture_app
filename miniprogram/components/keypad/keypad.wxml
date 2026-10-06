@@ -15,5 +15,5 @@
   <view wx:else class="k fn" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="clear">C</view>
   <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k="0">0</view>
   <view class="k" hover-class="k-on" hover-stay-time="60" bindtap="tap" data-k=".">.</view>
-  <view class="k ok {{tone === 'in' ? 'in' : ''}} {{disabled && !hasOp ? 'dis' : ''}}" hover-class="k-on" hover-stay-time="60" bindtap="ok">{{hasOp ? '＝' : okText}}</view>
+  <view class="k ok {{tone === 'in' ? 'in' : ''}} {{okText.length > 4 ? 'long' : ''}} {{disabled && !hasOp ? 'dis' : ''}}" hover-class="k-on" hover-stay-time="60" bindtap="ok">{{hasOp ? '＝' : okText}}</view>
 </view>
