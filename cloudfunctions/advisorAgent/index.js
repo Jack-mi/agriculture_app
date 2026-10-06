@@ -13,6 +13,17 @@ const _ = db.command;
 
 const COST_CATS = ['agri', 'mach', 'trans', 'labor', 'asset'];
 const MATERIAL_TYPES = ['种子', '农药', '化肥', '其他'];
+const COST_CAT_NAMES = { agri: '农资投入', mach: '机械作业', trans: '运输成本', labor: '雇工成本', asset: '固定资产' };
+const INCOME_CATS = { grain: '卖粮', subsidy: '补贴', rent: '土地租金', service: '农机服务', insure: '保险赔付', inother: '其他' };
+const REC_FREQS = ['week', 'month', 'quarter', 'year'];
+
+// 用户的 tags 单文档（库存/周期账/账户/模板/收入类型都挂这里）
+async function tagsDoc(openid) {
+  const r = await db.collection('tags').where({ _openid: openid }).limit(1).get().catch(() => ({ data: [] }));
+  return (r.data && r.data[0]) || {};
+}
+const dirOf = c => (c && c.dir === 'in' ? 'in' : 'out');
+const catName = c => (dirOf(c) === 'in' ? (INCOME_CATS[c.cat] || c.cat || '其他') : (COST_CAT_NAMES[c.cat] || c.cat || '其他'));
 
 function cfgDoc(openid) {
   return db.collection('config').doc('advisor_ai_' + openid).get()
@@ -98,13 +109,127 @@ async function impl(openid, name, args, drafts) {
   }
   if (name === 'query_costs') {
     const r = await db.collection('costs').where({ _openid: openid }).orderBy('date', 'desc').limit(100).get();
-    return r.data.map(c => ({ id: c.id || c._id, seasonAllocations: normAlloc(c), date: c.date, cat: c.cat, sub: c.sub || '', total: normAlloc(c).reduce((s, x) => s + x.amount, 0), note: c.note || '' }));
+    let rows = r.data.filter(c => !c.deletedAt);
+    // dir 过滤：in 只查收入 / out 只查支出（收支双态后不分会算错账）
+    if (a.dir === 'in' || a.dir === 'out') rows = rows.filter(c => dirOf(c) === a.dir);
+    return rows.map(c => ({
+      id: c.id || c._id, dir: dirOf(c), catName: catName(c), sub: c.sub || '',
+      seasonAllocations: normAlloc(c), date: c.date,
+      total: normAlloc(c).reduce((s, x) => s + x.amount, 0),
+      account: c.account || '', note: c.note || '',
+      debt: c.debt ? { party: c.debt.party || '', dueDate: c.debt.dueDate || '', paidAmount: +c.debt.paidAmount || 0, settled: !!c.debt.settled } : null
+    }));
   }
   if (name === 'query_tasks') {
     const where = { _openid: openid };
     if (a.status) where.status = a.status;
     const r = await db.collection('tasks').where(where).orderBy('dueStart', 'asc').limit(50).get();
     return r.data.map(t => ({ taskId: t._id, seasonId: t.seasonId, title: t.title, dueStart: t.dueStart, dueEnd: t.dueEnd, status: t.status, why: t.why || [] }));
+  }
+  // 收支总览：净收益 + 支出/收入结构 + 应收应付。问"赚了/花了多少、谁欠钱"先调这个，别自己拿流水加
+  if (name === 'query_summary') {
+    const [costsR, seasonsR] = await Promise.all([
+      db.collection('costs').where({ _openid: openid }).limit(1000).get(),
+      db.collection('seasons').where({ _openid: openid }).limit(50).get()
+    ]);
+    const sid = a.seasonId || '';
+    let income = 0, expense = 0, recv = 0, pay = 0;
+    const outByCat = {}, inByCat = {};
+    costsR.data.filter(c => !c.deletedAt).forEach(c => {
+      const all = normAlloc(c).filter(x => !sid || x.seasonId === sid);
+      const amt = all.reduce((s, x) => s + x.amount, 0);
+      if (!amt) return;
+      const d = dirOf(c), cn = catName(c);
+      if (d === 'in') { income += amt; inByCat[cn] = (inByCat[cn] || 0) + amt; } else { expense += amt; outByCat[cn] = (outByCat[cn] || 0) + amt; }
+      if (c.debt && !c.debt.settled) {
+        const remain = amt - (+c.debt.paidAmount || 0);
+        if (remain > 0) { if (d === 'in') recv += remain; else pay += remain; }
+      }
+    });
+    const r2 = n => Math.round(n * 100) / 100;
+    const season = sid ? seasonsR.data.find(s => s._id === sid) : null;
+    return {
+      scope: season ? (season.crop + '季') : '全部', income: r2(income), expense: r2(expense), net: r2(income - expense),
+      expenseByCat: Object.keys(outByCat).map(k => ({ cat: k, total: r2(outByCat[k]) })).sort((x, y) => y.total - x.total),
+      incomeByCat: Object.keys(inByCat).map(k => ({ cat: k, total: r2(inByCat[k]) })).sort((x, y) => y.total - x.total),
+      receivable: r2(recv), payable: r2(pay)
+    };
+  }
+  // 资金账户：余额 = 期初 + 实收 − 实付（挂赊的只算已销账部分）
+  if (name === 'query_accounts') {
+    const [tags, costsR] = await Promise.all([
+      tagsDoc(openid),
+      db.collection('costs').where({ _openid: openid }).limit(1000).get()
+    ]);
+    const rows = (Array.isArray(tags.accounts) ? tags.accounts : []).map(x => ({ key: x.key, name: x.name, init: +x.init || 0, income: 0, expense: 0 }));
+    const byKey = {}; rows.forEach(r => { byKey[r.key] = r; });
+    costsR.data.filter(c => !c.deletedAt).forEach(c => {
+      const r = byKey[c.account || ''];
+      if (!r) return;
+      const total = normAlloc(c).reduce((s, x) => s + x.amount, 0);
+      const amt = c.debt ? (+c.debt.paidAmount || 0) : total;
+      if (dirOf(c) === 'in') r.income += amt; else r.expense += amt;
+    });
+    const r2 = n => Math.round(n * 100) / 100;
+    return rows.map(r => ({ name: r.name, balance: r2(r.init + r.income - r.expense), income: r2(r.income), expense: r2(r.expense) }));
+  }
+  // 欠款台账：应收（别人欠我，dir=in）/ 应付（我欠别人，dir=out），只看没结清的
+  if (name === 'query_debts') {
+    const r = await db.collection('costs').where({ _openid: openid }).orderBy('date', 'desc').limit(200).get();
+    const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+    return r.data.filter(c => !c.deletedAt && c.debt && !c.debt.settled && (!a.dir || dirOf(c) === a.dir)).map(c => {
+      const total = normAlloc(c).reduce((s, x) => s + x.amount, 0);
+      const remain = Math.round((total - (+c.debt.paidAmount || 0)) * 100) / 100;
+      return {
+        id: c.id || c._id, dir: dirOf(c), catName: catName(c), sub: c.sub || '', party: c.debt.party || '未填对方',
+        total, remain, dueDate: c.debt.dueDate || '', overdue: !!(c.debt.dueDate && c.debt.dueDate < today), date: c.date
+      };
+    }).filter(x => x.remain > 0);
+  }
+  if (name === 'query_recurring') {
+    const tags = await tagsDoc(openid);
+    return (Array.isArray(tags.recurring) ? tags.recurring : []).map(r => ({
+      id: r.id, name: r.name, dir: r.dir === 'in' ? 'in' : 'out', catName: r.dir === 'in' ? (INCOME_CATS[r.cat] || r.cat) : (COST_CAT_NAMES[r.cat] || r.cat),
+      sub: r.sub || '', amount: +r.amount || 0, freq: r.freq, day: r.day, month: r.month || '',
+      startAt: r.startAt || '', endAt: r.endAt || '', enabled: r.enabled !== false
+    }));
+  }
+  if (name === 'query_templates') {
+    const tags = await tagsDoc(openid);
+    return (Array.isArray(tags.templates) ? tags.templates : []).map(t => ({
+      name: t.name, dir: t.dir === 'in' ? 'in' : 'out', catName: t.dir === 'in' ? (INCOME_CATS[t.cat] || t.cat) : (COST_CAT_NAMES[t.cat] || t.cat),
+      sub: t.sub || '', amount: +t.amount || 0, unitPrice: +t.unitPrice || 0, mode: t.mode || 'fixed', note: t.note || ''
+    }));
+  }
+  if (name === 'query_stock') {
+    const tags = await tagsDoc(openid);
+    const r2 = n => Math.round(n * 100) / 100;
+    return (Array.isArray(tags.stock) ? tags.stock : []).map(x => ({
+      name: x.name, unit: x.unit || '件', onHand: +x.onHand || 0,
+      warnAt: +x.warnAt || 0, low: (+x.warnAt || 0) > 0 && (+x.onHand || 0) < +x.warnAt,
+      lastPrice: +x.lastPrice || 0, value: r2((+x.onHand || 0) * (+x.lastPrice || 0))
+    }));
+  }
+  // 预算进度：在种季的预算 vs 已花（预算挂 season 记录上：total 总预算 / perMu 每亩目标）
+  if (name === 'query_budget') {
+    const [seasonsR, plotsR, costsR] = await Promise.all([
+      db.collection('seasons').where({ _openid: openid, status: 'growing' }).limit(50).get(),
+      db.collection('plots').where({ _openid: openid }).limit(50).get(),
+      db.collection('costs').where({ _openid: openid }).limit(1000).get()
+    ]);
+    const pmap = {}; plotsR.data.forEach(p => { pmap[p._id] = p; });
+    const r2 = n => Math.round(n * 100) / 100;
+    return seasonsR.data.map(s => {
+      const spent = costsR.data.filter(c => !c.deletedAt && dirOf(c) === 'out')
+        .reduce((sum, c) => sum + normAlloc(c).filter(x => x.seasonId === s._id).reduce((z, x) => z + x.amount, 0), 0);
+      const b = s.budget || {};
+      const area = +((pmap[s.plotId] || {}).area) || 0;
+      const eff = +b.total > 0 ? +b.total : (+b.perMu > 0 && area > 0 ? b.perMu * area : 0);
+      return {
+        seasonId: s._id, crop: s.crop, plot: (pmap[s.plotId] || {}).name || '',
+        budget: r2(eff), spent: r2(spent), pct: eff > 0 ? Math.round(spent / eff * 100) : 0, hasBudget: eff > 0
+      };
+    });
   }
   if (name === 'query_weather') {
     const where = { _openid: openid, plotId: a.plotId };
@@ -172,15 +297,82 @@ async function impl(openid, name, args, drafts) {
   }
   if (name === 'draft_cost') {
     const ids = Array.isArray(a.seasonIds) && a.seasonIds.length ? a.seasonIds : (a.seasonId ? [a.seasonId] : []);
-    if (!ids.length || !(+a.amount > 0) || !okDate(a.date)) return { error: '缺 seasonIds/amount/date' };
-    if (COST_CATS.indexOf(a.cat) < 0) return { error: 'cat 只能是 ' + COST_CATS.join('/') };
+    const dir = a.dir === 'in' ? 'in' : 'out';
+    if (!ids.length || !okDate(a.date)) return { error: '缺 seasonIds/date' };
+    if (dir === 'in' && !INCOME_CATS[a.cat]) return { error: '收入的 cat 只能是 ' + Object.keys(INCOME_CATS).join('/') };
+    if (dir === 'out' && COST_CATS.indexOf(a.cat) < 0) return { error: '支出的 cat 只能是 ' + COST_CATS.join('/') };
+    const MODES = ['fixed', 'perMu', 'perDay', 'perJin', 'perMuPrice'];
+    const mode = MODES.indexOf(a.mode) >= 0 ? a.mode : 'fixed';
+    if (mode === 'fixed' && !(+a.amount > 0)) return { error: '缺 amount' };
     drafts.push({
       type: 'cost.create',
       cost: {
-        seasonIds: ids, cat: a.cat, sub: String(a.sub || '其他').slice(0, 12), date: a.date,
-        money: { mode: a.mode === 'perMu' ? 'perMu' : 'fixed', amount: +a.amount, unitPrice: +a.unitPrice > 0 ? +a.unitPrice : 0, mu: +a.mu > 0 ? +a.mu : 0 },
+        seasonIds: ids, dir, cat: a.cat, sub: String(a.sub || (dir === 'in' ? INCOME_CATS[a.cat] : '其他')).slice(0, 12), date: a.date,
+        money: {
+          mode, amount: +a.amount || 0,
+          unitPrice: +a.unitPrice > 0 ? +a.unitPrice : 0, mu: +a.mu > 0 ? +a.mu : 0,
+          people: +a.people > 0 ? +a.people : 0, qty: +a.qty > 0 ? +a.qty : 0
+        },
+        account: String(a.account || '').slice(0, 12),
+        debt: a.debt && a.debt.party ? { party: String(a.debt.party).slice(0, 20), dueDate: okDate(a.debt.dueDate) || '' } : null,
         note: String(a.note || '').slice(0, 60)
       }
+    });
+    return { drafted: true };
+  }
+  // 销账：把某笔挂赊的账收款/付款（可部分）。先 query_debts 拿 id
+  if (name === 'draft_debt_settle') {
+    if (!a.costId) return { error: '缺 costId，先 query_debts' };
+    drafts.push({ type: 'debt.settle', costId: String(a.costId), amount: +a.amount > 0 ? +a.amount : 0, date: okDate(a.date) || '' });
+    return { drafted: true };
+  }
+  // 周期账：每周/每月/每季/每年固定要记的账（到期只提醒，不自动扣）
+  if (name === 'draft_recurring') {
+    const dir = a.dir === 'in' ? 'in' : 'out';
+    if (!a.name || !(+a.amount > 0)) return { error: '缺 name/amount' };
+    if (REC_FREQS.indexOf(a.freq) < 0) return { error: 'freq 只能是 week/month/quarter/year' };
+    if (dir === 'in' && !INCOME_CATS[a.cat]) return { error: '收入的 cat 只能是 ' + Object.keys(INCOME_CATS).join('/') };
+    if (dir === 'out' && COST_CATS.indexOf(a.cat) < 0) return { error: '支出的 cat 只能是 ' + COST_CATS.join('/') };
+    drafts.push({
+      type: 'recurring.create',
+      recurring: {
+        name: String(a.name).slice(0, 20), dir, cat: a.cat, sub: String(a.sub || '').slice(0, 12),
+        amount: +a.amount, freq: a.freq, day: +a.day > 0 ? +a.day : 1, month: +a.month > 0 ? +a.month : 0
+      }
+    });
+    return { drafted: true };
+  }
+  // 库存出入库：qty 正数入库、负数出库（如"尿素用了半袋"= -0.5）
+  if (name === 'draft_stock_adjust') {
+    if (!a.name || !(+a.qty)) return { error: '缺 name/qty' };
+    drafts.push({ type: 'stock.adjust', name: String(a.name).slice(0, 20), unit: String(a.unit || '').slice(0, 6), qty: +a.qty, price: +a.price > 0 ? +a.price : 0 });
+    return { drafted: true };
+  }
+  if (name === 'draft_income_tag') {
+    const nm = String(a.name || '').trim().slice(0, 12);
+    if (!nm) return { error: '缺 name' };
+    drafts.push({ type: 'tag.income', name: nm });
+    return { drafted: true };
+  }
+  // 编辑已有日志（改文字/操作/农资用量）。先 query_logs 拿 id
+  if (name === 'draft_log_update') {
+    if (!a.logId) return { error: '缺 logId，先 query_logs' };
+    drafts.push({
+      type: 'log.update', logId: String(a.logId),
+      text: a.text === undefined ? '' : String(a.text).slice(0, 200),
+      ops: Array.isArray(a.ops) ? a.ops.slice(0, 6) : null,
+      materials: Array.isArray(a.materials) ? a.materials : null
+    });
+    return { drafted: true };
+  }
+  // 改种植季基础信息：播种时间 / 播种量 / 整地情况
+  if (name === 'draft_season_update') {
+    if (!a.seasonId) return { error: '缺 seasonId，先 query_seasons' };
+    if (a.sowDate && !okDate(a.sowDate)) return { error: 'sowDate 格式 YYYY-MM-DD' };
+    drafts.push({
+      type: 'season.update', seasonId: String(a.seasonId),
+      sowDate: okDate(a.sowDate) || '', seedRate: +a.seedRate > 0 ? +a.seedRate : 0,
+      tillage: String(a.tillage || '').slice(0, 40)
     });
     return { drafted: true };
   }
@@ -337,6 +529,23 @@ const TOOLS = [
   T('draft_cost_tag', '起草一个新的记账细分类型（确认后才加入类型列表）', { cat: { type: 'string', description: 'agri/mach/trans/labor/asset' }, name: { type: 'string' } }, ['cat', 'name']),
   T('draft_log_tag', '起草一个新的记事类型（确认后才加入）', { name: { type: 'string' } }, ['name']),
   T('draft_weather', '起草手工改正某一天的天气（气温℃、降雨 mm，风速 m/s 可省略）。确认后才覆盖这一天', { plotId: { type: 'string' }, date: { type: 'string' }, t: { type: 'number' }, p: { type: 'number' }, wind: { type: 'number' } }, ['plotId', 'date', 't', 'p'])
+  ,
+  T('query_summary', '收支总览：净收益、支出/收入分类结构、应收应付合计。问"赚了/花了多少、收支构成、谁欠钱"先调这个，不要自己拿流水加', { seasonId: { type: 'string', description: '可选，限定某个种植季' } }),
+  T('query_accounts', '查资金账户余额（现金/微信/支付宝/银行卡，余额=期初+实收−实付）', {}),
+  T('query_debts', '查欠款台账（没结清的应收/应付：对方、金额、已还、还剩、约定日期、是否逾期）', { dir: { type: 'string', description: 'in 应收 / out 应付，默认全部' } }),
+  T('query_recurring', '查周期账（每周/每月/每季/每年固定要记的账）', {}),
+  T('query_templates', '查常用账模板（农户收藏的快速记账组合）', {}),
+  T('query_stock', '查农资/粮食库存（在库量、预警、估值）', {}),
+  T('query_budget', '查在种季预算进度（预算 vs 已花、百分比）', {}),
+  T('draft_debt_settle', '起草销账：把某笔挂赊的账收款/付款（amount 省略 = 全部结清，可部分）。先 query_debts 拿 costId', { costId: { type: 'string' }, amount: { type: 'number' }, date: { type: 'string' } }, ['costId']),
+  T('draft_recurring', '起草一个周期账（确认后才加入）。freq: week 每周 / month 每月 / quarter 每季 / year 每年；day: 周=周几(0-6) 月/季/年=几号；month: 季/年落在哪个月', {
+    name: { type: 'string' }, dir: { type: 'string' }, cat: { type: 'string' }, sub: { type: 'string' },
+    amount: { type: 'number' }, freq: { type: 'string' }, day: { type: 'number' }, month: { type: 'number' }
+  }, ['name', 'cat', 'amount', 'freq']),
+  T('draft_stock_adjust', '起草库存出入库（确认后才改）。qty 正数入库、负数出库，如"尿素用了半袋" = qty -0.5 unit 袋', { name: { type: 'string' }, unit: { type: 'string' }, qty: { type: 'number' }, price: { type: 'number' } }, ['name', 'qty']),
+  T('draft_income_tag', '起草一个新的收入类型（确认后才加入）', { name: { type: 'string' } }, ['name']),
+  T('draft_log_update', '起草编辑一条已有农事日志（改文字/操作/农资用量，确认后才改）。先 query_logs 拿 logId', { logId: { type: 'string' }, text: { type: 'string' }, ops: { type: 'array', items: { type: 'string' } }, materials: { type: 'array', items: { type: 'object' } } }, ['logId']),
+  T('draft_season_update', '起草修改种植季基础信息（播种时间 sowDate / 播种量 seedRate 斤每亩 / 整地情况 tillage，确认后才改）', { seasonId: { type: 'string' }, sowDate: { type: 'string' }, seedRate: { type: 'number' }, tillage: { type: 'string' } }, ['seasonId'])
 ];
 
 function pickTools(names) {
@@ -344,9 +553,9 @@ function pickTools(names) {
   names.forEach(n => { set[n] = true; });
   return TOOLS.filter(t => set[t.function.name]);
 }
-const BOOK_TOOLS = pickTools(['query_costs', 'query_plots', 'query_seasons', 'draft_cost', 'draft_cost_remove', 'draft_cost_tag', 'memory_search', 'memory_save']);
-const LOG_TOOLS = pickTools(['query_logs', 'query_plots', 'query_seasons', 'query_tasks', 'draft_log', 'draft_log_remove', 'draft_log_tag', 'draft_task', 'draft_task_move', 'draft_task_skip', 'draft_task_done']);
-const AGRI_TOOLS = pickTools(['kb_search', 'pesticide_check', 'query_plots', 'query_seasons', 'query_weather', 'weather_forecast', 'draft_stage', 'draft_season', 'draft_harvest', 'draft_variety', 'draft_season_remove', 'draft_plot', 'draft_plot_update', 'draft_plot_remove', 'draft_locate', 'draft_weather', 'memory_search', 'memory_save', 'memory_forget']);
+const BOOK_TOOLS = pickTools(['query_costs', 'query_summary', 'query_accounts', 'query_debts', 'query_recurring', 'query_templates', 'query_stock', 'query_budget', 'query_plots', 'query_seasons', 'draft_cost', 'draft_cost_remove', 'draft_cost_tag', 'draft_income_tag', 'draft_debt_settle', 'draft_recurring', 'draft_stock_adjust', 'memory_search', 'memory_save']);
+const LOG_TOOLS = pickTools(['query_logs', 'query_plots', 'query_seasons', 'query_tasks', 'draft_log', 'draft_log_update', 'draft_log_remove', 'draft_log_tag', 'draft_task', 'draft_task_move', 'draft_task_skip', 'draft_task_done']);
+const AGRI_TOOLS = pickTools(['kb_search', 'pesticide_check', 'query_plots', 'query_seasons', 'query_weather', 'weather_forecast', 'draft_stage', 'draft_season', 'draft_season_update', 'draft_harvest', 'draft_variety', 'draft_season_remove', 'draft_plot', 'draft_plot_update', 'draft_plot_remove', 'draft_locate', 'draft_weather', 'memory_search', 'memory_save', 'memory_forget']);
 const ORCH_TOOLS = [
   T('ask_bookkeeper', '交给记账子代理。花了多少、记一笔钱、删一笔账、新增记账细分类型', { request: { type: 'string', description: '用农户的原话说明要查或要记的账' } }, ['request']),
   T('ask_logger', '交给记事子代理。记一笔农活、删记事、新增记事类型、设提醒、改日期、这条不做了、标完成', { request: { type: 'string' } }, ['request']),
@@ -362,15 +571,16 @@ function orchPrompt(context) {
   return '你是「田祖记」的农事参谋总管。你不自己查账、不自己记活、不自己下农事结论。\n' +
     '【今天】' + todayOf(c) + '\n' +
     '【地块】' + (plots || '还没有') + '\n' +
-    '记账、花了多少、记账类型 → ask_bookkeeper。记农活、删记事、提醒和待办 → ask_logger。能不能打药、技术依据、生育期、开季收获、地块、选位置、改某一天天气 → ask_agronomist。\n' +
+    '记账、花了多少、赚了多少、收入、欠款和销账、账户余额、库存、周期账、预算、记账类型 → ask_bookkeeper。记农活、删改记事、提醒和待办 → ask_logger。能不能打药、技术依据、生育期、开季收获、改播种时间播量整地、地块、选位置、改某一天天气 → ask_agronomist。\n' +
     '闲聊可以直接答。要干活或要查农户自己的数据，必须先叫对应子代理，再用它的结论用口语回复。需要强调用 **加粗**。不要输出 JSON。';
 }
 function expertPrompt(role, context) {
   const today = todayOf(context);
   const stageLine = ['wheat', 'corn'].map(c => (c === 'wheat' ? '小麦' : '玉米') + '：' + STAGES[c].map(s => s.name).join('→')).join('\n');
   const common = '【今天】' + today + '。农户说今天/昨天/明天按这个日子换算。查数据必须先调工具，禁止编。要改数据只能 draft_* 起草，确认后才落库。删除要说明不能恢复。回复给总管：一两句结论，加上你起草了什么。\n【上下文】' + JSON.stringify(context || {}) + '\n';
-  if (role === 'bookkeeper') return '你是记账子代理。只处理钱和记账类型。\n' + common;
-  if (role === 'logger') return '你是记事子代理。只处理农事日志、记事类型和待办提醒。\n' + common;
+  if (role === 'bookkeeper') return '你是记账子代理。处理钱：收支记账（支出五类 agri/mach/trans/labor/asset，收入六类 grain/subsidy/rent/service/insure/inother）、欠款和销账、账户余额、库存、周期账、预算、记账类型。\n' +
+    '问"赚/亏、花了多少、收支构成"先 query_summary；问欠款先 query_debts；记收入用 draft_cost dir=in；挂赊账在 draft_cost 里带 debt.party；销账用 draft_debt_settle。\n' + common;
+  if (role === 'logger') return '你是记事子代理。只处理农事日志（含编辑已有日志）、记事类型和待办提醒。\n' + common;
   return '你是农事决策子代理。处理种植、植保、天气、地块和生育期。农药先 kb_search / pesticide_check，只推登记药剂。地图选点用 draft_locate，你拿不到经纬度。改正某一天天气用 draft_weather。\n【生育期】\n' + stageLine + '\n' + common;
 }
 

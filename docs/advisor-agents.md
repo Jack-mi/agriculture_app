@@ -8,9 +8,9 @@
 
 | 子代理 | 只管 | 工具 |
 |---|---|---|
-| 记账 | 花了多少、记一笔、删账、记账细分类型 | `query_costs`、`draft_cost`、`draft_cost_remove`、`draft_cost_tag` 及地块/种植季查询 |
-| 记事 | 农活、记事类型、提醒和待办 | `query_logs`、`query_tasks`、`draft_log`、`draft_log_remove`、`draft_log_tag`、`draft_task*` |
-| 农事决策 | 能不能打药、技术依据、生育期、开季收获、地块、选位置、改正某一天天气 | `kb_search`、`pesticide_check`、天气预报、`draft_locate`、`draft_weather`、地块/种植季起草 |
+| 记账 | 收支记账（收入/支出）、赚了花了、欠款销账、账户、库存、周期账、常用账、预算、记账/收入类型 | `query_costs`、`query_summary`、`query_accounts`、`query_debts`、`query_recurring`、`query_templates`、`query_stock`、`query_budget`、`draft_cost`（收支双态+5 种算法+挂赊+账户）、`draft_cost_remove`（软删）、`draft_cost_tag`、`draft_income_tag`、`draft_debt_settle`、`draft_recurring`、`draft_stock_adjust` 及地块/种植季查询 |
+| 记事 | 农活（含编辑已有日志）、记事类型、提醒和待办 | `query_logs`、`query_tasks`、`draft_log`、`draft_log_update`、`draft_log_remove`、`draft_log_tag`、`draft_task*` |
+| 农事决策 | 能不能打药、技术依据、生育期、开季收获、改播种时间/播量/整地、地块、选位置、改正某一天天气 | `kb_search`、`pesticide_check`、天气预报、`draft_locate`、`draft_weather`、`draft_season_update`、地块/种植季起草 |
 
 地图选点：子代理只起草确认卡，确认后手机打开地图，点一下才写入经纬度。云函数拿不到定位。自定义类型和手工改天气也是确认后由小程序写入。
 
@@ -18,8 +18,8 @@
 
 ## 工具契约（云函数内实现，schema 校验）
 
-只读：`query_plots`、`query_seasons`、`query_logs`、`query_costs`、`query_tasks`、`query_weather`、`weather_forecast`、`kb_search`、`pesticide_check`、`memory_search`
-起草（权限门，农户在 App 里点确认才落库）：`draft_plot`、`draft_plot_update`、`draft_plot_remove`、`draft_locate`、`draft_season`、`draft_harvest`、`draft_season_remove`、`draft_variety`、`draft_task`、`draft_task_move`、`draft_task_skip`、`draft_task_done`、`draft_log`、`draft_log_remove`、`draft_log_tag`、`draft_cost`、`draft_cost_remove`、`draft_cost_tag`、`draft_weather`、`draft_stage`、`memory_save`、`memory_forget`。模型永远没有直接写权限。
+只读：`query_plots`、`query_seasons`、`query_logs`、`query_costs`、`query_tasks`、`query_weather`、`weather_forecast`、`kb_search`、`pesticide_check`、`memory_search`、`query_summary`、`query_accounts`、`query_debts`、`query_recurring`、`query_templates`、`query_stock`、`query_budget`
+起草（权限门，农户在 App 里点确认才落库）：`draft_plot`、`draft_plot_update`、`draft_plot_remove`、`draft_locate`、`draft_season`、`draft_season_update`、`draft_harvest`、`draft_season_remove`、`draft_variety`、`draft_task`、`draft_task_move`、`draft_task_skip`、`draft_task_done`、`draft_log`、`draft_log_update`、`draft_log_remove`、`draft_log_tag`、`draft_cost`、`draft_cost_remove`、`draft_cost_tag`、`draft_income_tag`、`draft_debt_settle`、`draft_recurring`、`draft_stock_adjust`、`draft_weather`、`draft_stage`、`memory_save`、`memory_forget`。模型永远没有直接写权限。删除类起草在客户端一律软删（进回收站 30 天可恢复），与手动删除同口径。
 
 ## 数据与隐私
 

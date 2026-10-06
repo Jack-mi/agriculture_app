@@ -9,7 +9,7 @@ const advisor = require('./advisor.js');
 const pesticide = require('./pesticide.js');
 const weather = require('./weather.js');
 
-const ACTIONS = ['plot.create', 'plot.update', 'plot.remove', 'plot.locate', 'season.create', 'season.harvest', 'season.remove', 'season.variety', 'task.create', 'task.update', 'task.dismiss', 'task.complete', 'log.create', 'log.remove', 'cost.create', 'cost.remove', 'tag.cost', 'tag.log', 'weather.set', 'stage.calibrate', 'memory.add', 'memory.remove'];
+const ACTIONS = ['plot.create', 'plot.update', 'plot.remove', 'plot.locate', 'season.create', 'season.harvest', 'season.remove', 'season.variety', 'season.update', 'task.create', 'task.update', 'task.dismiss', 'task.complete', 'log.create', 'log.update', 'log.remove', 'cost.create', 'cost.remove', 'debt.settle', 'recurring.create', 'stock.adjust', 'tag.cost', 'tag.income', 'tag.log', 'weather.set', 'stage.calibrate', 'memory.add', 'memory.remove'];
 
 // ---------- 上下文 ----------
 // ctx: { taskId?, seasonId? } → 解析出 task / season / plot
@@ -83,22 +83,88 @@ function cardLog(seasons, draft, taskId) {
 function cardCost(seasons, money, draft) {
   const date = draft.date || U.today();
   const ids = seasons.map(s => s.id);
-  const sub = draft.sub || '其他';
+  const dir = draft.dir === 'in' ? 'in' : 'out';
+  const sub = draft.sub || (dir === 'in' ? C.catOf(draft.cat).name : '其他');
   let total = money.amount || 0, calc = null;
-  if (money.mode === 'perMu') {
+  let formula = '';
+  if (money.mode === 'perMu' || money.mode === 'perMuPrice') {
     const mu = money.mu > 0 ? money.mu : store.costs.areaOf(ids);
     total = Math.round(money.unitPrice * mu * 100) / 100;
-    calc = { mode: 'perMu', unitPrice: money.unitPrice, mu };
+    calc = { mode: money.mode, unitPrice: money.unitPrice, mu };
+    formula = '¥' + U.money(calc.unitPrice) + '/亩 × ' + mu + '亩 = ¥' + U.money(total);
   } else if (money.mode === 'perDay') {
     total = Math.round(money.unitPrice * money.people * 100) / 100;
     calc = { mode: 'perDay', unitPrice: money.unitPrice, people: money.people };
+    formula = money.people + '人 × ¥' + U.money(money.unitPrice) + ' = ¥' + U.money(total);
+  } else if (money.mode === 'perJin') {
+    total = Math.round(money.unitPrice * money.qty * 100) / 100;
+    calc = { mode: 'perJin', unitPrice: money.unitPrice, qty: money.qty };
+    formula = '¥' + U.money(money.unitPrice) + '/斤 × ' + money.qty + '斤 = ¥' + U.money(total);
   }
   const allocs = ids.length > 1 ? store.costs.allocByArea(total, ids) : [{ seasonId: ids[0], amount: total }];
-  const rows = [calc && calc.mode === 'perMu' ? '¥' + U.money(calc.unitPrice) + '/亩 × ' + calc.mu + '亩 = ¥' + U.money(total)
-    : calc && calc.mode === 'perDay' ? calc.people + '人 × ¥' + U.money(calc.unitPrice) + ' = ¥' + U.money(total) : '¥' + U.money(total)];
+  const rows = [(dir === 'in' ? '＋' : '') + (formula || '¥' + U.money(total))];
   if (allocs.length > 1) rows.push('按亩均摊：' + allocs.map(a => plotName(store.seasons.get(a.seasonId)).slice(0, 4) + ' ¥' + U.money(a.amount)).join(' · '));
-  return { id: cid(), type: 'cost.create', tag: '记账', tagCls: 'org', title: C.catOf(draft.cat).name + ' · ' + sub, rows, ok: '记上',
-    payload: { date, cat: draft.cat, sub, allocations: allocs, calc, split: allocs.length > 1 ? 'area' : '', note: draft.note || '' } };
+  // 账户：模型可能给名称（微信/现金），也可能给 key，统一落到 key
+  let account = '';
+  if (draft.account) {
+    const hit = store.accounts.items().find(a => a.key === draft.account || a.name === draft.account);
+    account = hit ? hit.key : '';
+    if (account) rows.push('进「' + store.accounts.name(account) + '」');
+  }
+  let debt = null;
+  if (draft.debt && draft.debt.party) {
+    debt = { party: draft.debt.party, dueDate: draft.debt.dueDate || '', settled: false, paidAmount: 0 };
+    rows.push('挂' + (dir === 'in' ? '赊' : '欠') + '：' + debt.party + (debt.dueDate ? ' · 约定 ' + advisor.md(debt.dueDate) : ''));
+  }
+  return { id: cid(), type: 'cost.create', tag: dir === 'in' ? '记收入' : '记账', tagCls: dir === 'in' ? 'blu' : 'org',
+    title: C.catOf(draft.cat).name + (sub && sub !== C.catOf(draft.cat).name ? ' · ' + sub : ''), rows, ok: '记上',
+    payload: { date, dir, cat: draft.cat, sub, allocations: allocs, calc, split: allocs.length > 1 ? 'area' : '', note: draft.note || '', account, debt } };
+}
+function cardDebtSettle(cost, amount, date) {
+  const total = store.allocTotal(cost);
+  const remain = Math.round((total - (+cost.debt.paidAmount || 0)) * 100) / 100;
+  const amt = amount > 0 ? Math.min(amount, remain) : remain;
+  const dir = store.isIncome(cost) ? 'in' : 'out';
+  return { id: cid(), type: 'debt.settle', tag: '销账', tagCls: 'blu',
+    title: (cost.debt.party || '未填对方') + ' · ' + C.catOf(cost.cat).name,
+    rows: [(dir === 'in' ? '收' : '付') + ' ¥' + U.money(amt) + (amt < remain ? '，还剩 ¥' + U.money(remain - amt) : '，全部结清'), '原账 ' + advisor.md(cost.date) + ' · ¥' + U.money(total)],
+    ok: '确认' + (dir === 'in' ? '收款' : '付款'),
+    payload: { costId: cost.id, amount: amt, date: valid(date) || U.today() } };
+}
+function cardRecurring(r) {
+  const freqText = { week: '每周', month: '每月', quarter: '每季', year: '每年' }[r.freq] || r.freq;
+  const dayText = r.freq === 'week' ? ('周' + '日一二三四五六'[r.day % 7]) : ((r.freq === 'quarter' || r.freq === 'year') && r.month ? r.month + ' 月的 ' : '') + r.day + ' 号';
+  return { id: cid(), type: 'recurring.create', tag: '周期账', tagCls: 'org', title: r.name + ' · ¥' + U.money(r.amount),
+    rows: [freqText + dayText + ' 记一次', '到期只提醒，点确认才落账'], ok: '加上',
+    payload: { name: r.name, dir: r.dir, cat: r.cat, sub: r.sub || '', amount: r.amount, freq: r.freq, day: r.day, month: r.month || 0 } };
+}
+function cardStockAdjust(name, unit, qty, price) {
+  const cur = store.stock.find(name);
+  const rows = [{ old: cur ? (cur.onHand + ' ' + (cur.unit || unit || '件')) : '没有这品名', now: ((+((cur ? cur.onHand : 0)) + qty)).toString() + ' ' + (unit || (cur && cur.unit) || '件') }];
+  if (price > 0) rows.push('单价 ¥' + U.money(price));
+  return { id: cid(), type: 'stock.adjust', tag: qty > 0 ? '入库' : '出库', tagCls: qty > 0 ? 'blu' : 'org', title: name,
+    rows, ok: '确认', payload: { name, unit, qty, price: price || 0 } };
+}
+function cardIncomeTag(name) {
+  return { id: cid(), type: 'tag.income', tag: '收入类型', tagCls: 'blu', title: name,
+    rows: ['加到收入类型里'], ok: '加上', payload: { name } };
+}
+function cardLogUpdate(log, patch) {
+  const rows = [];
+  if (patch.text) rows.push({ old: (log.text || '（无）').slice(0, 20), now: patch.text.slice(0, 20) });
+  if (patch.ops) rows.push({ old: (log.ops || []).join('、') || '（无）', now: patch.ops.join('、') });
+  if (patch.materials) rows.push('农资用量一起改（原扣减的库存会先加回再按新值扣）');
+  return { id: cid(), type: 'log.update', tag: '改记事', tagCls: 'blu', title: advisor.md(log.date) + ' · ' + ((log.ops || []).join('·') || '记事'),
+    rows: rows.length ? rows : ['没有实际改动'], ok: '改上', payload: Object.assign({ logId: log.id }, patch) };
+}
+function cardSeasonUpdate(season, patch) {
+  const rows = [];
+  if (patch.sowDate && patch.sowDate !== season.sowDate) rows.push({ old: '播种 ' + advisor.md(season.sowDate), now: advisor.md(patch.sowDate) });
+  if (patch.seedRate && +patch.seedRate !== +season.seedRate) rows.push({ old: '播量 ' + (season.seedRate || '未填'), now: patch.seedRate + ' 斤/亩' });
+  if (patch.tillage && patch.tillage !== (season.tillage || '')) rows.push({ old: '整地 ' + (season.tillage || '未填'), now: patch.tillage });
+  return { id: cid(), type: 'season.update', tag: '改季', tagCls: 'org', title: plotName(season) + ' · ' + C.cropOf(season.crop).name,
+    rows: rows.length ? rows : ['没有实际改动'], ok: '改上',
+    payload: { seasonId: season.id, sowDate: patch.sowDate || '', seedRate: patch.seedRate || 0, tillage: patch.tillage || '' } };
 }
 function cardCalib(season, stageKey) {
   const cur = growth.current(season, advisor.forecastOf(season.plotId));
@@ -286,8 +352,38 @@ function fromLLM(json, ctx) {
         const seasons = ids.map(id => store.seasons.get(id)).filter(Boolean);
         if (!seasons.length || !valid(cst.date)) return;
         const money = cst.money || { mode: 'fixed', amount: 0 };
-        if (!(+money.amount > 0) && !(money.mode === 'perMu' && +money.unitPrice > 0)) return;
+        const modeOk = money.mode === 'fixed' ? +money.amount > 0
+          : (money.mode === 'perMu' || money.mode === 'perMuPrice') ? +money.unitPrice > 0
+          : money.mode === 'perDay' ? (+money.unitPrice > 0 && +money.people > 0)
+          : money.mode === 'perJin' ? (+money.unitPrice > 0 && +money.qty > 0) : false;
+        if (!modeOk) return;
         out.cards.push(cardCost(seasons, money, cst));
+      } else if (a.type === 'debt.settle') {
+        const cost = store.costs.get(a.costId);
+        if (!cost || !cost.debt || cost.debt.settled) return;
+        out.cards.push(cardDebtSettle(cost, +a.amount || 0, a.date));
+      } else if (a.type === 'recurring.create' && a.recurring) {
+        const r = a.recurring;
+        if (!r.name || !(+r.amount > 0) || ['week', 'month', 'quarter', 'year'].indexOf(r.freq) < 0) return;
+        out.cards.push(cardRecurring(r));
+      } else if (a.type === 'stock.adjust') {
+        const nm = String(a.name || '').trim();
+        if (!nm || !(+a.qty)) return;
+        out.cards.push(cardStockAdjust(nm, String(a.unit || ''), +a.qty, +a.price || 0));
+      } else if (a.type === 'tag.income') {
+        const nm = String(a.name || '').trim().slice(0, 12);
+        if (!nm) return;
+        out.cards.push(cardIncomeTag(nm));
+      } else if (a.type === 'log.update') {
+        const log = store.logs.get(a.logId); if (!log) return;
+        const patch = {};
+        if (a.text) patch.text = String(a.text).slice(0, 200);
+        if (Array.isArray(a.ops)) patch.ops = a.ops.map(o => String(o).slice(0, 10)).slice(0, 6);
+        if (Array.isArray(a.materials)) patch.materials = a.materials;
+        out.cards.push(cardLogUpdate(log, patch));
+      } else if (a.type === 'season.update') {
+        const s = store.seasons.get(a.seasonId) || rc.season; if (!s) return;
+        out.cards.push(cardSeasonUpdate(s, { sowDate: valid(a.sowDate), seedRate: +a.seedRate || 0, tillage: String(a.tillage || '').slice(0, 40) }));
       }
     } catch (e) { /* 丢弃不合法动作 */ }
   });
@@ -404,12 +500,63 @@ function execute(card) {
     }
     case 'log.remove': {
       if (!store.logs.get(p.logId)) return { ok: false };
-      store.logs.remove(p.logId);
+      store.softRemove('logs', p.logId); // 软删进回收站，与手动删除同口径
       return { ok: true };
     }
     case 'cost.remove': {
       if (!store.costs.get(p.costId)) return { ok: false };
-      store.costs.remove(p.costId);
+      store.softRemove('costs', p.costId); // 软删进回收站，与手动删除同口径
+      return { ok: true };
+    }
+    case 'debt.settle': {
+      const c = store.costs.get(p.costId);
+      if (!c || !c.debt) return { ok: false };
+      store.costs.settle(p.costId, { amount: p.amount, date: p.date });
+      return { ok: true };
+    }
+    case 'recurring.create': {
+      store.recurring.save({ name: p.name, dir: p.dir === 'in' ? 'in' : 'out', cat: p.cat, sub: p.sub || '', mode: 'fixed', amount: p.amount, freq: p.freq, day: p.day, month: p.month || 0, startAt: U.today(), enabled: true });
+      return { ok: true };
+    }
+    case 'stock.adjust': {
+      // 库存未初始化时先开（不然期初口径对不上）
+      if (!store.stock.inited()) store.stock.init(true);
+      store.stock.applyDelta(p.name, p.unit || '件', p.qty, { price: p.price });
+      return { ok: true };
+    }
+    case 'tag.income': {
+      const d = store.db();
+      if (!Array.isArray(d.tags.income)) d.tags.income = [];
+      if (d.tags.income.indexOf(p.name) >= 0) return { ok: true };
+      d.tags.income.push(p.name);
+      store.save();
+      store.notify('tags', 'upsert', 'tags');
+      return { ok: true };
+    }
+    case 'log.update': {
+      const log = store.logs.get(p.logId);
+      if (!log) return { ok: false };
+      const patch = { id: log.id };
+      if (p.text) patch.text = p.text;
+      if (p.ops) patch.ops = p.ops;
+      if (p.materials) {
+        // 库存口径与手动编辑一致：先把上次扣的加回来，再按新值扣
+        patch.materials = p.materials.map(m => ({ type: m.type || '其他', name: String(m.name || '').slice(0, 20), rate: +m.rate || '', unit: m.unit || '' }));
+        patch.stockApplied = store.stock.applyLog(Object.assign({}, log, { materials: patch.materials }), log.stockApplied);
+      }
+      store.logs.save(patch);
+      return { ok: true };
+    }
+    case 'season.update': {
+      const s = store.seasons.get(p.seasonId);
+      if (!s) return { ok: false };
+      const patch = { id: s.id };
+      if (p.sowDate) patch.sowDate = p.sowDate;
+      if (p.seedRate) patch.seedRate = p.seedRate;
+      if (p.tillage) patch.tillage = p.tillage;
+      store.seasons.save(patch);
+      if (patch.sowDate && s.status === 'growing') weather.fillSeason(store.seasons.get(s.id)).catch(() => null);
+      advisor.onSeasonChanged(s.id);
       return { ok: true };
     }
     case 'task.complete': {
@@ -445,7 +592,13 @@ function execute(card) {
       return { ok: !!first, logId: first ? first.id : '' };
     }
     case 'cost.create': {
-      const c = store.costs.save({ seasonId: p.allocations[0].seasonId, date: p.date, cat: p.cat, sub: p.sub, allocations: p.allocations, calc: p.calc || undefined, split: p.split || undefined, note: p.note || '' });
+      const c = store.costs.save({
+        seasonId: p.allocations[0].seasonId, date: p.date, cat: p.cat, sub: p.sub,
+        allocations: p.allocations, calc: p.calc || undefined, split: p.split || undefined, note: p.note || '',
+        dir: p.dir === 'in' ? 'in' : undefined, // 缺省=out，老数据零迁移
+        account: p.account || undefined,
+        debt: p.debt || undefined
+      });
       return { ok: true, costId: c.id };
     }
     case 'stage.calibrate': {

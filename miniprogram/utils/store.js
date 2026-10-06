@@ -858,4 +858,4 @@ const tags = {
   tags[fn] = function () { const r = orig.apply(tags, arguments); notify('tags', 'upsert', 'tags'); return r; };
 });
 
-module.exports = { tasks, memory, tags, costs, stock, accounts, recurring, trash, logs, weather, plots, seasons, varieties, tillage, db, save, replaceAll, notify, outbox, weatherId, dirOf, isIncome, isDebtOpen, allocTotal, pushAudit, setAuditSrc, TRASH_DAYS, KEY, OUTBOX_KEY };
+module.exports = { tasks, memory, tags, costs, stock, accounts, recurring, trash, logs, weather, plots, seasons, varieties, tillage, db, save, replaceAll, notify, outbox, weatherId, dirOf, isIncome, isDebtOpen, allocTotal, pushAudit, setAuditSrc, softRemove, TRASH_DAYS, KEY, OUTBOX_KEY };
