@@ -14,6 +14,16 @@ const COLS = ['plots', 'seasons', 'costs', 'logs', 'tasks', 'memory'];
 const LASTPULL_KEY = 'guyuji_lastpull';
 const OPENID_KEY = 'guyuji_openid';
 const TAGS_DOCID_KEY = 'guyuji_tags_docid';
+const DEAD_KEY = 'guyuji_deadletter';
+// 单条连续失败上限：超过就从 outbox 挪进死信，否则一条永久性错误（权限/数据问题）
+// 会永远卡在队首，后面所有变更都同步不上去
+const MAX_FAILS = 5;
+// pull 水位线回退窗口：updatedAt 来自各设备本地时钟，时钟偏快会把水位抬高、
+// 漏拉其他设备的正常写入。回退 10 分钟重叠拉取，合并是幂等 LWW，重复无害。
+const PULL_OVERLAP_MS = 10 * 60 * 1000;
+// 硬删除集合（物理 remove，云端不留墓碑）：每天对账一次，清掉别台设备已删的本地幽灵
+const HARD_DEL_COLS = ['plots', 'seasons', 'tasks', 'memory'];
+const RECONCILE_KEY = 'guyuji_reconcile_date';
 
 function init(env) {
   if (!env || !wx.cloud) return;
@@ -43,6 +53,29 @@ function dequeue(entry) {
   // 只移除本次成功的那一条（flush 期间若有更新变更，at 更新则保留）
   wx.setStorageSync(store.OUTBOX_KEY,
     outbox().filter(e => !(e.col === entry.col && e.id === entry.id && e.at === entry.at)));
+}
+function dead() { try { return wx.getStorageSync(DEAD_KEY) || []; } catch (e) { return []; } }
+// 把失败计数写回存储中的 outbox（e 只是数组副本，直接改不会持久化）
+function markFail(entry) {
+  const q = outbox();
+  const hit = q.find(x => x.col === entry.col && x.id === entry.id && x.at === entry.at);
+  const fails = ((hit && hit.fails) || 0) + 1;
+  if (hit) { hit.fails = fails; wx.setStorageSync(store.OUTBOX_KEY, q); }
+  return fails;
+}
+function toDead(entry, err) {
+  const list = dead();
+  list.push({ col: entry.col, op: entry.op, id: entry.id, at: Date.now(), err: String((err && err.errMsg) || (err && err.message) || err).slice(0, 200) });
+  wx.setStorageSync(DEAD_KEY, list.slice(-50));
+  // 从 outbox 移除该 col+id 的全部条目（含可能存在的更新变更，重试时以最新数据重新入队）
+  wx.setStorageSync(store.OUTBOX_KEY, outbox().filter(x => !(x.col === entry.col && x.id === entry.id)));
+}
+// 死信重新入队（例如权限修复后），返回重新入队条数
+function retryDead() {
+  const list = dead();
+  list.forEach(e => store.notify(e.col, e.op, e.id));
+  wx.setStorageSync(DEAD_KEY, []);
+  return list.length;
 }
 
 // ---------- 写：flush ----------
@@ -123,6 +156,7 @@ async function flush() {
         await pushOne(e);
         dequeue(e);
       } catch (err) {
+        if (markFail(e) > MAX_FAILS) toDead(e, err);
         break; // 弱网失败，剩余条目留在队列
       }
     }
@@ -199,18 +233,21 @@ async function pull() {
   pulling = true;
   try {
     const since = wx.getStorageSync(LASTPULL_KEY) || 0;
+    // 水位线带回退重叠：防止设备时钟偏快漏拉（见 PULL_OVERLAP_MS）
+    const querySince = since > PULL_OVERLAP_MS ? since - PULL_OVERLAP_MS : 0;
     let maxAt = since;
     let changed = false;
     for (const name of COLS) {
-      const recs = await pullCol(name, since).catch(() => []);
+      const recs = await pullCol(name, querySince).catch(() => []);
       recs.forEach(r => { if ((r.updatedAt || 0) > maxAt) maxAt = r.updatedAt; });
       if (mergeCol(name, recs)) changed = true;
     }
-    const wrecs = await pullCol('weather', since).catch(() => []);
+    const wrecs = await pullCol('weather', querySince).catch(() => []);
     wrecs.forEach(r => { if ((r.updatedAt || 0) > maxAt) maxAt = r.updatedAt; });
     if (mergeWeather(wrecs)) changed = true;
     const trecs = await pullCol('tags', 0).catch(() => []); // tags 单文档，全量比对
     if (mergeTags(trecs)) changed = true;
+    if (await reconcile()) changed = true;
     if (changed) store.save({ silent: true });
     if (maxAt > since) wx.setStorageSync(LASTPULL_KEY, maxAt);
   } finally {
@@ -218,16 +255,38 @@ async function pull() {
   }
 }
 
-// 兼容旧调用（app.js）：首拉/恢复 = 全量增量一体的 pull
-function pullIfEmpty() { return pull(); }
+// 硬删除对账：plots/seasons/tasks/memory 在云端是物理 remove，别的设备删了这里收不到事件。
+// 每天一次拉全量 id 比对：本地有、云端没有、outbox 里也没有待同步变更的，判定为别台设备已删，本地清除。
+// 任一步失败都放弃本轮对账（宁可留幽灵，不可误删）。
+async function reconcile() {
+  const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  if (wx.getStorageSync(RECONCILE_KEY) === today) return false;
+  wx.setStorageSync(RECONCILE_KEY, today);
+  const d = store.db();
+  const pending = {};
+  outbox().forEach(e => { pending[e.col + ':' + e.id] = true; });
+  let changed = false;
+  for (const name of HARD_DEL_COLS) {
+    let ids;
+    try {
+      const recs = await pullCol(name, 0);
+      ids = {};
+      recs.forEach(r => { ids[r._id] = true; });
+    } catch (e) { return changed; } // 拉不全就不删
+    const keep = d[name].filter(x => ids[x.id] || pending[name + ':' + x.id]);
+    if (keep.length !== d[name].length) { d[name] = keep; changed = true; }
+  }
+  return changed;
+}
 
 function status() {
   return {
     enabled,
     dirty: outbox().length > 0,
+    dead: dead().length,
     syncedAt: wx.getStorageSync('guyuji_synced_at') || 0,
     lastPullAt: wx.getStorageSync(LASTPULL_KEY) || 0
   };
 }
 
-module.exports = { init, login, flush, pull, pullIfEmpty, status };
+module.exports = { init, login, flush, pull, status, retryDead, reconcile };

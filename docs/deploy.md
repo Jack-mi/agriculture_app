@@ -101,6 +101,14 @@
 >   - 模拟器复核：「我的」一行入口 + 「记账设置」二级页三行，都截图看过
 >   - 顺带（本轮另做）：`scripts/wxrun.sh` + `scripts/wx-allow.swift` —— wechatide 的「MCP 客户端授权」弹窗自动点掉（不是靠开关，那个开关在这个版本是死的），详见第 8 节
 > - **版本号约定（2026-10-06 确认）**：0.7.x 到 `0.7.18` 收口（`0.7.10`~`0.7.15` 是弹窗自动化验证时的空上传，内容同 `0.7.9`）；**下一处真改动直接跳 `0.8.0`**，不再在 0.7 上加水位。
+> - **2026-10-06：体验版 `0.8.0` 已上传**（架构安全加固，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+>   - **云函数鉴权与隔离**：`advisorChat` 全部 action 强制 OPENID 鉴权（原来完全没有鉴权，任何人可篡改全局 Key/baseUrl）；AI 配置改 per-user 文档 `config/advisor_ai_<openid>`，历史全局 `advisor_ai` 只读兜底；baseUrl 强制 https；`advisorChat`/`advisorAgent` 按用户限流（chat 100 次/天、agent 30 次/天，`config/rl_*` 计数）
+>   - **天气 `_openid` 修复**：`weatherBackfill`/`weatherDaily` 写 weather 带属主 `_openid`（原来 admin 裸写，「仅创建者可读写」下客户端和 advisorAgent 都读不到）；`weatherBackfill` 加地块归属校验；存量数据用 `scripts/repair-weather-openid.js` 修复 10 条 + 清理孤儿 6 条
+>   - **同步可靠性**：outbox 单条失败超 5 次进死信（`guyuji_deadletter`，「我的 → 数据同步」可见可重试），不再一条错误卡死全队列；plots/seasons/tasks/memory 硬删除每天对账一次，清掉别台设备已删的本地幽灵；pull 水位线回退 10 分钟重叠，防设备时钟偏快漏拉
+>   - **存储超限保护**：`store.save()` 写失败不再崩，「我的」页提示
+>   - **仓库卫生**：删 `design_handoff/miniprogram` 过时副本；kb 双份拷贝加守卫 `scripts/check-kb-sync.js`（挂在 check-miniprogram 末尾）；cloudfunctions 的 node_modules 移出 git
+>   - **timeout 固化**：`scripts/fix-fn-timeout.sh` 一键把 advisorAgent→60s / advisorChat→30s 打回 SCF（.env → stable_token → getqcloudtoken → TC3 签名 SCF API），**每次重新部署这两个函数后必跑**
+>   - 自检：54/54（新增 sync 死信/对账用例）；云端实测 advisorChat status/setModel/badbase、weatherBackfill 归属+`_openid` 落库、advisorAgent 真实问答全链路通过
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`
@@ -131,6 +139,7 @@
 | `logs` | 仅创建者可读写 | 记事流水 |
 | `weather` | 仅创建者可读写 | 逐日天气，`_id = plotId@date` 天然唯一，无需另建索引 |
 | `tags` | 仅创建者可读写 | 用户自定义类型（每用户单文档） |
+| `config` | 仅创建者可读写 | AI 配置（`advisor_ai_<openid>` per-user + 历史全局 `advisor_ai`）与限流计数（`rl_*`），只经云函数访问 |
 
 建议再给 `plots/seasons/costs/logs/weather` 的 `updatedAt` 建普通索引（增量同步按它过滤排序）。
 
@@ -143,6 +152,11 @@
 | `login` | openid 静默建档 | 上传并部署：云端安装依赖 |
 | `weatherBackfill` | 开季回补 + 手动重取天气 | 上传并部署：云端安装依赖 |
 | `weatherDaily` | 每日 06:30 为在种的季拉昨日天气 | 上传并部署：云端安装依赖 + **上传触发器** |
+| `advisorChat` | BYOK 大模型代理（鉴权 + per-user Key + 限流） | 上传并部署：云端安装依赖，**部署后跑 `scripts/fix-fn-timeout.sh`** |
+| `advisorAgent` | 参谋多智能体运行时 | 上传并部署：云端安装依赖，**部署后跑 `scripts/fix-fn-timeout.sh`** |
+
+> CLI/IDE 部署不会应用 `config.json` 的 timeout，重新部署后 timeout 会掉回默认 3s，
+> 必须跑 `scripts/fix-fn-timeout.sh` 把 advisorAgent→60s / advisorChat→30s 打回 SCF。
 
 `weatherDaily` 的定时触发器在 `config.json` 里（cron `0 30 6 * * * *`），部署时选「上传并部署：所有文件」会自动带上；也可在云控制台手动核对触发器是否存在。
 

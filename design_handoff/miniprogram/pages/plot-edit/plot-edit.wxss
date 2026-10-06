@@ -1,1 +1,0 @@
-.loc { display: flex; align-items: center; background: #fff; border: 3rpx solid var(--line); border-radius: 16rpx; padding: 24rpx 28rpx; min-height: 104rpx; box-sizing: border-box; font-size: 34rpx; }

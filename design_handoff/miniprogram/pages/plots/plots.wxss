@@ -1,6 +1,0 @@
-.big-n { font-size: 44rpx; font-weight: 800; }
-.p-name { font-size: 40rpx; font-weight: 800; }
-.edit { font-size: 28rpx; }
-.cur { display: flex; align-items: center; margin-top: 24rpx; background: #FBF8EF; border: 2rpx solid var(--line); border-radius: 16rpx; padding: 20rpx 24rpx; }
-.his { margin-top: 24rpx; border-top: 2rpx dashed var(--line); padding-top: 20rpx; }
-.his-row { padding: 14rpx 0; font-size: 30rpx; }

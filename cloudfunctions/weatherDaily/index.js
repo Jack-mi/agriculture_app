@@ -1,5 +1,6 @@
 // 每日 06:30 定时触发：扫描所有在种的季，为对应地块拉取昨日天气写入 weather 集合。
 // 服务端 admin 权限扫描全量用户；src=manual 的手工修正记录永不覆盖。
+// 写入的 weather 文档带该地块属主的 _openid，否则客户端按「仅创建者可读写」拉不到。
 const cloud = require('wx-server-sdk');
 const meteo = require('./meteo.js');
 
@@ -33,7 +34,7 @@ exports.main = async () => {
     if (!map[yesterday]) continue;
 
     await col.doc(docId).set({
-      data: { plotId, date: yesterday, t: map[yesterday].t, p: map[yesterday].p, wind: map[yesterday].wind, src: 'api', updatedAt: now }
+      data: { _openid: plot._openid || '', plotId, date: yesterday, t: map[yesterday].t, p: map[yesterday].p, wind: map[yesterday].wind, src: 'api', updatedAt: now }
     }).catch(() => null);
     updated++;
   }

@@ -124,7 +124,12 @@ function purgeExpired(cache) {
 function save(opts) {
   const d = db();
   d.updatedAt = Date.now();
-  wx.setStorageSync(KEY, d);
+  try {
+    wx.setStorageSync(KEY, d);
+  } catch (e) {
+    // Storage 超限/写失败：内存 cache 还在，不崩；打点让「我的」页能提示，下次启动数据可能回滚
+    try { wx.setStorageSync('guyuji_storage_err', 1); } catch (e2) {}
+  }
   if (!(opts && opts.silent)) {
     wx.setStorageSync('guyuji_dirty', 1);
     const app = getApp && getApp();

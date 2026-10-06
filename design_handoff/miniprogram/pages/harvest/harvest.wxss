@@ -1,8 +1,0 @@
-.sum { display: flex; flex-wrap: wrap; padding: 12rpx 32rpx; }
-.sum-cell { width: 50%; padding: 20rpx 0; }
-.sum-cell.full { width: 100%; border-top: 2rpx solid var(--line); }
-.v { font-size: 48rpx; font-weight: 800; }
-.u { font-size: 24rpx; color: var(--sub); margin-left: 6rpx; font-weight: 500; }
-.heat { color: var(--heat); }
-.rain { color: var(--rain); }
-.wheat-t { color: var(--wheat); }

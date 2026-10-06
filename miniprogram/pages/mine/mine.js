@@ -21,10 +21,13 @@ Page({
     const gd = (getApp() || {}).globalData || {};
     const pending = store.outbox().length;
     const syncedAt = wx.getStorageSync('guyuji_synced_at') || 0;
+    const dead = sync.status().dead || 0;
     const online = gd.online !== false;
     // 说人话：数据本来就在云上，这里报的是「同步状态」，不是一个要打开的开关
     let state, ok = false;
-    if (!gd.cloudEnv) state = '这台手机没连云端，数据只存在本机';
+    if (wx.getStorageSync('guyuji_storage_err')) state = '本机存储快满了，最近的改动可能没存住，清下缓存或联系我们';
+    else if (dead) state = dead + ' 条没传上去（点这里重试）';
+    else if (!gd.cloudEnv) state = '这台手机没连云端，数据只存在本机';
     else if (!online) state = '当前离线' + (pending ? '，' + pending + ' 条等联网后自动传' : '，联网后自动同步');
     else if (pending) state = pending + ' 条正在上传…';
     else if (syncedAt) { state = '已同步到云端 · ' + ago(syncedAt); ok = true; }
@@ -45,6 +48,7 @@ Page({
     if (!gd.cloudEnv) return wx.showModal({ title: '没连云端', content: '数据现在只存在这台手机上。', showCancel: false });
     if (gd.online === false) return U.toast('当前没网，联网后会自动同步');
     U.toast('正在同步…');
+    sync.retryDead();
     sync.login().then(() => sync.pull()).then(() => sync.flush())
       .then(() => { U.toast('同步完成', 'success'); this.onShow(); })
       .catch(() => U.toast('同步失败，联网后会自动重试'));

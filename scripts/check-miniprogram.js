@@ -110,3 +110,6 @@ if (errors.length) {
   process.exit(1);
 }
 console.log('✔ 全部通过');
+
+// kb 双份拷贝一致性（miniprogram/kb vs cloudfunctions/advisorAgent/kb）
+require('./check-kb-sync.js');

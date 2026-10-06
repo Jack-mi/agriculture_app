@@ -6,3 +6,6 @@ project.private.config.json
 # 主体变更/证件类敏感材料（身份证号、信用代码、公章扫描件），禁止提交
 *主体变更*
 *申请函*
+
+# 云函数依赖本地安装产物（部署走云端安装依赖）
+cloudfunctions/*/node_modules/

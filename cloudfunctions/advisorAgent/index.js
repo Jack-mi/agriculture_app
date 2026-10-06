@@ -1,7 +1,8 @@
 // 农事参谋 · 多智能体运行时（生产环境）
 // Agent loop：模型提议 → schema 校验 → 执行 → 观察 → 继续，封顶 8 轮。
 // 写操作只有"起草"：draft_* 工具产出动作草稿，农户在 App 里点确认才落库，模型永远没有直接写权限。
-// 设计见 docs/advisor-agents.md。Key 复用 advisorChat 的 config/advisor_ai（不下发客户端）。
+// 设计见 docs/advisor-agents.md。Key 读 config 集合：先查 per-user 文档 advisor_ai_<openid>，
+// 没有再兜底历史全局 advisor_ai（控制台手工维护）；Key 不下发客户端。按用户限流。
 const cloud = require('wx-server-sdk');
 const https = require('https');
 const { DOCS, PESTICIDES, BLOCKED, STAGES } = require('./kb');
@@ -13,8 +14,25 @@ const _ = db.command;
 const COST_CATS = ['agri', 'mach', 'trans', 'labor', 'asset'];
 const MATERIAL_TYPES = ['种子', '农药', '化肥', '其他'];
 
-function cfgDoc() {
-  return db.collection('config').doc('advisor_ai').get().then(r => r.data).catch(() => null);
+function cfgDoc(openid) {
+  return db.collection('config').doc('advisor_ai_' + openid).get()
+    .then(r => (r.data && r.data.apiKey) ? r.data : db.collection('config').doc('advisor_ai').get().then(x => x.data))
+    .catch(() => db.collection('config').doc('advisor_ai').get().then(x => x.data).catch(() => null));
+}
+
+const RL_CAP = 30; // 每用户每天 agent 调用上限（每次最多 20 次模型调用，费用大头）
+// ponytail: 计数非原子，并发下会少计；防滥用够用
+async function rateLimit(openid, action, cap) {
+  const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  const id = 'rl_' + action + '_' + openid + '_' + day;
+  try {
+    const col = db.collection('config');
+    const r = await col.doc(id).get().catch(() => null);
+    const n = (r && r.data && r.data.n) || 0;
+    if (n >= cap) return false;
+    await col.doc(id).set({ data: { n: n + 1, updatedAt: Date.now() } });
+    return true;
+  } catch (e) { return true; }
 }
 function postJSON(url, headers, body, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -424,10 +442,11 @@ async function runExpert(cfg, spec, request, context, openid, drafts, budget, re
 }
 
 exports.main = async (event) => {
-  const cfg = await cfgDoc();
-  if (!cfg || !cfg.apiKey) return { ok: false, reason: 'nokey' };
   const openid = (cloud.getWXContext() || {}).OPENID || '';
   if (!openid) return { ok: false, reason: 'noauth' };
+  if (!(await rateLimit(openid, 'agent', RL_CAP))) return { ok: false, reason: 'ratelimit' };
+  const cfg = await cfgDoc(openid);
+  if (!cfg || !cfg.apiKey) return { ok: false, reason: 'nokey' };
 
   const message = String(event.message || '').trim();
   if (!message && !event.image) return { ok: false, reason: 'badargs' };
