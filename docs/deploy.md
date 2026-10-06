@@ -70,6 +70,7 @@
 >   - 另：分类宫格改一行 5 个（原来一行 4 个，第二行被切一半）；大类分段改自动换行（原来 5 个挤一行，「固定资产」被切掉）；键盘行高 108→100rpx；键盘 OK 键长文案自动缩字号（「保存并下一天」不再撑出格子）
 >   - 设计稿同步：F1 记一笔 mock 按新布局重画并重写说明、F4 周期账改成「每季/每年 = 哪个月 + 几号」并加口径回显、F11 连续补账改成「记一笔的补账模式」、覆盖清单 P1-8 与口径表同步；仍是 28 屏、`div` 开合平衡
 >   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51（周期账用例补了「季=每 3 个月、锚月可指定」「年=哪个月」「nextOn 下次提醒」，并修掉一条写死日期的倒计时用例）；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
+>   - **上传记录**：2026-10-06 `upload --upload-version 0.7.7`，代码包 524,603 B（TOTAL 1 个包），`taskId=confirmation_upload_39b59d9b…` → `execution_success`
 >   - 模拟器真机路径复核：`.k` 在自定义组件里选不到，所以金额用页面事件驱动，**保存走的是真实 `save()` 分支**——补账模式记 2026-10-06 后本地库出现 `date=2026-10-06 / src=catchup`，并自动跳到下一天（8 天进度：第 1/8 天 → 存 9-24 → 进度变 1/7、日期跳到 9-25）；截图存 `docs/design/verify/cost-edit.jpg`、`cost-edit-in.jpg`、`cost-edit-rec.jpg`、`cost-edit-rec-year.jpg`、`cost-edit-batch.jpg`、`recurring-edit.jpg`；**验证用的 2 笔假账已从本地库和云端一起清掉**（云端 costs 计数回到 6）
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
