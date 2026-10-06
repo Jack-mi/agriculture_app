@@ -1,4 +1,7 @@
 .avatar { width: 96rpx; height: 96rpx; border-radius: 28rpx; background: var(--green-l); color: var(--green-d); font-size: 44rpx; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.avatar-img { width: 100%; height: 100%; border-radius: 28rpx; }
+.nick { font-size: 36rpx; font-weight: 800; min-height: 50rpx; }
+.nick-ph { color: var(--sub); font-weight: 600; }
 .list { padding: 4rpx 32rpx; }
 .item { display: flex; align-items: center; padding: 26rpx 0; border-bottom: 2rpx solid var(--line); }
 .item:last-child { border-bottom: none; }
@@ -11,3 +14,4 @@
 .share-row { position: relative; }
 .share-hit { position: absolute; left: 0; top: 0; right: 0; bottom: 0; width: 100%; height: 100%; padding: 0; margin: 0; border: none; background: transparent; opacity: 0; border-radius: 0; line-height: normal; }
 .share-hit::after { display: none; border: none; }
+

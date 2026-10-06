@@ -1,4 +1,4 @@
 {
-  "desc": "谷雨记",
+  "desc": "田祖记",
   "rules": [{ "action": "allow", "page": "*" }]
 }

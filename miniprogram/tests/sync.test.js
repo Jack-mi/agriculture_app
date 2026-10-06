@@ -12,6 +12,7 @@ global.wx = {
   cloud: {
     init() {},
     callFunction: () => Promise.resolve({ result: { openid: 'o1' } }),
+    uploadFile: ({ cloudPath, filePath }) => Promise.resolve({ fileID: 'cloud://test/' + cloudPath }),
     database: () => ({
       command: { gt: v => ({ $gt: v }) },
       collection(name) {
@@ -81,4 +82,18 @@ test('对账每天只跑一次', async () => {
   mem[store.OUTBOX_KEY] = [];
   await sync.pull();
   assert.strictEqual(store.db().plots.length, 1);
+});
+
+test('账号资料：昵称落缓存，chooseAvatar 临时路径先传云存储再存 fileID', async () => {
+  reset();
+  let p = await sync.updateProfile({ nickName: '  老王的地  ' });
+  assert.strictEqual(p.nickName, '老王的地');
+  assert.strictEqual(sync.profile().nickName, '老王的地');
+  p = await sync.updateProfile({ avatarUrl: 'wxfile://tmp_avatar.png' });
+  assert.strictEqual(p.avatarUrl.indexOf('cloud://'), 0, '临时路径必须转成云存储 fileID');
+  assert.strictEqual(sync.profile().avatarUrl, p.avatarUrl);
+  // 已是 fileID 的不重复上传
+  const before = p.avatarUrl;
+  p = await sync.updateProfile({ avatarUrl: before });
+  assert.strictEqual(p.avatarUrl, before);
 });

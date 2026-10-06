@@ -1,12 +1,20 @@
 .hero { background: var(--green); color: #fff; padding: 32rpx 32rpx 84rpx; }
-.hero-date { font-size: 54rpx; font-weight: 800; letter-spacing: 2rpx; }
-.hero-week { font-size: 30rpx; font-weight: 500; margin-left: 14rpx; opacity: .85; }
-.hero-sub { font-size: 27rpx; opacity: .88; margin-top: 6rpx; }
+.hero-drow { display: flex; align-items: center; }
+.hero-day { font-size: 88rpx; font-weight: 800; letter-spacing: 4rpx; line-height: 1.1; margin-right: 24rpx; }
+.hero-meta { min-width: 0; flex: 1; }
+.hero-m1 { font-size: 28rpx; font-weight: 600; }
+.hero-chip { display: inline-flex; align-items: center; align-self: flex-start; margin-top: 10rpx; font-size: 22rpx; font-weight: 700; background: rgba(255,255,255,.18); border-radius: 999rpx; padding: 6rpx 18rpx; }
+.hero-chip-ic { width: 22rpx; height: 22rpx; margin-right: 8rpx; }
+.hero-prov { font-size: 25rpx; opacity: .82; margin-top: 16rpx; }
+.hero-wx { display: flex; align-items: center; font-size: 25rpx; opacity: .88; margin-top: 8rpx; }
+.hero-wx-ic { width: 26rpx; height: 26rpx; margin-right: 10rpx; }
 .hero-m { text-align: right; font-size: 24rpx; opacity: .9; }
 .hero-mv { font-size: 36rpx; font-weight: 800; }
 .offline { margin-top: 20rpx; background: rgba(255,255,255,.16); border-radius: 12rpx; padding: 12rpx 20rpx; font-size: 28rpx; }
 .lift { margin-top: -56rpx; position: relative; }
 .b { font-weight: 700; }
+
+
 
 .alertbar { display: flex; align-items: center; background: #FBE9E1; border: 2rpx solid #EDBFAC; border-radius: 20rpx; padding: 20rpx 24rpx; margin-bottom: 20rpx; color: #7D2E12; box-shadow: 0 6rpx 24rpx rgba(0,0,0,.06); }
 .al-t { font-size: 31rpx; font-weight: 800; }

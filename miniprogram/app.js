@@ -1,4 +1,4 @@
-// 谷雨记 · 入口
+// 田祖记 · 入口
 // 云开发环境 ID：留空 = 纯本地模式（数据只存在手机里，天气自动获取不可用）；
 // 填入云开发环境 ID 后：wx.login 静默建档（users 集合），数据分集合逐条同步（按 openid 隔离），
 // 天气由云函数统一拉取。部署步骤见 docs/deploy.md。
@@ -23,7 +23,20 @@ App({
       if (r.isConnected) sync.pull().then(() => sync.flush());
     });
     // 先静默登录建档，再增量拉取，最后把本地积压的变更推上去
-    sync.login().then(() => sync.pull()).then(() => sync.flush());
+    sync.login().then(() => { this._maybeProfileSetup(); return sync.pull(); }).then(() => sync.flush());
+  },
+
+  // 新用户（头像昵称都为空）首次登录拉起资料设置页；设置/跳过后置标记，不再打扰。
+  // 拉起失败（首页还没就绪等极端情况）不置标记，「我的」页的一次性引导兜底。
+  _maybeProfileSetup() {
+    const p = sync.profile();
+    if (p.nickName || p.avatarUrl) return;
+    if (wx.getStorageSync('guyuji_profile_guide')) return;
+    wx.navigateTo({
+      url: '/pages/profile-setup/profile-setup',
+      success: () => wx.setStorageSync('guyuji_profile_guide', 1),
+      fail: () => null
+    });
   },
 
   onShow() {

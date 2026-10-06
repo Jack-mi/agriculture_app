@@ -15,6 +15,7 @@ const LASTPULL_KEY = 'guyuji_lastpull';
 const OPENID_KEY = 'guyuji_openid';
 const TAGS_DOCID_KEY = 'guyuji_tags_docid';
 const DEAD_KEY = 'guyuji_deadletter';
+const PROFILE_KEY = 'guyuji_profile';
 // 单条连续失败上限：超过就从 outbox 挪进死信，否则一条永久性错误（权限/数据问题）
 // 会永远卡在队首，后面所有变更都同步不上去
 const MAX_FAILS = 5;
@@ -40,11 +41,37 @@ function login() {
   if (!enabled) return Promise.resolve(null);
   return wx.cloud.callFunction({ name: 'login' })
     .then(r => {
-      const openid = r.result && r.result.openid;
+      const res = r.result || {};
+      const openid = res.openid;
       if (openid) wx.setStorageSync(OPENID_KEY, openid);
+      if (res.user) wx.setStorageSync(PROFILE_KEY, { nickName: res.user.nickName || '', avatarUrl: res.user.avatarUrl || '' });
       return openid || null;
     })
     .catch(() => null); // 弱网失败不阻塞本地使用，下次启动重试
+}
+
+// ---------- 账号资料：头像昵称 ----------
+function profile() {
+  try { return wx.getStorageSync(PROFILE_KEY) || { nickName: '', avatarUrl: '' }; }
+  catch (e) { return { nickName: '', avatarUrl: '' } };
+}
+
+// 更新头像昵称。avatarUrl 传 chooseAvatar 拿到的临时路径时会先传云存储（跨设备可见）；
+// 纯本地模式直接缓存（临时路径可能过期，下次启动会被云端资料覆盖或重新选择）。
+async function updateProfile(p) {
+  const cur = profile();
+  const next = { nickName: p.nickName !== undefined ? String(p.nickName).trim().slice(0, 32) : cur.nickName,
+                 avatarUrl: p.avatarUrl !== undefined ? p.avatarUrl : cur.avatarUrl };
+  // chooseAvatar 的临时路径是 wxfile:// 或 http://tmp/...，必须传云存储才跨设备可见
+  const isTemp = next.avatarUrl.indexOf('wxfile://') === 0 || next.avatarUrl.indexOf('http://tmp') === 0;
+  if (enabled && next.avatarUrl && isTemp) {
+    const openid = wx.getStorageSync(OPENID_KEY) || 'anon';
+    const up = await wx.cloud.uploadFile({ cloudPath: 'avatars/' + openid + '-' + Date.now() + '.png', filePath: next.avatarUrl });
+    next.avatarUrl = up.fileID;
+  }
+  wx.setStorageSync(PROFILE_KEY, next);
+  if (enabled) await wx.cloud.callFunction({ name: 'login', data: next }).catch(() => null);
+  return next;
 }
 
 // ---------- outbox ----------
@@ -289,4 +316,4 @@ function status() {
   };
 }
 
-module.exports = { init, login, flush, pull, status, retryDead, reconcile };
+module.exports = { init, login, flush, pull, status, retryDead, reconcile, profile, updateProfile };

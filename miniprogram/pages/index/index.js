@@ -1,14 +1,17 @@
-// 今天：按时间看 —— 天气与预警 · 待办（马上办 / 这周 / 往后折叠）· 生育期小卡 · 记录入口
+// 今天：农历卷首（称呼问候 + 大农历日 + 节气/物候/农谚）· 节气轴 · 天气与预警 · 待办 · 生育期小卡 · 记录入口
 // 有事是待办清单；没事写明「今天地里没有要紧的事」+ 下一件预告 + 最近记的
 const store = require('../../utils/store.js');
 const stats = require('../../utils/stats.js');
 const weather = require('../../utils/weather.js');
 const advisor = require('../../utils/advisor.js');
+const sync = require('../../utils/sync.js');
+const LM = require('../../utils/lunar.js');
 const U = require('../../utils/util.js');
 const C = require('../../utils/const.js');
 
 Page({
   data: { todayText: '', week: '', hasPlots: false, growing: 0, online: true, wxLine: '', month: '0', v: null, showLater: false, recent: [], tpls: [], loading: false,
+    nick: '', lm: null,
     money: {}, debt: {}, stock: {}, dueCount: 0 },
 
   onShow() {
@@ -27,6 +30,9 @@ Page({
     const t = U.today();
     const growing = store.seasons.growing();
     const v = advisor.today();
+    // 农历卷首：大农历日 + 节气倒计时/物候 + 农谚
+    const lm = LM.info(t);
+    const nick = (sync.profile().nickName || '').trim();
     // 顶部天气：第一块在种地的今日预报 / 实况
     let wxLine = '';
     const s0 = growing[0];
@@ -89,6 +95,7 @@ Page({
     this.setData({
       todayText: U.cnDate(t), week: U.weekday(t), hasPlots: store.plots.all().length > 0, growing: growing.length,
       online: getApp().globalData.online, wxLine, month: ms.totalText,
+      nick, lm,
       v, recent, tpls, money, debt, stock, dueCount, briefs, budget,
       nextText: v.nextTask ? v.nextTask.plot + ' ' + v.nextTask.title : '',
       nextDue: v.nextTask ? v.nextTask.due : ''

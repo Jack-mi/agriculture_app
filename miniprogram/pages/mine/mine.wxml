@@ -2,13 +2,21 @@
   <!-- 只留「这人是啥 / 记账设置 / 同步与关于」；看账相关的一切都在「账本」页 -->
   <view class="card">
     <view class="row" style="gap:24rpx">
-      <view class="avatar">谷</view>
+      <!-- 头像昵称：微信现行「头像昵称填写」能力，点头像选图、点昵称直接改，即改即存 -->
+      <view class="avatar" style="position:relative">
+        <image wx:if="{{profile.avatarUrl}}" class="avatar-img" src="{{profile.avatarUrl}}" mode="aspectFill" />
+        <text wx:else>田</text>
+        <button class="share-hit" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="none"></button>
+      </view>
       <view class="flex1">
-        <view style="font-size:36rpx;font-weight:800">我的农田账本</view>
-        <view class="muted">{{year}} 年 · 地块 {{counts.plots}} · 种植季 {{counts.seasons}} · 账目 {{counts.costs}} · 记事 {{counts.logs}}</view>
+        <input class="nick" type="nickname" value="{{profile.nickName}}" placeholder="点这里用微信昵称" placeholder-class="nick-ph"
+               bindblur="onNickBlur" bindconfirm="onNickBlur" confirm-type="done" />
+        <!-- 登录是无感的（账号=微信本身，没有退出登录），这里只报状态；没连上时点一下重连 -->
+        <view class="muted" style="color:{{login.ok ? 'var(--green)' : 'var(--sub)'}}" bindtap="relogin">{{login.state}}</view>
       </view>
     </view>
   </view>
+
 
   <view class="card list">
     <view class="item" bindtap="goLedgerSettings">
@@ -45,8 +53,17 @@
     <view class="item" bindtap="about">
       <view class="it-ic"><image class="it-img" src="/assets/icons/info_green.svg" /></view>
       <view class="flex1">
-        <view class="it">关于谷雨记</view>
-        <view class="muted" style="font-size:26rpx">谷雨种谷，雨生百谷</view>
+        <view class="it">关于田祖记</view>
+        <view class="muted" style="font-size:26rpx">敬田祖，记好账</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+
+    <view class="item logout-row" bindtap="logout">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/users_sub.svg" /></view>
+      <view class="flex1">
+        <view class="it">退出登录</view>
+        <view class="muted" style="font-size:26rpx">清除本机头像昵称，数据仍在云端账号</view>
       </view>
       <text class="muted">›</text>
     </view>

@@ -1,8 +1,15 @@
 <view class="hero">
-  <view class="row between" style="align-items:flex-end">
-    <view>
-      <view class="hero-date">{{todayText}}<text class="hero-week">{{week}}</text></view>
-      <view class="hero-sub">{{wxLine || '今天地里干了啥、花了多少，随手记一笔'}}</view>
+  <view class="row between" style="align-items:flex-start">
+    <view class="flex1" style="min-width:0">
+      <view class="hero-drow">
+        <text class="hero-day">{{lm.dayText}}</text>
+        <view class="hero-meta">
+          <view class="hero-m1">{{todayText}} {{week}} · {{lm.monthText}}</view>
+          <view class="hero-chip"><image class="hero-chip-ic" src="/assets/icons/leaf_w.svg" />{{lm.term ? '今日' + lm.term + ' · ' + lm.hou : lm.next.name + ' · ' + lm.next.days + '天后'}}</view>
+        </view>
+      </view>
+      <view class="hero-prov ellipsis">「{{lm.proverb}}」</view>
+      <view wx:if="{{wxLine}}" class="hero-wx"><image class="hero-wx-ic" src="/assets/icons/rain_w.svg" />{{wxLine}}</view>
     </view>
     <view wx:if="{{growing}}" class="hero-m">
       本月净收
@@ -10,13 +17,13 @@
       <view class="hero-mx">收 {{money.income}} · 支 {{money.expense}}</view>
     </view>
   </view>
-  <view wx:if="{{!online}}" class="offline">当前无网络 · 记录已存手机，联网后自动同步</view>
 </view>
 
 <view class="wrap lift" style="padding-top:0;padding-bottom:260rpx">
+
   <!-- 空状态 -->
   <view wx:if="{{!hasPlots}}" class="card empty">
-    <view class="big">先添加第一块地</view>
+    <view class="big">{{nick ? nick + '，' : ''}}先添加第一块地</view>
     <view class="muted" style="margin-bottom:40rpx">填上名称、亩数，定个位置，就能自动记天气</view>
     <view class="btn" hover-class="btn-hover" bindtap="addPlot">＋ 添加地块</view>
   </view>
@@ -99,7 +106,7 @@
 
     <!-- 没事 -->
     <view wx:else class="card quiet">
-      <view class="row"><text class="ok-ic">✓</text><text class="quiet-t">今天地里没有要紧的事</text></view>
+      <view class="row"><text class="ok-ic">✓</text><text class="quiet-t">{{nick ? nick + '，' : ''}}今天地里没有要紧的事</text></view>
       <view wx:if="{{nextText}}" class="next" bindtap="goTask" data-id="{{v.nextTask.id}}">
         <view class="flex1">下一件：<text class="b">{{nextText}}</text><view class="muted">{{nextDue}}，到时提醒你</view></view><text class="muted">›</text>
       </view>

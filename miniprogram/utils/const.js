@@ -1,4 +1,4 @@
-// 谷雨记 · 业务常量
+// 田祖记 · 业务常量
 // 作物配置：一期只开放小麦 / 玉米；新增作物（如花生）只需在此追加一项并置 enabled: true
 const CROPS = [
   { key: 'wheat', name: '小麦', short: '麦', cls: 'wheat', enabled: true, hint: '冬小麦 · 秋播夏收，跨年', icon: '/assets/crops/wheat.svg' },
