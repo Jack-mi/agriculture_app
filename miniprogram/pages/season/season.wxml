@@ -47,6 +47,16 @@
 
   <!-- ===== 参谋 ===== -->
   <block wx:if="{{tab === 'advisor' && adv}}">
+    <!-- AI 入口：参谋的核心就是对话，做成整页最显眼的大卡片 -->
+    <view class="ai-hero" bindtap="talkSeason" hover-class="btn-hover">
+      <view class="ai-mic"><image src="/assets/icons/mic_w.svg" class="ai-mic-img" mode="aspectFit" /></view>
+      <view class="flex1">
+        <view class="ai-t">跟参谋说</view>
+        <view class="ai-s">问建议 · 记一笔 · 改任务，张嘴就行</view>
+      </view>
+      <text class="ai-go">›</text>
+    </view>
+
     <view class="card" style="padding:28rpx">
       <view class="row between">
         <view><view class="muted">现在是</view><view class="adv-st">{{adv.stage}}</view></view>
@@ -65,13 +75,6 @@
       </view>
     </view>
 
-    <view class="card adv-row" bindtap="talkSeason" hover-class="btn-hover">
-      <image src="/assets/icons/sprout_green.svg" class="adv-ic" />
-      <view class="flex1" wx:if="{{adv.growthText}}"><view style="font-size:29rpx">最近一次长势：<text class="b">「{{adv.growthText}}」</text></view><view class="muted" style="font-size:22rpx">{{adv.growthDate}} 记录</view></view>
-      <view class="flex1 muted" wx:else>还没记过长势，巡田时记一句就行</view>
-      <text class="muted">›</text>
-    </view>
-
     <view wx:if="{{adv.alert}}" class="card adv-row adv-alert" bindtap="goWx">
       <image src="/assets/icons/rain_heat.svg" class="adv-ic" />
       <view class="flex1"><text class="b">{{adv.alert.text}}</text></view><text class="adv-alink">天气 ›</text>
@@ -85,8 +88,6 @@
       </view>
     </view>
     <view wx:else class="card muted" style="padding:28rpx;text-align:center">这块地眼下没有要紧的活</view>
-
-    <view class="btn ghost adv-talk" hover-class="btn-hover" bindtap="talkSeason"><image src="/assets/icons/mic_green.svg" class="adv-mic" />跟参谋说：问建议 / 记一笔 / 改任务</view>
   </block>
 
   <!-- ===== 账本 ===== -->
