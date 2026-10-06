@@ -104,7 +104,7 @@ Page({
     const wk = stats.costWeek(s, wkStart);
 
     this.setData({
-      season: s, plot, brief, cost, costList, costDays, calYm, cal, logGroups, costSubs, logTags, costTotalCount: allCosts.length,
+      season: s, plot, brief, cost, costList, costDays, calYm, cal, logGroups, costSubs, logTags, costTotalCount: allCosts.length, todayDate: U.today(),
       budget: (b => (b ? Object.assign(b, { barW: Math.min(100, b.pct), totalText2: U.money(b.total) }) : null))(stats.budgetProgress(s.id)),
       nv, sd, wkStart, wk,
       costFilterSum: cf ? U.money(allCosts.filter(c => (c.cat + '|' + c.sub) === cf).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0)) : '',
@@ -236,6 +236,47 @@ Page({
     store.seasons.save({ id: this.data.id, variety: v.slice(0, 20) });
     this.render();
     U.toast(v ? '已记录品种' : '已清空');
+  },
+
+  // 播种时间：改了以后按新日期口径重算第几天/积温，并补拉新区间的天气
+  editSow(e) {
+    const v = e.detail.value;
+    if (!v || v === this.data.season.sowDate) return;
+    store.seasons.save({ id: this.data.id, sowDate: v });
+    this.render();
+    const s = store.seasons.get(this.data.id);
+    if (s && s.status === 'growing') weather.fillSeason(s).then(() => this.render());
+    U.toast('已改播种时间', 'success');
+  },
+
+  // 播种量（斤/亩）
+  editSeed() {
+    const s = this.data.season;
+    wx.showModal({
+      title: '播种量（斤/亩）', editable: true, content: s.seedRate || '', placeholderText: '如：100',
+      success: m => {
+        if (!m.confirm) return;
+        const v = m.content === '' || m.content === undefined ? '' : parseFloat(m.content);
+        if (v !== '' && !(v > 0)) return U.toast('填数字，比如 100');
+        store.seasons.save({ id: this.data.id, seedRate: v });
+        this.render();
+        U.toast(v === '' ? '已清空' : '已记录播种量', 'success');
+      }
+    });
+  },
+
+  // 整地情况：自由文本，多项用、隔开（清单管理在开季页）
+  editTillage() {
+    const s = this.data.season;
+    wx.showModal({
+      title: '整地情况', editable: true, content: s.tillage || '', placeholderText: '如：免耕、深松',
+      success: m => {
+        if (!m.confirm) return;
+        store.seasons.save({ id: this.data.id, tillage: (m.content || '').trim().slice(0, 40) });
+        this.render();
+        U.toast('已保存', 'success');
+      }
+    });
   },
 
   delSeason() {

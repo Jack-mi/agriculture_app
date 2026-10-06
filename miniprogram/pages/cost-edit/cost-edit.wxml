@@ -2,13 +2,14 @@
   <!-- ① 什么时候的：连续补账进度 → 方向 → 日期 / 周期 -->
   <view class="topbar">
     <view wx:if="{{batch}}" class="bhead">
-      <view wx:if="{{batchTotal > 1}}" class="row between">
-        <text class="muted">{{batchTotal ? '第 ' + (batchIdx + 1) + ' / ' + batchTotal + ' 天' : '已记齐，没有要补的'}}</text>
-        <text class="muted" style="font-size:24rpx">{{batchScope}}</text>
-      </view>
-      <view wx:if="{{batchTotal > 1}}" class="track"><view class="fill" style="width:{{(batchIdx + 1) / batchTotal * 100}}%"></view></view>
-      <view wx:elif="{{batchTotal === 1}}" class="row between"><text class="muted" style="font-size:24rpx">只缺这一天</text><text class="muted" style="font-size:24rpx">{{batchScope}}</text></view>
-      <view wx:else class="muted none-hint">这个范围里每天都记过了，不用补；要单独补某一天，点下面的日期选。</view>
+      <block wx:if="{{batchTotal > 1}}">
+        <view class="row between">
+          <text class="muted">第 {{batchIdx + 1}} / {{batchTotal}} 天</text>
+          <text class="muted" style="font-size:24rpx">{{batchScope}}</text>
+        </view>
+        <view class="track"><view class="fill" style="width:{{(batchIdx + 1) / batchTotal * 100}}%"></view></view>
+      </block>
+      <view wx:elif="{{!batchTotal}}" class="muted none-hint">这个范围里每天都记过了，不用补；要单独补某一天，点下面的日期选。</view>
     </view>
 
     <view class="dirs">
@@ -132,7 +133,6 @@
       <view wx:if="{{attachments.length}}" class="muted" style="font-size:23rpx;margin-top:8rpx">原图先存本机（离线也能看），联网后自动传云端</view>
     </view>
 
-    <view class="mng"><text bindtap="manageTags">管理类型 ›</text></view>
     <view wx:if="{{isEdit}}" class="delbox"><view class="btn danger" hover-class="btn-hover" bindtap="del">删除这笔账（可在回收站恢复）</view></view>
     <view style="height:24rpx"></view>
   </scroll-view>

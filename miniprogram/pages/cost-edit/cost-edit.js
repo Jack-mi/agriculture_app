@@ -268,7 +268,6 @@ Page({
       }
     });
   },
-  manageTags() { wx.navigateTo({ url: '/pages/tags/tags?tab=' + (this.data.dir === 'in' ? 'income' : 'cost') + '&cat=' + this.data.cat }); },
 
   // ---------- 计算方式 & 键盘 ----------
   pickMode(e) {

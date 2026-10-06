@@ -302,9 +302,11 @@
   <block wx:if="{{tab === 'info'}}">
     <view class="card">
       <view class="kv" bindtap="editVariety" hover-class="btn-hover"><text class="muted">品种</text><text class="{{season.variety ? '' : 'muted'}}">{{season.variety || '未填 · 点此补填'}} ›</text></view>
-      <view class="kv"><text class="muted">播种时间</text><text>{{seasonInfo.sow}}</text></view>
-      <view class="kv"><text class="muted">播种量</text><text>{{seasonInfo.seed}}</text></view>
-      <view class="kv"><text class="muted">整地情况</text><text>{{seasonInfo.tillage}}</text></view>
+      <picker mode="date" value="{{season.sowDate}}" end="{{todayDate}}" bindchange="editSow">
+        <view class="kv" hover-class="btn-hover"><text class="muted">播种时间</text><text>{{seasonInfo.sow}} ›</text></view>
+      </picker>
+      <view class="kv" bindtap="editSeed" hover-class="btn-hover"><text class="muted">播种量</text><text class="{{season.seedRate ? '' : 'muted'}}">{{seasonInfo.seed}}{{season.seedRate ? '' : ' · 点此补填'}} ›</text></view>
+      <view class="kv" bindtap="editTillage" hover-class="btn-hover"><text class="muted">整地情况</text><text class="{{season.tillage ? '' : 'muted'}}">{{seasonInfo.tillage}}{{season.tillage ? '' : ' · 点此补填'}} ›</text></view>
     </view>
     <view wx:if="{{brief.status === 'done'}}" class="card">
       <view class="kv"><text class="muted">收获时间</text><text>{{seasonInfo.harvest}}</text></view>
