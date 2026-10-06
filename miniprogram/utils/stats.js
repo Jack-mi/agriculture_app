@@ -56,7 +56,8 @@ function netOf(seasonId) {
   const inc = incomeSummary(seasonId).total;
   const exp = costSummary(seasonId).total;
   const net = Math.round((inc - exp) * 100) / 100;
-  return { income: inc, expense: exp, net, incomeText: U.money(inc), expenseText: U.money(exp), netText: U.money(net), hasIncome: inc > 0 };
+  // netText 一律不带符号（展示处统一自己加 ＋/−，否则负数会变成「−¥-98」俩负号）
+  return { income: inc, expense: exp, net, incomeText: U.money(inc), expenseText: U.money(exp), netText: U.money(Math.abs(net)), hasIncome: inc > 0 };
 }
 
 // 时间口径：'year' | 'season' | 'month' | 'all'，可叠加地块
@@ -129,7 +130,7 @@ function overview(filterFn, opt) {
   const income = sum(inc), expense = sum(exp);
   return {
     income, expense, net: Math.round((income - expense) * 100) / 100,
-    incomeText: U.money(income), expenseText: U.money(expense), netText: U.money(Math.round((income - expense) * 100) / 100),
+    incomeText: U.money(income), expenseText: U.money(expense), netText: U.money(Math.abs(Math.round((income - expense) * 100) / 100)),
     incomeCount: inc.length, expenseCount: exp.length,
     area: Math.round(area * 10) / 10, yieldJin: Math.round(yieldJin),
     perMuCost: area ? Math.round(expense / area) : 0,
@@ -303,10 +304,13 @@ function costMonth(season, ym, opt) {
     if (inMonth) monthTotal += sp;
     if (inMonth) monthIncome += inc;
     const wd = w[d];
+    const dayNet = Math.round((inc - sp) * 100) / 100;
     return {
       date: d, day: +d.slice(8), inMonth, inSeason, future,
       spend: sp, spendText: sp ? shortMoney(sp) : '', big: sp >= 2000,
       income: inc, incomeText: inc ? shortMoney(inc) : '',
+      // 单日净额（收−支）：日历格子只显示这一个数，正绿负红
+      net: dayNet, netText: dayNet ? shortMoney(Math.abs(dayNet)) : '', netPos: dayNet >= 0,
       rain: !!(wd && wd.p >= 0.1), hasLog: !!logged[d],
       unrecorded: inMonth && inSeason && !future && !sp && !inc && !logged[d],
       isToday: d === today
@@ -321,7 +325,7 @@ function costMonth(season, ym, opt) {
   return {
     ym, title: y + ' 年 ' + m + ' 月', cells,
     monthTotal, monthTotalText: U.money(monthTotal),
-    monthIncome, monthIncomeText: U.money(monthIncome), monthNet: net, monthNetText: U.money(net),
+    monthIncome, monthIncomeText: U.money(monthIncome), monthNet: net, monthNetText: U.money(Math.abs(net)),
     canPrev: ym > minYm, canNext: ym < maxYm
   };
 }
@@ -355,7 +359,7 @@ function costWeek(season, weekStart, opt) {
     start: weekStart, end: U.addDays(weekStart, 6), cells,
     title: shortMd(weekStart) + ' – ' + shortMd(U.addDays(weekStart, 6)),
     expense, income, net: Math.round((income - expense) * 100) / 100,
-    expenseText: U.money(expense), incomeText: U.money(income), netText: U.money(income - expense)
+    expenseText: U.money(expense), incomeText: U.money(income), netText: U.money(Math.abs(income - expense))
   };
 }
 // 某天所在周的周日
@@ -381,7 +385,7 @@ function monthSpend(ym) {
   return {
     total, today: Math.round(today * 100) / 100, income,
     net: Math.round((income - total) * 100) / 100,
-    totalText: U.money(total), incomeText: U.money(income), netText: U.money(income - total)
+    totalText: U.money(total), incomeText: U.money(income), netText: U.money(Math.abs(income - total))
   };
 }
 
@@ -601,7 +605,7 @@ function balanceSheet(filterFn) {
     payable, payableText: U.money(payable), payableCount: ds.payable.count,
     assets, assetsText: U.money(assets),
     liabilities, liabilitiesText: U.money(liabilities),
-    net, netText: U.money(net), accounts: acc
+    net, netText: U.money(Math.abs(net)), accounts: acc
   };
 }
 

@@ -2,11 +2,12 @@
   <!-- ① 什么时候的：连续补账进度 → 方向 → 日期 / 周期 -->
   <view class="topbar">
     <view wx:if="{{batch}}" class="bhead">
-      <view class="row between">
+      <view wx:if="{{batchTotal > 1}}" class="row between">
         <text class="muted">{{batchTotal ? '第 ' + (batchIdx + 1) + ' / ' + batchTotal + ' 天' : '已记齐，没有要补的'}}</text>
         <text class="muted" style="font-size:24rpx">{{batchScope}}</text>
       </view>
-      <view wx:if="{{batchTotal}}" class="track"><view class="fill" style="width:{{(batchIdx + 1) / batchTotal * 100}}%"></view></view>
+      <view wx:if="{{batchTotal > 1}}" class="track"><view class="fill" style="width:{{(batchIdx + 1) / batchTotal * 100}}%"></view></view>
+      <view wx:elif="{{batchTotal === 1}}" class="row between"><text class="muted" style="font-size:24rpx">只缺这一天</text><text class="muted" style="font-size:24rpx">{{batchScope}}</text></view>
       <view wx:else class="muted none-hint">这个范围里每天都记过了，不用补；要单独补某一天，点下面的日期选。</view>
     </view>
 
@@ -80,11 +81,11 @@
   <!-- ③ 分类 + 备注 + 附件（都在这页里，不再挤成一行 chip） -->
   <scroll-view scroll-y class="mid">
     <block wx:if="{{dir === 'out'}}">
-      <view class="seg">
+      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="seg">
         <view wx:for="{{cats}}" wx:key="key" class="sg {{cat === item.key ? 'on' : ''}}" bindtap="pickCat" data-k="{{item.key}}">
           <text class="sdot" style="background:{{item.color}}"></text>{{item.name}}
         </view>
-      </view>
+      </scroll-view>
       <view class="grid">
         <view wx:for="{{subs}}" wx:key="name" class="gi {{sub === item.name ? 'on' : ''}}" bindtap="pickSub" data-s="{{item.name}}">
           <view class="gic" style="{{sub === item.name ? 'background:' + catColor + ';border-color:' + catColor : ''}}">

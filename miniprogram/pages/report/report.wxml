@@ -72,7 +72,7 @@
         <view class="muted" style="font-size:25rpx">{{item.area}} 亩 · 收 {{item.incomeText}} · 支 {{item.expenseText}}</view>
       </view>
       <view style="text-align:right">
-        <view class="num f-a {{item.net >= 0 ? 'in' : 'out'}}">{{item.netText}}</view>
+        <view class="num f-a {{item.net >= 0 ? 'in' : 'out'}}">{{item.net >= 0 ? '＋' : '−'}}{{item.netText}}</view>
         <view class="muted" style="font-size:23rpx">{{item.sold ? item.perMuText : '未收粮'}}</view>
       </view>
     </view>

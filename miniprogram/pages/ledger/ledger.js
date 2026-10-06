@@ -117,7 +117,7 @@ Page({
         ? { n: '预算', s: '本季已用 ' + bp.pct + '%', warn: bp.over }
         : { n: '预算', s: '按季设成本目标' })(stats.budgetProgress((store.seasons.growing()[0] || store.seasons.all()[0] || {}).id)),
       funds: { n: '资金账户', s: '¥' + stats.accountRows(null).totalBalanceText },
-      balance: (bs => ({ n: '资产负债', s: '净资产 ¥' + bs.netText, warn: bs.net < 0 }))(stats.balanceSheet())
+      balance: (bs => ({ n: '资产负债', s: '净资产 ' + (bs.net < 0 ? '−' : '') + '¥' + bs.netText, warn: bs.net < 0 }))(stats.balanceSheet())
     };
     // 周期账：单独一张状态卡——有几个、下次哪天，一眼能看见（不再是个小 chip）
     const recs = store.recurring.items().filter(r => r.enabled !== false);

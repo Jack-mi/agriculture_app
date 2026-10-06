@@ -106,8 +106,7 @@
       <view class="cal">
         <view wx:for="{{cal.cells}}" wx:key="date" class="cc {{item.inMonth ? '' : 'om'}} {{item.future ? 'out' : ''}} {{item.isToday ? 'today' : ''}}" bindtap="openDay" data-i="{{index}}">
           <text class="d">{{item.isToday ? '今' : item.day}}</text>
-          <text wx:if="{{item.income && item.inMonth}}" class="in">+{{item.incomeText}}</text>
-          <text wx:if="{{item.spend && item.inMonth}}" class="ot">-{{item.spendText}}</text>
+          <text wx:if="{{item.netText && item.inMonth}}" class="{{item.netPos ? 'in' : 'ot'}}">{{item.netPos ? '+' : '-'}}{{item.netText}}</text>
           <text wx:elif="{{item.unrecorded}}" style="font-size:22rpx;color:#A9A292">未记</text>
           <view wx:if="{{item.rain && item.inMonth}}" class="dot"></view>
           <view wx:if="{{item.hasLog && item.inMonth}}" class="lg"></view>
@@ -139,8 +138,7 @@
       <view class="cal ccw">
         <view wx:for="{{wk.cells}}" wx:key="date" class="cc {{item.isToday ? 'today' : ''}} {{item.future ? 'out' : ''}}" bindtap="openDay" data-i="{{index}}">
           <text class="d">{{item.isToday ? '今' : item.day}}</text>
-          <text wx:if="{{item.income}}" class="in">+{{item.incomeText}}</text>
-          <text wx:if="{{item.spend}}" class="ot">-{{item.spendText}}</text>
+          <text wx:if="{{item.netText}}" class="{{item.netPos ? 'in' : 'ot'}}">{{item.netPos ? '+' : '-'}}{{item.netText}}</text>
           <text wx:elif="{{item.unrecorded}}" style="font-size:22rpx;color:#A9A292">未记</text>
         </view>
       </view>

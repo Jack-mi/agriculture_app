@@ -38,6 +38,7 @@ Page({
   },
 
   onUnload() {
+    this.stopThinkTimer();
     if ((this.data.msgs || []).some(m => m.role === 'me')) this.persist();
   },
 
@@ -82,6 +83,7 @@ Page({
       this._sent = true;
       this.push({ role: 'me', img: path });
       const thinking = this.push({ role: 'ai', thinking: true });
+      this.startThinkTimer(thinking);
       this.persist();
       let b64 = '';
       try { b64 = wx.getFileSystemManager().readFileSync(path, 'base64'); } catch (e) {}
@@ -98,10 +100,26 @@ Page({
     this.setData({ msgs, scrollTo: m.id });
     return m.id;
   },
+  // 「思考中…」气泡：点一下展开/收起；展开时能看到已经等了几秒
+  toggleThink(e) {
+    const id = e.currentTarget.dataset.id;
+    const msgs = this.data.msgs.map(m => m.id === id ? Object.assign({}, m, { thinkOpen: !m.thinkOpen }) : m);
+    this.setData({ msgs });
+  },
+  startThinkTimer(id) {
+    this.stopThinkTimer();
+    const t0 = Date.now();
+    this._thinkTimer = setInterval(() => {
+      const msgs = this.data.msgs.map(m => (m.id === id && m.thinking) ? Object.assign({}, m, { thinkSec: Math.floor((Date.now() - t0) / 1000) }) : m);
+      this.setData({ msgs });
+    }, 1000);
+  },
+  stopThinkTimer() { if (this._thinkTimer) { clearInterval(this._thinkTimer); this._thinkTimer = null; } },
   send(text) {
     this._sent = true;
     this.push({ role: 'me', text });
     const thinking = this.push({ role: 'ai', thinking: true });
+    this.startThinkTimer(thinking);
     const prior = this.history.slice();
     this.history.push({ role: 'user', content: text });
     if (this.history.length > 12) this.history = this.history.slice(-12);
@@ -113,6 +131,7 @@ Page({
     }).catch(() => this.reply({ reply: '出了点问题，再说一次？', cards: [], chips: [] }, thinking));
   },
   reply(r, replaceId) {
+    this.stopThinkTimer();
     const msgs = this.data.msgs.filter(m => m.id !== replaceId);
     this.setData({ msgs });
     // 补槽位：改写已有卡片

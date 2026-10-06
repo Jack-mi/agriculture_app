@@ -183,15 +183,14 @@
       <view class="cal-g">
         <view wx:for="{{cal.cells}}" wx:key="date" class="cc {{item.inMonth ? '' : 'om'}} {{!item.inSeason || item.future ? 'out' : ''}} {{item.spend ? (item.big ? 'big' : 'sp') : ''}} {{item.isToday ? 'today' : ''}}" bindtap="openDay" data-i="{{index}}">
           <text class="cc-d">{{item.isToday ? '今' : item.day}}</text>
-          <text wx:if="{{item.incomeText && item.inMonth}}" class="cc-m num" style="color:var(--green)">+{{item.incomeText}}</text>
-          <text wx:if="{{item.spendText && item.inMonth}}" class="cc-m num" style="color:var(--heat)">-{{item.spendText}}</text>
-          <text wx:elif="{{!item.incomeText && item.unrecorded}}" class="cc-u">未记</text>
+          <text wx:if="{{item.netText && item.inMonth}}" class="cc-m num" style="color:{{item.netPos ? 'var(--green)' : 'var(--heat)'}}">{{item.netPos ? '+' : '-'}}{{item.netText}}</text>
+          <text wx:elif="{{item.unrecorded}}" class="cc-u">未记</text>
           <view wx:if="{{item.rain && item.inMonth && item.inSeason}}" class="cc-r"></view>
           <view wx:if="{{item.hasLog && item.inMonth}}" class="cc-l"></view>
         </view>
       </view>
       <view class="cal-lg">
-        <text><text class="lg in2"></text>有收入</text><text><text class="lg sp"></text>有支出</text><text><text class="lg rd"></text>下雨</text><text><text class="lg lgl"></text>有记事</text><text class="muted">未记 = 当天没记事也没记账</text>
+        <text><text class="lg in2"></text>有收入</text><text><text class="lg sp"></text>有支出</text><text><text class="lg rd"></text>下雨</text><text><text class="lg lgl"></text>有记事</text>
       </view>
       <view class="row between" style="margin-top:20rpx;border-top:2rpx solid var(--line);padding-top:20rpx">
         <text class="muted">本月 收 ¥{{cal.monthIncomeText}} · 支 ¥{{cal.monthTotalText}}</text>
@@ -211,9 +210,8 @@
       <view class="cal-g ccw">
         <view wx:for="{{wk.cells}}" wx:key="date" class="cc {{!item.inSeason || item.future ? 'out' : ''}} {{item.isToday ? 'today' : ''}}" bindtap="openDay" data-i="{{index}}">
           <text class="cc-d">{{item.isToday ? '今' : item.day}}</text>
-          <text wx:if="{{item.incomeText}}" class="cc-m num" style="color:var(--green)">+{{item.incomeText}}</text>
-          <text wx:if="{{item.spendText}}" class="cc-m num" style="color:var(--heat)">-{{item.spendText}}</text>
-          <text wx:elif="{{!item.incomeText && item.unrecorded}}" class="cc-u">未记</text>
+          <text wx:if="{{item.netText}}" class="cc-m num" style="color:{{item.netPos ? 'var(--green)' : 'var(--heat)'}}">{{item.netPos ? '+' : '-'}}{{item.netText}}</text>
+          <text wx:elif="{{item.unrecorded}}" class="cc-u">未记</text>
           <view wx:if="{{item.rain && item.inSeason}}" class="cc-r"></view>
           <view wx:if="{{item.hasLog}}" class="cc-l"></view>
         </view>
@@ -306,7 +304,7 @@
       <view class="kv" bindtap="editVariety" hover-class="btn-hover"><text class="muted">品种</text><text class="{{season.variety ? '' : 'muted'}}">{{season.variety || '未填 · 点此补填'}} ›</text></view>
       <view class="kv"><text class="muted">播种时间</text><text>{{seasonInfo.sow}}</text></view>
       <view class="kv"><text class="muted">播种量</text><text>{{seasonInfo.seed}}</text></view>
-      <view class="kv col"><text class="muted">整地情况</text><text style="margin-top:8rpx">{{seasonInfo.tillage}}</text></view>
+      <view class="kv"><text class="muted">整地情况</text><text>{{seasonInfo.tillage}}</text></view>
     </view>
     <view wx:if="{{brief.status === 'done'}}" class="card">
       <view class="kv"><text class="muted">收获时间</text><text>{{seasonInfo.harvest}}</text></view>

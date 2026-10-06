@@ -91,7 +91,7 @@ Page({
     const nv = {
       income: ns.incomeText, expense: ns.expenseText, net: ns.netText, netPos: ns.net >= 0,
       hasIncome: ns.hasIncome, inPct: ns.income + ns.expense ? Math.round(ns.income / (ns.income + ns.expense) * 100) : 0,
-      catText: ns.hasIncome && plot.area ? '¥' + Math.round(ns.net / plot.area) + '/亩' : ''
+      catText: ns.hasIncome && plot.area ? (ns.net >= 0 ? '＋' : '−') + '¥' + Math.abs(Math.round(ns.net / plot.area)) + '/亩' : ''
     };
     const myDebts = store.costs.bySeason(s.id).filter(c => c.debt);
     const sd = {
@@ -212,11 +212,14 @@ Page({
   // 品种（选填）：随时补填 / 修改；快捷选项 = 用过的 + 常见品种
   editVariety() {
     const s = this.data.season;
-    const opts = store.seasons.varieties(s.crop).all.filter(v => v !== s.variety).slice(0, 5);
+    // wx.showActionSheet 最多 6 项：已填品种时多一个「清空品种」，快捷选项就得少带一个，
+    // 否则超上限整个弹层调不起来（点了没反应）
+    const opts = store.seasons.varieties(s.crop).all.filter(v => v !== s.variety).slice(0, s.variety ? 4 : 5);
     const items = ['手动输入…'].concat(opts);
     if (s.variety) items.push('清空品种');
     wx.showActionSheet({
       itemList: items,
+      fail: () => U.toast('弹不出来，再点一次试试'),
       success: r => {
         const pick = items[r.tapIndex];
         if (r.tapIndex === 0) {

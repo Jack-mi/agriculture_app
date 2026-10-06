@@ -101,6 +101,12 @@
 >   - 模拟器复核：「我的」一行入口 + 「记账设置」二级页三行，都截图看过
 >   - 顺带（本轮另做）：`scripts/wxrun.sh` + `scripts/wx-allow.swift` —— wechatide 的「MCP 客户端授权」弹窗自动点掉（不是靠开关，那个开关在这个版本是死的），详见第 8 节
 > - **版本号约定（2026-10-06 确认）**：0.7.x 到 `0.7.18` 收口（`0.7.10`~`0.7.15` 是弹窗自动化验证时的空上传，内容同 `0.7.9`）；**下一处真改动直接跳 `0.8.0`**，不再在 0.7 上加水位。
+> - **2026-10-06：体验版 `0.8.1` 已上传**（四条真机反馈，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+>   - **跟参谋说「思考中…」可展开/收起**：展开看实时秒数 + 参谋团在干嘛（总管分活→子代理查数据）；回答到达后仍是原来的「已思考 展开/收起」
+>   - **品种选定后改不了**：根因是 `wx.showActionSheet` 最多 6 项，已填品种时「手动输入+5 个快捷+清空品种」共 7 项直接静默失败；快捷选项改为按是否已填品种带 4/5 个，并加 fail 提示。「整地情况」从错位的双列布局改回标准 kv 行
+>   - **账本月历/周历格子改成单日净额**（收−支一个数，正绿负红，season + ledger 四处格子统一）；删掉「未记 = 当天没记事也没记账」说明；**「净 −¥-98」俩负号根治**：stats 里 netOf/monthSpend/costWeek/costMonth/balanceSheet 的 netText 统一改不带符号，展示处自己加 ＋/−（连带修了 season 头部净收益/每亩、index 本月净收、balance 净资产、report 分季表、ledger 入口卡同批隐患）
+>   - **连续补账/记一笔中间区重设计**：分类大类从换行两行改单行横滑；宫格 134→112rpx 紧凑化；金额区 166→138rpx；batch 头部「第 N/M 天」只在 N/M > 1 时显示（只有 1 天时显示「只缺这一天」+ 范围）。备注/附件行在 iPhone 小屏上完整可见
+>   - 自检：54/54 + 25 页静态检查；模拟器逐页截图复核（信息 tab / 月历 / 连续补账 / 记一笔 / 思考中两态）
 > - **2026-10-06：体验版 `0.8.0` 已上传**（架构安全加固，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
 >   - **云函数鉴权与隔离**：`advisorChat` 全部 action 强制 OPENID 鉴权（原来完全没有鉴权，任何人可篡改全局 Key/baseUrl）；AI 配置改 per-user 文档 `config/advisor_ai_<openid>`，历史全局 `advisor_ai` 只读兜底；baseUrl 强制 https；`advisorChat`/`advisorAgent` 按用户限流（chat 100 次/天、agent 30 次/天，`config/rl_*` 计数）
 >   - **天气 `_openid` 修复**：`weatherBackfill`/`weatherDaily` 写 weather 带属主 `_openid`（原来 admin 裸写，「仅创建者可读写」下客户端和 advisorAgent 都读不到）；`weatherBackfill` 加地块归属校验；存量数据用 `scripts/repair-weather-openid.js` 修复 10 条 + 清理孤儿 6 条
