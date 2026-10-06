@@ -3,8 +3,6 @@
 .hero .big.neg { color: var(--heat); }
 .arow { display: flex; align-items: center; padding: 22rpx 0; border-bottom: 2rpx solid var(--line); }
 .arow:last-child { border-bottom: none; }
-.arow.total { padding-top: 24rpx; }
-.arow.total .an { font-weight: 800; }
 .f1 { flex: 1; min-width: 0; }
 .an { font-size: 32rpx; font-weight: 600; }
 .ah { font-size: 24rpx; margin-top: 4rpx; }

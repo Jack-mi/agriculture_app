@@ -85,6 +85,13 @@
 >   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51（品种用例重写：清单可加可删、`all = 用过的(去重) + 清单`；新增整地清单加删断言）；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
 >   - 模拟器逐页复核截图存 `docs/design/verify/`（`cost-edit`、`cost-edit-acct`、`ledger`、`ledger-daysheet`、`mine`、`season-new`、`season-new-till`、`keypanel`）；品种/整地的加删走的是真实 `store` 写入，**验证用的「测试品种A / 测试整地A」已删干净**
 >   - 设计稿同步：F1（去掉最近用过/常用账行 + 账户可自建 + 金额区高度写死）、F6（账本变记账总入口，加第二排入口与设置行）、F20（我的简化 + 数据同步 + 分享行对齐）、F26（账户可增删改 + 老库只补缺）、覆盖清单 P1-8/P1-14、现行→目标表「我的」行、口径表（新增「资金账户」「品种 / 整地」两行）、第 13 节新增第 11 条；仍是 28 屏、`div` 开合平衡
+> - **2026-10-07：体验版 `0.7.9` 已上传**（三条真机反馈：账本入口拆分 / 入口图标 / 资产负债去重复，二维码同 `docs/trial-qr-0.7.0.png`，无需换码）
+>   - **账本页那行小 chip 拆开**：原来「类型管理 / 周期账 / 记账键盘 / 回收站」挤成一行。现在 **周期账留在账本、但换成一张状态卡**（时钟图标 + 「周期账 N 个」+「下次 X月X日 · 名字」，用 `store.recurring.nextOn` 真实算下次日期；没有周期账时显示引导文案；真到期了上面那条橙色 bar 仍然先说「N 个周期账到期待记 · 去记」）；**类型管理 / 记账键盘 / 回收站挪到「我的 → 记账设置」**（它们是设置，不是看账入口）
+>   - **6 个入口的图标**：原来用单个汉字（报 / 欠 / 库 / 预 / 资 / 产）当图标，太丑。新画了 6 个绿线图标（`chart` / `box` / `wallet` / `target` / `scale` / `trash`）+ `sync`（数据同步）+ `info`（关于），并补了 `users` 的绿色版（分享），风格与既有图标一致（24×24 描边、`#2E5B34`、1.8 线宽）；入口渲染成「浅绿圆角底 + 绿线图标 + 标题 + 实时结论」。「我的」两个设置组也一起上了图标
+>   - **资产负债页去掉重复**：删掉「资产合计 / 负债合计」两行 —— 它们和顶部「总资产 / 总负债」是同一批数字（用户指出 ¥563 ↔ ¥563 重复）。同时删掉「资金账户余额」下的「账户期初 + 收 − 支」和「库存估值」下的「N 个品名 · 按最近均价」两行小字说明框（底部那条口径说明已经讲清楚）。应收/应付的「N 笔未结」保留
+>   - 自检：`node --test miniprogram/tests/*.test.js` → 51/51；`node scripts/check-miniprogram.js` → 24 页 + keypad 全通过
+>   - 模拟器复核：账本页（6 个图标入口 + 周期账卡「周期账 1 个 / 下次 10月1日 · 土地流转」+ 设置行已消失）、我的页（记账设置组 3 行 + 账号组 3 行，`›` 全部右对齐）、资产负债页（两处合计与两处说明框都没了）截图存 `docs/design/verify/ledger.jpg`、`mine.jpg`、`balance.jpg`；**验证用的那 1 个测试周期账已从本地库和云端一起清掉**（云端 `tags.recurring` 回到 `[]`）
+>   - 设计稿同步：F6（第二排入口换图标 + 设置行改周期账状态卡 + caption）、F20（新增「记账设置」组 + caption）、F27（删两处合计 + 两处说明框 + caption）、新增 `i-target` / `i-wallet` / `i-scale` 三个 symbol、现行→目标表「我的」行、第 13 节新增第 12 条；仍是 28 屏、`div` 开合平衡
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）
 > - 地理位置接口申请（`wx.chooseLocation` + `wx.getFuzzyLocation`）**审核中**；未批前上传会报 `-80424 ... is not authorized`

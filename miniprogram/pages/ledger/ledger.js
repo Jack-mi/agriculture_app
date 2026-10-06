@@ -119,8 +119,13 @@ Page({
       funds: { n: '资金账户', s: '¥' + stats.accountRows(null).totalBalanceText },
       balance: (bs => ({ n: '资产负债', s: '净资产 ¥' + bs.netText, warn: bs.net < 0 }))(stats.balanceSheet())
     };
-    const trash = store.trash.count();
-    const recCount = store.recurring.items().length;
+    // 周期账：单独一张状态卡——有几个、下次哪天，一眼能看见（不再是个小 chip）
+    const recs = store.recurring.items().filter(r => r.enabled !== false);
+    const recOn = recs.map(r => ({ r, d: store.recurring.nextOn(r, today) }))
+      .filter(x => x.d).sort((a, b) => (a.d < b.d ? -1 : 1));
+    const rec = recs.length
+      ? { title: '周期账 ' + recs.length + ' 个', sub: recOn.length ? '下次 ' + U.cnDate(recOn[0].d) + ' · ' + recOn[0].r.name : '还没到日子' }
+      : { title: '周期账', sub: '土地流转、贷款这类固定支出，到日子提醒你去记' };
     // 生效筛选 chip
     const chips = [];
     const f = this.data.f;
@@ -142,7 +147,7 @@ Page({
       days, total, hub, due, chips, subList: subs, plots, scopeName, acctList: store.accounts.items(),
       cal, calYm, wk, wkStart,
       offline: gd.online === false, unsynced: store.outbox().length,
-      itemCount: list.length, trash, recCount
+      itemCount: list.length, rec
     });
   },
 

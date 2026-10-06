@@ -13,22 +13,24 @@
 
   <!-- 记账的一切都在这页：报表 / 欠款 / 库存 / 预算 / 账户 / 资产负债 -->
   <view class="hub">
-    <view class="h" bindtap="goReport" hover-class="btn-hover"><view class="ic">报</view><view class="n">{{hub.report.n}}</view><view class="s">{{hub.report.s}}</view></view>
-    <view class="h" bindtap="goDebt" hover-class="btn-hover"><view class="ic">欠</view><view class="n">{{hub.debt.n}}</view><view class="s {{hub.debt.warn ? 'warn' : 'debt'}}">{{hub.debt.s}}</view></view>
-    <view class="h" bindtap="goStock" hover-class="btn-hover"><view class="ic">库</view><view class="n">{{hub.stock.n}}</view><view class="s {{hub.stock.warn ? 'warn' : ''}}">{{hub.stock.s}}</view></view>
+    <view class="h" bindtap="goReport" hover-class="btn-hover"><view class="h-ic"><image src="/assets/icons/chart_green.svg" class="h-img" /></view><view class="n">{{hub.report.n}}</view><view class="s">{{hub.report.s}}</view></view>
+    <view class="h" bindtap="goDebt" hover-class="btn-hover"><view class="h-ic"><image src="/assets/icons/note_green.svg" class="h-img" /></view><view class="n">{{hub.debt.n}}</view><view class="s {{hub.debt.warn ? 'warn' : 'debt'}}">{{hub.debt.s}}</view></view>
+    <view class="h" bindtap="goStock" hover-class="btn-hover"><view class="h-ic"><image src="/assets/icons/box_green.svg" class="h-img" /></view><view class="n">{{hub.stock.n}}</view><view class="s {{hub.stock.warn ? 'warn' : ''}}">{{hub.stock.s}}</view></view>
   </view>
   <view class="hub">
-    <view class="h" bindtap="goBudget" hover-class="btn-hover"><view class="ic">预</view><view class="n">{{hub.budget.n}}</view><view class="s {{hub.budget.warn ? 'warn' : ''}}">{{hub.budget.s}}</view></view>
-    <view class="h" bindtap="goFunds" hover-class="btn-hover"><view class="ic">资</view><view class="n">{{hub.funds.n}}</view><view class="s">{{hub.funds.s}}</view></view>
-    <view class="h" bindtap="goBalance" hover-class="btn-hover"><view class="ic">产</view><view class="n">{{hub.balance.n}}</view><view class="s {{hub.balance.warn ? 'warn' : ''}}">{{hub.balance.s}}</view></view>
+    <view class="h" bindtap="goBudget" hover-class="btn-hover"><view class="h-ic"><image src="/assets/icons/target_green.svg" class="h-img" /></view><view class="n">{{hub.budget.n}}</view><view class="s {{hub.budget.warn ? 'warn' : ''}}">{{hub.budget.s}}</view></view>
+    <view class="h" bindtap="goFunds" hover-class="btn-hover"><view class="h-ic"><image src="/assets/icons/wallet_green.svg" class="h-img" /></view><view class="n">{{hub.funds.n}}</view><view class="s">{{hub.funds.s}}</view></view>
+    <view class="h" bindtap="goBalance" hover-class="btn-hover"><view class="h-ic"><image src="/assets/icons/scale_green.svg" class="h-img" /></view><view class="n">{{hub.balance.n}}</view><view class="s {{hub.balance.warn ? 'warn' : ''}}">{{hub.balance.s}}</view></view>
   </view>
 
-  <!-- 记账设置：类型 / 周期账 / 键盘 / 回收站 -->
-  <view class="tools">
-    <view class="t" bindtap="goTags" hover-class="btn-hover">类型管理</view>
-    <view class="t" bindtap="goRecurring" hover-class="btn-hover">周期账{{recCount ? ' ' + recCount : ''}}</view>
-    <view class="t" bindtap="goKeypanel" hover-class="btn-hover">记账键盘</view>
-    <view class="t" bindtap="goTrash" hover-class="btn-hover">回收站{{trash ? ' ' + trash : ''}}</view>
+  <!-- 周期账：一张状态卡（不是小 chip）。到期的橙色提醒在上面那条 bar 里先说 -->
+  <view class="reccard" bindtap="goRecurring" hover-class="btn-hover">
+    <view class="h-ic"><image src="/assets/icons/clock_green.svg" class="h-img" /></view>
+    <view class="flex1" style="min-width:0">
+      <view class="rc-t">{{rec.title}}</view>
+      <view class="rc-s">{{rec.sub}}</view>
+    </view>
+    <text class="muted">›</text>
   </view>
 
   <!-- 搜索 + 筛选 + 范围 -->

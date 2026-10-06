@@ -7,10 +7,16 @@
 .hub .s.warn { color: var(--heat); font-weight: 700; }
 .hub .s.debt { color: var(--debt); font-weight: 700; }
 
-/* 记账设置：类型 / 周期账 / 键盘 / 回收站，一行四个小chip */
-.tools { display: flex; flex-wrap: wrap; margin: 0 -6rpx 20rpx; }
-.tools .t { margin: 6rpx; padding: 0 22rpx; height: 64rpx; line-height: 64rpx; border-radius: 32rpx; background: var(--card); border: 2rpx solid var(--line); font-size: 26rpx; color: var(--sub); }
-.tools .t:active { opacity: .75; }
+/* 入口图标：浅绿底 + 绿线图标（和记账分类同一套视觉） */
+.h-ic { width: 64rpx; height: 64rpx; border-radius: 20rpx; background: var(--green-l); display: flex; align-items: center; justify-content: center; margin: 0 auto 10rpx; flex-shrink: 0; }
+.h-img { width: 38rpx; height: 38rpx; }
+
+/* 周期账状态卡 */
+.reccard { display: flex; align-items: center; background: var(--card); border: 2rpx solid var(--line); border-radius: 20rpx; padding: 22rpx 24rpx; margin: 0 0 20rpx; }
+.reccard .h-ic { margin: 0 20rpx 0 0; }
+.reccard:active { opacity: .85; }
+.rc-t { font-size: 31rpx; font-weight: 700; }
+.rc-s { font-size: 24rpx; color: var(--sub); margin-top: 4rpx; }
 
 .bars { padding: 0 8rpx 8rpx; }
 .bar { display: flex; align-items: center; border-radius: 20rpx; padding: 20rpx 24rpx; margin-bottom: 20rpx; font-size: 29rpx; }

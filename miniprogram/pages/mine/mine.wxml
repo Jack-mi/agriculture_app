@@ -1,5 +1,5 @@
 <view class="wrap">
-  <!-- 只留「这人是啥/数据有多少」；记账相关的一切都在「账本」页 -->
+  <!-- 只留「这人是啥 / 记账设置 / 同步与关于」；看账相关的一切都在「账本」页 -->
   <view class="card">
     <view class="row" style="gap:24rpx">
       <view class="avatar">谷</view>
@@ -10,8 +10,37 @@
     </view>
   </view>
 
+  <view class="sec-title">记账设置</view>
+  <view class="card list">
+    <view class="item" bindtap="goTags">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/note_green.svg" /></view>
+      <view class="flex1">
+        <view class="it">记账 / 记事类型管理</view>
+        <view class="muted" style="font-size:26rpx">分类、颜色、收入类型、常用账</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+    <view class="item" bindtap="goKeypanel">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/kb_green.svg" /></view>
+      <view class="flex1">
+        <view class="it">记账键盘</view>
+        <view class="muted" style="font-size:26rpx">布局、左下功能键、震动与千分位</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+    <view class="item" bindtap="goTrash">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/trash_green.svg" /></view>
+      <view class="flex1">
+        <view class="it">回收站</view>
+        <view class="muted" style="font-size:26rpx">{{trash ? trash + ' 项 · 30 天内可恢复' : '空的'}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
+  </view>
+
   <view class="card list">
     <view class="item" bindtap="syncNow">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/sync_green.svg" /></view>
       <view class="flex1">
         <view class="it">数据同步</view>
         <view class="muted" style="font-size:26rpx">{{sync.state}}</view>
@@ -19,8 +48,9 @@
       <text class="muted" style="color:{{sync.ok ? 'var(--green)' : 'var(--sub)'}}">{{sync.ok ? '已同步 ›' : '立即同步 ›'}}</text>
     </view>
 
-    <!-- 分享行：整行跟上面的 item 完全同一套布局，按钮只做一层透明点击层（不然 `›` 会被 button 的默认居中挤到中间） -->
+    <!-- 分享行：整行跟上下两行同一套布局，按钮只做一层透明点击层（不然 `›` 会被 button 的默认居中挤到中间） -->
     <view class="item share-row">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/users_green.svg" /></view>
       <view class="flex1">
         <view class="it">推荐给种地的朋友</view>
         <view class="muted" style="font-size:26rpx">分享给一起种地的邻居</view>
@@ -30,6 +60,7 @@
     </view>
 
     <view class="item" bindtap="about">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/info_green.svg" /></view>
       <view class="flex1">
         <view class="it">关于谷雨记</view>
         <view class="muted" style="font-size:26rpx">谷雨种谷，雨生百谷</view>

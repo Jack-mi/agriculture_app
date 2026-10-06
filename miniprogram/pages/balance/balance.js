@@ -12,9 +12,11 @@ Page({
   render() {
     const bs = stats.balanceSheet();
     bs.netNeg = bs.net < 0;
+    // 两处合计（资产合计 / 负债合计）和净资产、总资产、总负债是同一批数字，重复，已删。
+    // 资金账户余额 / 库存估值的两行小字说明也删了——底部那条口径说明已经讲清楚。
     bs.assetRows = [
-      { name: '资金账户余额', hint: '账户期初 + 收 − 支', value: bs.cash, text: bs.cashText, go: 'funds' },
-      { name: '库存估值', hint: bs.stockCount + ' 个品名 · 按最近均价', value: bs.stockValue, text: bs.stockValueText, go: 'stock' },
+      { name: '资金账户余额', hint: '', value: bs.cash, text: bs.cashText, go: 'funds' },
+      { name: '库存估值', hint: '', value: bs.stockValue, text: bs.stockValueText, go: 'stock' },
       { name: '应收（还没收到的钱）', hint: bs.receivableCount + ' 笔未结', value: bs.receivable, text: bs.receivableText, go: 'debt' }
     ];
     bs.liabRows = [

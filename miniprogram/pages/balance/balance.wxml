@@ -14,14 +14,10 @@
     <view class="arow" wx:for="{{bs.assetRows}}" wx:key="name" bindtap="go" data-go="{{item.go}}">
       <view class="f1">
         <view class="an">{{item.name}}</view>
-        <view class="muted ah">{{item.hint}}</view>
+        <view wx:if="{{item.hint}}" class="muted ah">{{item.hint}}</view>
       </view>
       <text class="av">¥{{item.text}}</text>
       <text class="ar">›</text>
-    </view>
-    <view class="arow total">
-      <text class="an">资产合计</text>
-      <text class="av">¥{{bs.assetsText}}</text>
     </view>
   </view>
 
@@ -30,14 +26,10 @@
     <view class="arow" wx:for="{{bs.liabRows}}" wx:key="name" bindtap="go" data-go="{{item.go}}">
       <view class="f1">
         <view class="an">{{item.name}}</view>
-        <view class="muted ah">{{item.hint}}</view>
+        <view wx:if="{{item.hint}}" class="muted ah">{{item.hint}}</view>
       </view>
       <text class="av heat">¥{{item.text}}</text>
       <text class="ar">›</text>
-    </view>
-    <view class="arow total">
-      <text class="an">负债合计</text>
-      <text class="av heat">¥{{bs.liabilitiesText}}</text>
     </view>
   </view>
 
