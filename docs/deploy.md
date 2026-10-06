@@ -133,7 +133,7 @@
 >   - **同步可靠性**：outbox 单条失败超 5 次进死信（`guyuji_deadletter`，「我的 → 数据同步」可见可重试），不再一条错误卡死全队列；plots/seasons/tasks/memory 硬删除每天对账一次，清掉别台设备已删的本地幽灵；pull 水位线回退 10 分钟重叠，防设备时钟偏快漏拉
 >   - **存储超限保护**：`store.save()` 写失败不再崩，「我的」页提示
 >   - **仓库卫生**：删 `design_handoff/miniprogram` 过时副本；kb 双份拷贝加守卫 `scripts/check-kb-sync.js`（挂在 check-miniprogram 末尾）；cloudfunctions 的 node_modules 移出 git
->   - **timeout 固化**：`scripts/fix-fn-timeout.sh` 一键把 advisorAgent→60s / advisorChat→30s 打回 SCF（.env → stable_token → getqcloudtoken → TC3 签名 SCF API），**每次重新部署这两个函数后必跑**
+>   - **timeout 固化**：`scripts/fix-fn-timeout.sh` 一键把 advisorAgent→60s / advisorChat→30s 打回 SCF（.env → stable_token → getqcloudtoken → TC3 签名 SCF API），**每次重新部署这些函数后必跑**（2026-10-06 起含 weatherBackfill→20s / weatherDaily→60s / weatherForecast→10s：weatherBackfill 卡在默认 3s 时客户端报「网络不好，天气稍后自动补齐」，模拟器偶发成功、真机冷启动基本必现）
 >   - 自检：54/54（新增 sync 死信/对账用例）；云端实测 advisorChat status/setModel/badbase、weatherBackfill 归属+`_openid` 落库、advisorAgent 真实问答全链路通过
 > - 小程序名已变更为 **田祖记**（原名 Londdon123kkk，改名审核已生效）
 > - **2026-10-01：体验版 `0.5.0` 已上传**（参谋问答全面切换大模型多智能体：新增云函数 `advisorAgent`（DeepSeek 原生 tool-calling loop，9 个只读工具按 openid 隔离 + draft_* 起草工具，写操作必须农户确认才落库）；`chat.js` 重写，删除全部本地对话规则与 `nlu.js`，失败只诚实报错；模型简化为 deepseek-flash / deepseek-v4-pro（BYOK，Key 只存云端）。**注意：CLI/IDE 部署不会应用 config.json 的 timeout**，advisorAgent 60s / advisorChat 30s 是走 `/tcb/getqcloudtoken` 换腾讯云凭证后直调 SCF `UpdateFunctionConfiguration` 改的；实测数据问/农技问/天气问/起草/多轮/客户端 send 全链路通过）

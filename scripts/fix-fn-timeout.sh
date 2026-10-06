@@ -1,7 +1,8 @@
 #!/bin/bash
 # 部署云函数后必跑：把 SCF timeout 改回正确值。
 # 背景：CLI/IDE 部署不会应用 config.json 里的 timeout（微信云开发已知行为），
-# 每次重新部署 advisorAgent/advisorChat 后 timeout 会回退默认 3s，agent 多轮调用直接被掐。
+# 每次重新部署后 timeout 会回退默认 3s，agent 多轮调用直接被掐；
+# weatherBackfill 3s 时上游拉取 + 逐日串行写库稍慢就超时，客户端报「网络不好，天气稍后自动补齐」。
 # 链路：.env(AppID/AppSecret) → stable_token → tcb/getqcloudtoken 换腾讯云凭证
 #       → TC3-HMAC-SHA256 签名直调 SCF UpdateFunctionConfiguration。
 # 用法：scripts/fix-fn-timeout.sh
@@ -56,7 +57,8 @@ def tc3(action, params):
         'X-TC-Region': region, 'X-TC-Token': token})
     return json.load(urllib.request.urlopen(req))
 
-for fn, timeout in [('advisorAgent', 60), ('advisorChat', 30)]:
+for fn, timeout in [('advisorAgent', 60), ('advisorChat', 30),
+                    ('weatherBackfill', 20), ('weatherDaily', 60), ('weatherForecast', 10)]:
     r = tc3('UpdateFunctionConfiguration',
             {'FunctionName': fn, 'Namespace': env_id, 'Timeout': timeout})
     err = r.get('Response', {}).get('Error')
