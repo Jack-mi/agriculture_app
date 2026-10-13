@@ -118,6 +118,7 @@
 >   - ⚠️ 踩坑：`app.json` 的 `requiredPrivateInfos` 里 `getLocation` 与 `getFuzzyLocation` **互斥**，同时声明上传直接编译失败；声明 `getLocation` 即覆盖模糊定位调用（最终只留 `chooseLocation` + `getLocation`）
 >   - 体验版二维码：10-12 旧码已过期，新码待从 mp 版本管理下载（wxa/get_qrcode API 对当前 token 返回 40014，未走通）
 > - **2026-10-13 平台侧**：`wx.getLocation` 审核通过；「深度合成 > AI问答」类目审核通过（类目=综合工具(主营)/记账/日历/备忘录/天气/AI问答，「商业服务」已删）
+> - **2026-10-13：每日跑批 06:30 → 08:30**（用户反馈：给农户推消息不能一清早发）：触发器已换 `daily0830`（cron `0 30 8 * * * *`，Enable=1，ListTriggers 实测 Bind=on；旧 `daily0630` 已删），`buildTask` 提醒时间文案同步改 08:30；天气数据随跑批 08:30 回填昨日，不受影响（首页用的是实时预报缓存）。config.json 已同步（仅为文档一致性，触发器仍以 SCF 侧为准）。
 > - **2026-10-13 首跑前加固**：微信 `time` 类型字段文档口径为「15:01 / 2019年10月1日 15:01」，原 ISO「2026-10-14 06:30:00」有 47003 风险 → time29/time30 改中文格式（weatherDaily 已重部署+timeout 120s）。探针实测：注入 weather/task 额度 + 明天到期测试任务 → Invoke → 两类额度均 43101 清零、errs 为空（无 47003 格式错误；43101 与数据校验的先后未知，最终确认仍待首个真实送达）。测试任务/额度已清理。alert 路径因未来 10 天无极端天气未触发，属正常。
 > - **2026-10-13 subInc 入账链路云端实测通过**：模拟器运行时直接 `callFunction login {subInc:{weather:2,alert:1,task:7,bogus:9}}` → 返回 `{weather:2,alert:1,task:5}`（白名单过滤 bogus、单次 clamp ≤5 均生效）；测试额度已清零。⚠️ 教训：login 第一次部署后实测是旧代码（subInc 静默无效、返回全 0），重新部署后正常——**部署云函数后必须实测一次再信**。「我的 → 消息提醒」入口渲染实测 `docs/design/verify/mine-submsg-entry.jpg`（额度文案准确显示 0 条）。
 > - **2026-10-13 订阅消息收口验证**：体验码已下载 `docs/trial-qr-0.10.0.png`（mp 版本管理 → 体验版 → 点击「扫描访问体验版」弹窗内取图，**该二维码 10月20日前有效**；`wxa/get_qrcode` API 对 stable_token 和 legacy token 均返回 40014，确认走不通，只能后台取）。模拟器实测：首页「开启每日提醒」横幅正常渲染（`docs/design/verify/index-submsg-banner.jpg`），点击弹起订阅面板（`docs/design/verify/submsg-panel.jpg`）。⚠️ 两个待真机确认：① 模拟器面板只显示「天气提醒」一条（请求里带了三条 tmplIds，真机应显示三条勾选列表）；② 模拟器的原生订阅弹窗 automator 点不到（选择器/坐标触摸都够不着原生层），「允许」后的 subInc 入账链路未在模拟器闭环。
@@ -125,12 +126,12 @@
 > - **2026-10-13：订阅消息全链路落地**（天气提醒/灾害预警/日程提醒三模板，代码+云端+凭证+实测）
 >   - **额度模型**：一次性订阅 = 点一次「允许」+1 条额度，存 `users.subs.{weather,alert,task}`；发送成功才扣，43101（退订/未订）直接清零不再撞墙；客户端副本存本地，云端是权威
 >   - **客户端**：`utils/submsg.js`（水位线<3 时首页出「开启每日提醒」横幅，一次面板补三类，一天最多弹一次；「我的 → 消息提醒」常驻入口显示剩余额度）；`login` 云函数加 `subInc` 白名单记账（单次≤5，防刷）
->   - **云端**：`weatherDaily` 每天 06:30 跑批顺带发三类推送——天气（当日预报：日期/城市/天气/温度/降雨）、灾害预警（未来 10 天连阴雨/暴雨/霜冻/大风/干热风，规则与客户端 `advisor.alertsOf` 一致，同一预警只发一次）、日程提醒（明天含已过期到期的待办，每人每天 1 条）；去重标记在 `users.notified`
+>   - **云端**：`weatherDaily` 每天 08:30 跑批顺带发三类推送——天气（当日预报：日期/城市/天气/温度/降雨）、灾害预警（未来 10 天连阴雨/暴雨/霜冻/大风/干热风，规则与客户端 `advisor.alertsOf` 一致，同一预警只发一次）、日程提醒（明天含已过期到期的待办，每人每天 1 条）；去重标记在 `users.notified`
 >   - **模板字段 key 已从 mp 后台「订阅消息→我的模板→详情」逐字核对**（2026-10-13）：天气 日期date1/城市phrase2/天气phrase3/温度character_string4/降雨量thing6；任务 农事作业thing28/农事时间time29/提醒时间time30/任务名称thing31；预警 类型phrase3/等级phrase4/内容thing1/发布时间date5/地块名称thing15
 >   - ⚠️ **踩坑（重要）**：本环境（CloudBase 独立环境）`cloud.openapi` 拿不到微信 openapi access_token（-501001 invalid wx openapi access_token，wx-server-sdk 2.6.3/4.0.2 均实测）→ **订阅消息改直连微信 API**：`stable_token` 换 access_token → `cgi-bin/message/subscribe/send`；AppID/AppSecret 存 `config` 集合 `wx_msgs` 文档（与 advisor_ai 同管理模式，不进代码库）
 >   - ⚠️ `wx.requestSubscribeMessage` 必须用户点击触发（基础库 2.8.2+），不做 onShow 自动弹，入口=首页横幅 + 我的页设置项
 >   - `miniprogramState='trial'`（跳体验版），正式发布后改 `formal`（weatherDaily/index.js 顶部常量）
->   - **E2E 实测**：注入测试额度 → TC3 Invoke weatherDaily → 完整走通「读配置→取 token→调微信→43101→额度清零」（无真实订阅时 43101 是预期结果；真实送达待首个用户点横幅后次日 06:30 验证）；weatherDaily timeout 已提 120s（推送职责增加）
+>   - **E2E 实测**：注入测试额度 → TC3 Invoke weatherDaily → 完整走通「读配置→取 token→调微信→43101→额度清零」（无真实订阅时 43101 是预期结果；真实送达待首个用户点横幅后次日 08:30 验证）；weatherDaily timeout 已提 120s（推送职责增加）
 > - **2026-10-07：体验版 `0.9.2` 已上传**（信息 tab 分隔线统一：picker 组件包一层元素，里面的行误中 `:last-of-type` 丢分隔线，四行只剩两条杠；补 `.card > picker .kv` 统一回分隔线。`docs/design/verify/season-info.jpg`，二维码同 `docs/trial-qr-0.8.2.png`）
 > - **2026-10-07：体验版 `0.9.1` 已上传**（种植季天气 tab 两条真机反馈，二维码同 `docs/trial-qr-0.8.2.png`，无需换码）
 >   - 「重新获取天气」成功/失败都有 toast 反馈（成功「数据已刷新」/失败「没刷成，稍后再试」）

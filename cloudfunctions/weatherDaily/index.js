@@ -1,4 +1,4 @@
-// 每日 06:30 定时触发：扫描所有在种的季，为对应地块拉取昨日天气写入 weather 集合。
+// 每日 08:30 定时触发（2026-10-13 从 06:30 改：给农户推消息不能太早）：扫描所有在种的季，为对应地块拉取昨日天气写入 weather 集合。
 // 服务端 admin 权限扫描全量用户；src=manual 的手工修正记录永不覆盖。
 // 写入的 weather 文档带该地块属主的 _openid，否则客户端按「仅创建者可读写」拉不到。
 //
@@ -153,7 +153,7 @@ function buildTask(today, t) {
   return {
     thing28: { value: cut((t.ops && t.ops.length ? t.ops.join('、') : '农事作业'), 20) },
     time29: { value: cnDate(t.dueStart) },
-    time30: { value: cnDate(today) + ' 06:30' },
+    time30: { value: cnDate(today) + ' 08:30' },
     thing31: { value: cut(t.title || '农事任务', 20) }
   };
 }
