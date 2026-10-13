@@ -8,12 +8,13 @@ const advisor = require('../../utils/advisor.js');
 const C = require('../../utils/const.js');
 const md = require('../../utils/md.js');
 const chatlog = require('../../utils/chatlog.js');
+const { parseTrace } = require('../../utils/trace.js');
 
 let si = null;
 try { si = requirePlugin('WechatSI'); } catch (e) { si = null; }
 
 Page({
-  data: { head: null, msgs: [], typing: false, text: '', recording: false, hasVoice: !!si, scrollTo: '' },
+  data: { head: null, msgs: [], typing: false, text: '', recording: false, hasVoice: !!si, scrollTo: '', chips: [] },
 
   onLoad(q) {
     this.ctx = { taskId: q.taskId ? decodeURIComponent(q.taskId) : '', seasonId: q.seasonId || '' };
@@ -28,7 +29,7 @@ Page({
     const local = chatlog.load(this.ctx);
     if (local && local.msgs && local.msgs.length) this.applyPack(local);
     else this.setHello(rc);
-    this.setData({ head });
+    this.setData({ head, chips: chat.chipsFor(this.ctx) });
     chatlog.pull(this.ctx).then(remote => {
       if (this._sent || !remote || !remote.msgs || !remote.msgs.length) return;
       const localAt = (local && local.updatedAt) || 0;
@@ -39,22 +40,28 @@ Page({
 
   onUnload() {
     this.stopThinkTimer();
+    this.stopProgressPoll();
     if ((this.data.msgs || []).some(m => m.role === 'me')) this.persist();
   },
 
   setHello(rc) {
     rc = rc || chat.resolveCtx(this.ctx);
     const hello = rc.task ? '这条任务有啥要改的？直接说地里的实际情况。' : rc.season ? '想问这块地什么，或者记点什么，直接说。' : '想记点啥、问点啥，直接说。比如「后天提醒我去河边地打药」。';
+    // 开场提示集（仅空会话出现一次，点一下直接发送；历史会话拉回时不出现）
+    const prompts = rc.task ? ['这条任务往后推两天', '已经干完了', '这条不做了，以后也别推']
+      : rc.season ? ['这块地接下来该干啥', '这季花了多少', '上回打药是哪天', '帮我记一笔今天的活']
+      : ['接下来地里该干啥', '今天干了活，帮我记一笔', '这季到现在花了多少钱', '提醒我后天去河边地打药'];
     this.history = [];
     this.cards = {};
-    this.setData({ msgs: [{ id: 'm0', role: 'ai', text: hello, nodes: md.mdNodes(hello) }] });
+    this.setData({ msgs: [{ id: 'm0', role: 'ai', text: hello, nodes: md.mdNodes(hello), prompts }] });
   },
   applyPack(pack) {
     this.history = pack.history || [];
     this.cards = pack.cards || {};
     const msgs = (pack.msgs || []).map(m => Object.assign({}, m, {
       nodes: m.role === 'ai' && m.text ? md.mdNodes(m.text) : null,
-      reasonOpen: false
+      reasonOpen: false,
+      stepsOpen: false
     }));
     this.setData({ msgs, scrollTo: msgs.length ? msgs[msgs.length - 1].id : '' });
   },
@@ -77,6 +84,15 @@ Page({
   toggleType() { this.setData({ typing: !this.data.typing }); },
   onInput(e) { this.setData({ text: e.detail.value }); },
   sendText() { const t = this.data.text.trim(); if (t) { this.setData({ text: '' }); this.send(t); } },
+  // 开场提示集 / 常驻快捷条：点一下直接发送
+  tapPrompt(e) {
+    const t = e.currentTarget.dataset.t;
+    if (!t) return;
+    const msgs = this.data.msgs.map(m => (m.prompts ? Object.assign({}, m, { prompts: null }) : m));
+    this.setData({ msgs });
+    this.send(t);
+  },
+  tapChip(e) { const t = e.currentTarget.dataset.t; if (t) this.send(t); },
   photo() {
     wx.chooseMedia({ count: 1, mediaType: ['image'], sourceType: ['camera', 'album'], success: r => {
       const path = r.tempFiles[0].tempFilePath;
@@ -88,7 +104,8 @@ Page({
       let b64 = '';
       try { b64 = wx.getFileSystemManager().readFileSync(path, 'base64'); } catch (e) {}
       if (!b64) return this.reply({ reply: '照片读不出来，再拍一次？', cards: [], chips: [] }, thinking);
-      chat.askImage('', b64, this.ctx).then(res => this.reply(res, thinking))
+      const reqId = this.startProgressPoll(thinking);
+      chat.askImage('', b64, this.ctx, reqId).then(res => this.reply(res, thinking))
         .catch(() => this.reply({ reply: '识图出了点问题，再发一次？', cards: [], chips: [] }, thinking));
     } });
   },
@@ -115,16 +132,37 @@ Page({
     }, 1000);
   },
   stopThinkTimer() { if (this._thinkTimer) { clearInterval(this._thinkTimer); this._thinkTimer = null; } },
+  // 干活实况轮询：思考期间每 2s 问一次 advisorChat{action:'progress'}，把 toolTrace 实时渲染成步骤
+  startProgressPoll(thinkingId) {
+    this.stopProgressPoll();
+    const reqId = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const cf = wx.cloud && wx.cloud.callFunction;
+    if (!cf) return reqId;
+    this._pollTimer = setInterval(() => {
+      cf({ name: 'advisorChat', data: { action: 'progress' } }).then(r => {
+        const d = r && r.result;
+        if (!d || !d.ok || d.reqId !== reqId || !Array.isArray(d.trace) || !d.trace.length) return;
+        const liveSteps = parseTrace(d.trace);
+        if (!liveSteps.length) return;
+        const msgs = this.data.msgs.map(m => (m.id === thinkingId && m.thinking) ? Object.assign({}, m, { liveSteps }) : m);
+        this.setData({ msgs, scrollTo: thinkingId });
+      }).catch(() => {});
+    }, 2000);
+    return reqId;
+  },
+  stopProgressPoll() { if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; } },
   send(text) {
     this._sent = true;
+    if (this.data.chips.length) this.setData({ chips: [] });
     this.push({ role: 'me', text });
     const thinking = this.push({ role: 'ai', thinking: true });
     this.startThinkTimer(thinking);
+    const reqId = this.startProgressPoll(thinking);
     const prior = this.history.slice();
     this.history.push({ role: 'user', content: text });
     if (this.history.length > 12) this.history = this.history.slice(-12);
     this.persist();
-    chat.ask(text, this.ctx, this.pending, prior).then(r => {
+    chat.ask(text, this.ctx, this.pending, prior, reqId).then(r => {
       if (r.reply) this.history.push({ role: 'assistant', content: r.reply });
       if (this.history.length > 12) this.history = this.history.slice(-12);
       this.reply(r, thinking);
@@ -132,6 +170,7 @@ Page({
   },
   reply(r, replaceId) {
     this.stopThinkTimer();
+    this.stopProgressPoll();
     const msgs = this.data.msgs.filter(m => m.id !== replaceId);
     this.setData({ msgs });
     // 补槽位：改写已有卡片
@@ -141,7 +180,7 @@ Page({
     }
     const cards = (r.cards || []).map(c => { this.cards[c.id] = c; return this.viewCard(c); });
     const text = r.reply || '';
-    this.push({ role: 'ai', text, nodes: md.mdNodes(text), reasoning: r.reasoning || '', reasonOpen: false, list: r.list || null, cards });
+    this.push({ role: 'ai', text, nodes: md.mdNodes(text), reasoning: r.reasoning || '', reasonOpen: false, trace: r.trace || null, stepsOpen: false, list: r.list || null, cards });
     if (r.ask) this.push({ role: 'ai', text: r.ask, nodes: md.mdNodes(r.ask) });
     this.pending = r.pending || (r.fill ? null : this.pending && r.cards && r.cards.length ? null : this.pending);
     if (r.pending) this.pending = r.pending;
@@ -150,6 +189,11 @@ Page({
   toggleReason(e) {
     const id = e.currentTarget.dataset.id;
     const msgs = this.data.msgs.map(m => (m.id === id ? Object.assign({}, m, { reasonOpen: !m.reasonOpen }) : m));
+    this.setData({ msgs });
+  },
+  toggleSteps(e) {
+    const id = e.currentTarget.dataset.id;
+    const msgs = this.data.msgs.map(m => (m.id === id ? Object.assign({}, m, { stepsOpen: !m.stepsOpen }) : m));
     this.setData({ msgs });
   },
   // 卡片视图：rows 里 {old, now} 显示为「改前 → 改后」

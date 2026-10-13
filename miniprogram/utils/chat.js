@@ -8,6 +8,7 @@ const growth = require('./growth.js');
 const advisor = require('./advisor.js');
 const pesticide = require('./pesticide.js');
 const weather = require('./weather.js');
+const { parseTrace } = require('./trace.js');
 
 const ACTIONS = ['plot.create', 'plot.update', 'plot.remove', 'plot.locate', 'season.create', 'season.harvest', 'season.remove', 'season.variety', 'season.update', 'task.create', 'task.update', 'task.dismiss', 'task.complete', 'log.create', 'log.update', 'log.remove', 'cost.create', 'cost.remove', 'debt.settle', 'recurring.create', 'stock.adjust', 'tag.cost', 'tag.income', 'tag.log', 'weather.set', 'stage.calibrate', 'memory.add', 'memory.remove'];
 
@@ -417,10 +418,10 @@ function lightContext(ctx) {
     memory: store.memory.all().map(m => ({ id: m.id, text: m.text }))
   };
 }
-function askAgent(text, ctx, imageBase64, history) {
+function askAgent(text, ctx, imageBase64, history, reqId) {
   const cf = typeof wx !== 'undefined' && wx.cloud && wx.cloud.callFunction;
   if (!cf) return Promise.resolve({ reply: '参谋需要联网 + 云开发环境才能干活。', cards: [], chips: [] });
-  return cf({ name: 'advisorAgent', data: { message: text, image: imageBase64 || undefined, context: lightContext(ctx), history: history || [] } }).then(r => {
+  return cf({ name: 'advisorAgent', data: { message: text, image: imageBase64 || undefined, context: lightContext(ctx), history: history || [], reqId: reqId || '' } }).then(r => {
     const res = r && r.result;
     if (!res) return { reply: '参谋暂时连不上，稍后再试。', cards: [], chips: [] };
     if (!res.ok) {
@@ -430,11 +431,12 @@ function askAgent(text, ctx, imageBase64, history) {
     const out = fromLLM({ reply: res.reply, actions: res.actions || [] }, ctx);
     if (!out.reply && !out.cards.length) out.reply = '嗯，我在。想问啥直接说。';
     out.reasoning = String(res.reasoning || '').slice(0, 4000);
+    out.trace = parseTrace(res.toolTrace);
     return out;
   }).catch(() => ({ reply: '网络不太好，参谋没接上线，稍后再试。', cards: [], chips: [] }));
 }
-function ask(text, ctx, pending, history) { return askAgent(text, ctx, null, history); }
-function askImage(text, imageBase64, ctx) { return askAgent(text || '', ctx, imageBase64, null); }
+function ask(text, ctx, pending, history, reqId) { return askAgent(text, ctx, null, history, reqId); }
+function askImage(text, imageBase64, ctx, reqId) { return askAgent(text || '', ctx, imageBase64, null, reqId); }
 
 // ---------- 执行（唯一的写入口） ----------
 function execute(card) {

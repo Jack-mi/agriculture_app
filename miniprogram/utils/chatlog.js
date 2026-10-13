@@ -23,6 +23,7 @@ function slimMsgs(msgs) {
     if (m.img) c.img = m.img;
     if (m.list) c.list = m.list;
     if (m.cards && m.cards.length) c.cards = m.cards;
+    if (m.trace && m.trace.length) c.trace = m.trace;
     return c;
   });
 }

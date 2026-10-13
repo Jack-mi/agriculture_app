@@ -49,3 +49,28 @@ page { height: 100%; }
 .hold.on { background: var(--green-d); }
 .tin { flex: 1; margin: 0 16rpx; height: 88rpx; background: #fff; border: 3rpx solid var(--line); border-radius: 16rpx; padding: 0 20rpx; font-size: 30rpx; }
 .send { width: 128rpx; height: 88rpx; line-height: 88rpx; font-size: 30rpx; letter-spacing: 0; margin-right: 16rpx; }
+
+/* 开场提示集（空会话一次性） */
+.prompts { margin-top: 16rpx; }
+.prompt-tip { font-size: 24rpx; color: var(--sub); margin-bottom: 12rpx; }
+.prompt { display: flex; align-items: center; justify-content: space-between; background: var(--card); border: 2rpx solid var(--line); border-radius: 18rpx; padding: 20rpx 24rpx; font-size: 29rpx; margin-bottom: 14rpx; }
+.prompt:last-child { margin-bottom: 0; }
+.prompt-t { flex: 1; }
+.prompt-a { color: var(--green); font-weight: 700; font-size: 34rpx; margin-left: 16rpx; }
+
+/* 常驻快捷条（chipsFor 接线，发问后收起） */
+.chips { display: flex; flex-wrap: wrap; gap: 14rpx; padding: 14rpx 28rpx 0; background: var(--card); border-top: 2rpx solid var(--line); flex-shrink: 0; }
+.chip { flex-shrink: 0; background: #fff; border: 2rpx solid var(--line); border-radius: 30rpx; padding: 10rpx 24rpx; font-size: 26rpx; }
+
+/* 思维链步骤（toolTrace 人话版） */
+.steps { border-left: 4rpx solid var(--green-l); padding-left: 18rpx; margin: 4rpx 0 14rpx; }
+.step { display: flex; align-items: center; font-size: 26rpx; padding: 5rpx 0; }
+.sdot { width: 12rpx; height: 12rpx; border-radius: 6rpx; background: var(--green); margin-right: 12rpx; flex-shrink: 0; }
+.sdot.sub { background: #B9C7AE; }
+.sdot.fold { background: var(--line); }
+.sn { color: var(--sub); font-size: 24rpx; }
+
+/* 思考中的实时步骤：当前步高亮 */
+.steps.live { margin: 10rpx 0 2rpx; }
+.step.now { font-weight: 700; }
+.step.now .sdot { background: var(--green); }

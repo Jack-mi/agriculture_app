@@ -55,9 +55,6 @@
 .big-v .u { font-size: 26rpx; margin-left: 6rpx; color: var(--sub); font-weight: 500; }
 .heat { color: var(--heat); }
 .rain { color: var(--rain); }
-.bars { display: flex; align-items: flex-end; height: 120rpx; margin-top: 24rpx; border-bottom: 2rpx solid var(--line); }
-.bar-c { flex: 1; height: 100%; display: flex; align-items: flex-end; padding: 0 2rpx; }
-.bar { width: 100%; background: var(--rain); border-radius: 4rpx 4rpx 0 0; opacity: .85; }
 .warn-box { margin-top: 20rpx; background: #F8E1D6; color: var(--heat); padding: 16rpx 20rpx; border-radius: 12rpx; font-size: 28rpx; }
 .link { font-weight: 700; text-decoration: underline; }
 
@@ -69,6 +66,8 @@
 
 .kv { display: flex; justify-content: space-between; padding: 18rpx 0; border-bottom: 2rpx solid var(--line); font-size: 32rpx; }
 .kv:last-of-type { border-bottom: none; }
+/* picker 会包一层元素，里面的 .kv 误中 :last-of-type 导致分隔线时有时无（信息 tab 四行两条杠），补回统一分隔线 */
+.card > picker .kv { border-bottom: 2rpx solid var(--line); }
 .kv.col { flex-direction: column; }
 
 .harvest-btn { flex: 0 0 150rpx !important; }

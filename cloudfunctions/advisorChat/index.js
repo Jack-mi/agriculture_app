@@ -50,9 +50,9 @@ function validBase(u) {
 function postJSON(url, headers, body) {
   return new Promise((resolve, reject) => {
     const req = https.request(url, { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, headers) }, res => {
-      let buf = '';
-      res.on('data', c => { buf += c; });
-      res.on('end', () => resolve({ status: res.statusCode, body: buf }));
+      const chunks = []; // 中文跨 TCP 包切开时 buf += c 会解出永久的 �，必须拼完再解码
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }));
     });
     req.on('error', reject);
     req.setTimeout(30000, () => req.destroy(new Error('timeout')));
@@ -98,6 +98,12 @@ exports.main = async (event) => {
       data: { apiKey: c.apiKey, baseUrl, model, updatedAt: Date.now() }
     });
     return { ok: true };
+  }
+
+  // progress：参谋干活实况（客户端思考期间每 2s 轮询，只读本用户自己的进度文档，不限流）
+  if (action === 'progress') {
+    const d = await db.collection('advisorProgress').doc(openid).get().then(r => r.data).catch(() => null);
+    return { ok: true, reqId: (d && d.reqId) || '', trace: (d && d.trace) || [] };
   }
 
   // chat：messages 原样转发（系统提示由客户端组装），返回纯文本

@@ -9,7 +9,9 @@ Page({
   data: {
     id: '', tab: 'advisor', adv: null, brief: {}, season: {}, plot: {},
     cost: { cats: [], total: 0 }, costList: [], openCat: '',
-    logGroups: [], costView: 'list', costDays: [], calYm: '', cal: null, daySheet: null, costFilter: '', logFilter: '', costSubs: [], logTags: [], met: {}, bars: [], seasonInfo: {}, wxRows: [], wxLoading: false, wxMsg: '',
+    // showAI：参谋入口前端总开关（true=正常展示；曾按 2026-10-08 要求临时隐藏）
+    showAI: true,
+    logGroups: [], costView: 'list', costDays: [], calYm: '', cal: null, daySheet: null, costFilter: '', logFilter: '', costSubs: [], logTags: [], met: {}, seasonInfo: {}, wxRows: [], wxLoading: false, wxMsg: '',
     wkStart: '', wk: null, nv: {}, sd: {},
     edit: null
   },
@@ -82,10 +84,6 @@ Page({
       dateText: U.cnDate(r.date), dayN: U.diffDays(s.sowDate, r.date) + 1,
       tText: r.has ? r.t : '—', pText: r.has ? r.p : '—', windText: r.wind !== null ? r.wind : '—'
     }));
-    // 降雨柱状（近 30 天）
-    const last = ws.rows.slice(-30);
-    const maxP = Math.max(5, ...last.map(r => r.p || 0));
-    const bars = last.map(r => ({ d: r.date.slice(5), h: r.p ? Math.max(4, Math.round(r.p / maxP * 100)) : 0, p: r.p }));
     // 本季净收益 / 待收待付
     const ns = stats.netOf(s.id);
     const nv = {
@@ -109,7 +107,7 @@ Page({
       nv, sd, wkStart, wk,
       costFilterSum: cf ? U.money(allCosts.filter(c => (c.cat + '|' + c.sub) === cf).reduce((a, c) => a + store.costs.amountFor(c, s.id), 0)) : '',
       met: { gdd: ws.gdd, gdd0: ws.gdd0, rain: ws.rain, days: ws.days, known: ws.known, missing: ws.missing, manual: ws.manual, maxWind: ws.maxWind, hasLoc: plot.lat !== undefined && plot.lat !== '' },
-      wxRows, bars,
+      wxRows,
       seasonInfo: {
         sow: U.cnDate(s.sowDate, true), seed: s.seedRate ? s.seedRate + ' 斤/亩' : '未填',
         tillage: s.tillage || '未填',
@@ -130,6 +128,8 @@ Page({
       if (!r.ok && r.reason === 'nolocation') msg = '地块未定位，无法自动获取天气';
       else if (!r.ok) msg = '网络不好，天气稍后自动补齐';
       this.setData({ wxLoading: false, wxMsg: msg });
+      if (r.ok) wx.showToast({ title: '数据已刷新', icon: 'success' });
+      else wx.showToast({ title: '没刷成，稍后再试', icon: 'none' });
       this.render();
     }).catch(() => this.setData({ wxLoading: false }));
   },

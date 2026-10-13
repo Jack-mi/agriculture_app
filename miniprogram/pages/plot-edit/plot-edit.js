@@ -35,7 +35,7 @@ Page({
   // 拿不到时回退模糊定位（wx.getFuzzyLocation，约 1 公里，按地块取天气够用）。
   // PRECISE_LOCATION 开关：接口开通并在 app.json 声明后置 true，否则不调用未声明的隐私接口。
   useCurrent() {
-    const PRECISE_LOCATION = false;
+    const PRECISE_LOCATION = true;
     const done = r => this.setData({
       lat: Math.round(r.latitude * 1000) / 1000,
       lng: Math.round(r.longitude * 1000) / 1000,

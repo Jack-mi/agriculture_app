@@ -6,9 +6,9 @@ const https = require('https');
 function getJSON(url) {
   return new Promise((resolve, reject) => {
     https.get(url, res => {
-      let buf = '';
-      res.on('data', c => { buf += c; });
-      res.on('end', () => { try { resolve(JSON.parse(buf)); } catch (e) { reject(e); } });
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (e) { reject(e); } });
     }).on('error', reject);
   });
 }

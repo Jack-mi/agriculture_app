@@ -14,21 +14,42 @@
     <view class="pad">
       <view wx:for="{{msgs}}" wx:key="id" id="{{item.id}}" class="msg {{item.role}}">
         <image wx:if="{{item.img}}" src="{{item.img}}" class="photo" mode="aspectFill" />
-        <view wx:elif="{{item.thinking || item.text || item.reasoning || (item.cards && item.cards.length) || item.list}}" class="bub {{item.role}} {{item.cards && item.cards.length ? 'wide' : ''}} {{item.thinking ? 'thinking' : ''}}">
+        <view wx:elif="{{item.thinking || item.text || item.reasoning || (item.cards && item.cards.length) || item.list}}" class="bub {{item.role}} {{(item.cards && item.cards.length) || item.prompts ? 'wide' : ''}} {{item.thinking ? 'thinking' : ''}}">
           <block wx:if="{{item.thinking}}">
             <view class="think-live" catchtap="toggleThink" data-id="{{item.id}}">
               <text>思考中<text class="dot">.</text><text class="dot d2">.</text><text class="dot d3">.</text></text>
               <text class="reason-act">{{item.thinkOpen ? '收起' : '展开'}}</text>
             </view>
-            <view wx:if="{{item.thinkOpen}}" class="reason-bd">参谋团已经想了 {{item.thinkSec || 0}} 秒。总管先把活分给记账 / 记事 / 农事子代理，子代理查你的账本、地块和天气，一轮一般要十几秒到一分钟，问得越杂越久。</view>
+            <view wx:if="{{item.liveSteps}}" class="steps live">
+              <view wx:for="{{item.liveSteps}}" wx:for-item="s" wx:for-index="si" wx:key="index" class="step {{si === item.liveSteps.length - 1 ? 'now' : ''}}">
+                <text class="sdot {{s.expert ? '' : 'sub'}} {{s.folded ? 'fold' : ''}}"></text>
+                <text>{{s.text}}</text><text wx:if="{{s.n > 1}}" class="sn">（{{s.n}} 次）</text>
+              </view>
+            </view>
+            <view wx:if="{{item.thinkOpen}}" class="reason-bd">参谋已经想了 {{item.thinkSec || 0}} 秒{{item.liveSteps ? '，上面是干到哪一步的实况' : '。你的账本、地块、天气都要挨个翻'}}，一轮一般要十几秒到一分钟，问得越杂越久。</view>
           </block>
           <block wx:else>
+          <view wx:if="{{item.trace && item.trace.length}}" class="reason" catchtap="toggleSteps" data-id="{{item.id}}">
+            <text>参谋干了这些</text><text class="reason-act">{{item.stepsOpen ? '收起' : '展开'}}</text>
+          </view>
+          <view wx:if="{{item.trace && item.stepsOpen}}" class="steps">
+            <view wx:for="{{item.trace}}" wx:for-item="s" wx:key="index" class="step">
+              <text class="sdot {{s.expert ? '' : 'sub'}} {{s.folded ? 'fold' : ''}}"></text>
+              <text>{{s.text}}</text><text wx:if="{{s.n > 1}}" class="sn">（{{s.n}} 次）</text>
+            </view>
+          </view>
           <view wx:if="{{item.reasoning}}" class="reason" catchtap="toggleReason" data-id="{{item.id}}">
-            <text>已思考</text><text class="reason-act">{{item.reasonOpen ? '收起' : '展开'}}</text>
+            <text>{{item.trace && item.trace.length ? '看原始思考' : '已思考'}}</text><text class="reason-act">{{item.reasonOpen ? '收起' : '展开'}}</text>
           </view>
           <text wx:if="{{item.reasoning && item.reasonOpen}}" class="reason-bd" user-select>{{item.reasoning}}</text>
           <rich-text wx:if="{{item.nodes && item.nodes.length}}" nodes="{{item.nodes}}" />
           <text wx:elif="{{item.text}}">{{item.text}}</text>
+          <view wx:if="{{item.prompts}}" class="prompts">
+            <view class="prompt-tip">不知道问啥？点一个试试</view>
+            <view wx:for="{{item.prompts}}" wx:for-item="p" wx:key="*this" class="prompt" bindtap="tapPrompt" data-t="{{p}}">
+              <text class="prompt-t">{{p}}</text><text class="prompt-a">›</text>
+            </view>
+          </view>
           <view wx:if="{{item.list}}" class="mlist">
             <view wx:for="{{item.list}}" wx:for-item="li" wx:for-index="li_i" wx:key="id" class="mli">
               <text class="num muted" style="width:32rpx">{{li_i + 1}}</text><text class="flex1">{{li.text}}</text><text class="muted" style="font-size:22rpx">{{li.src}}</text>
@@ -56,6 +77,9 @@
     </view>
   </scroll-view>
 
+  <view wx:if="{{chips.length}}" class="chips">
+    <view wx:for="{{chips}}" wx:key="*this" class="chip" bindtap="tapChip" data-t="{{item}}">{{item}}</view>
+  </view>
   <view class="bar">
     <view class="row">
       <view class="ib" bindtap="photo"><image src="/assets/icons/cam_sub.svg" class="ii" /></view>

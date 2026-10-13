@@ -47,8 +47,8 @@
 
   <!-- ===== 参谋 ===== -->
   <block wx:if="{{tab === 'advisor' && adv}}">
-    <!-- AI 入口：参谋的核心就是对话，做成整页最显眼的大卡片 -->
-    <view class="ai-hero" bindtap="talkSeason" hover-class="btn-hover">
+    <!-- AI 入口：参谋的核心就是对话，做成整页最显眼的大卡片。showAI=false 期间前端隐藏，后端能力不动 -->
+    <view wx:if="{{showAI}}" class="ai-hero" bindtap="talkSeason" hover-class="btn-hover">
       <view class="ai-ribbon">✨ AI</view>
       <view class="ai-mic ai-mic-glow"><image src="/assets/icons/mic_w.svg" class="ai-mic-img" mode="aspectFit" /></view>
       <view class="flex1">
@@ -72,7 +72,7 @@
       <view wx:if="{{adv.next}}" class="adv-next">下一阶段 <text class="b">{{adv.next}}</text>{{adv.eta ? '，预计 ' : ''}}<text wx:if="{{adv.eta}}" class="b">{{adv.eta}}</text><text wx:if="{{adv.eta}}" class="muted">（±{{adv.etaSpan}} 天）</text><text wx:if="{{!adv.eta}}" class="muted">，天冷暂停生长，暂不预估</text></view>
       <view class="row between" style="margin-top:14rpx">
         <text class="muted" style="font-size:22rpx">{{adv.variety ? '按「' + adv.variety + '」参数' : '未填品种，按常见品种推算'}}{{adv.calibrated ? ' · 已按你说的校准' : ''}}{{adv.missing ? ' · ' + adv.missing + ' 天缺天气' : ''}}</text>
-        <text class="adv-link" bindtap="talkStage">阶段不对？跟参谋说 ›</text>
+        <text wx:if="{{showAI}}" class="adv-link" bindtap="talkStage">阶段不对？跟参谋说 ›</text>
       </view>
     </view>
 
@@ -273,12 +273,8 @@
         </view>
       </view>
       <view class="muted" style="margin-top:12rpx;font-size:26rpx">
-        共 {{met.days}} 天，已获取 {{met.known}} 天{{met.manual ? '（手工修正 ' + met.manual + ' 天）' : ''}}{{met.missing ? '，缺 ' + met.missing + ' 天' : ''}}{{met.gdd0 !== met.gdd ? ' · 仅计0℃以上：' + met.gdd0 : ''}}{{met.maxWind !== null ? ' · 全周期最大风力 ' + met.maxWind + ' m/s' : ''}}
+        共 {{met.days}} 天，已获取 {{met.known}} 天{{met.manual ? '（手工修正 ' + met.manual + ' 天）' : ''}}{{met.missing ? '，缺 ' + met.missing + ' 天' : ''}}{{met.gdd0 !== met.gdd ? ' · 仅计0℃以上：' + met.gdd0 : ''}}{{met.maxWind !== null && met.maxWind !== undefined ? ' · 全周期最大风力 ' + met.maxWind + ' m/s' : ''}}
       </view>
-      <view wx:if="{{bars.length}}" class="bars">
-        <view wx:for="{{bars}}" wx:key="d" class="bar-c"><view class="bar" style="height:{{item.h}}%"></view></view>
-      </view>
-      <view wx:if="{{bars.length}}" class="row between muted" style="font-size:22rpx"><text>{{bars[0].d}}</text><text>近30天降雨</text><text>{{bars[bars.length-1].d}}</text></view>
       <view wx:if="{{wxMsg}}" class="warn-box">{{wxMsg}}<text wx:if="{{!met.hasLoc}}" class="link" bindtap="goPlot"> 去定位 ›</text></view>
       <view class="btn ghost small" style="margin-top:20rpx" hover-class="btn-hover" bindtap="refreshWx">{{wxLoading ? '获取中…' : '重新获取天气'}}</view>
     </view>

@@ -61,6 +61,9 @@
   "permission": {
     "scope.userLocation": {
       "desc": "用于确定地块位置，自动获取当地每日气温和降雨"
+    },
+    "scope.userFuzzyLocation": {
+      "desc": "用于确定地块位置，自动获取当地每日气温和降雨"
     }
   },
   "plugins": {
@@ -71,9 +74,10 @@
   },
   "requiredPrivateInfos": [
     "chooseLocation",
-    "getFuzzyLocation"
+    "getLocation"
   ],
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }
+

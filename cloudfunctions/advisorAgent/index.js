@@ -48,9 +48,9 @@ async function rateLimit(openid, action, cap) {
 function postJSON(url, headers, body, timeoutMs) {
   return new Promise((resolve, reject) => {
     const req = https.request(url, { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, headers) }, res => {
-      let buf = '';
-      res.on('data', c => { buf += c; });
-      res.on('end', () => resolve({ status: res.statusCode, body: buf }));
+      const chunks = []; // 不能 buf += c：中文跨 TCP 包被切开时会解码成永久的 �
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }));
     });
     req.on('error', reject);
     req.setTimeout(timeoutMs || 60000, () => req.destroy(new Error('timeout')));
@@ -61,9 +61,9 @@ function postJSON(url, headers, body, timeoutMs) {
 function getJSON(url) {
   return new Promise((resolve, reject) => {
     https.get(url, res => {
-      let buf = '';
-      res.on('data', c => { buf += c; });
-      res.on('end', () => { try { resolve(JSON.parse(buf)); } catch (e) { reject(e); } });
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (e) { reject(e); } });
     }).on('error', reject);
   });
 }
@@ -572,7 +572,8 @@ function orchPrompt(context) {
     '【今天】' + todayOf(c) + '\n' +
     '【地块】' + (plots || '还没有') + '\n' +
     '记账、花了多少、赚了多少、收入、欠款和销账、账户余额、库存、周期账、预算、记账类型 → ask_bookkeeper。记农活、删改记事、提醒和待办 → ask_logger。能不能打药、技术依据、生育期、开季收获、改播种时间播量整地、地块、选位置、改某一天天气 → ask_agronomist。\n' +
-    '闲聊可以直接答。要干活或要查农户自己的数据，必须先叫对应子代理，再用它的结论用口语回复。需要强调用 **加粗**。不要输出 JSON。';
+    '闲聊可以直接答。要干活或要查农户自己的数据，必须先叫对应子代理，再用它的结论用口语回复。需要强调用 **加粗**。不要输出 JSON。\n' +
+    '【说话规矩】你是"参谋"，不是"AI/智能体/模型"，自称和解释时都不出现这些词。用农户的话：打药、上肥、浇地、卖粮；禁用术语：上下文、工具调用、起草、落库、确认卡（对农户说"先给你拟好，你点头才记上"）。拿不准就说拿不准，给出一个能核实的办法（比如"去地里看一眼"）。数字带单位，钱说"块"或"元"同一轮只用一种。解释你干了什么时，只说查了什么、拟了什么，不提子代理分工。';
 }
 function expertPrompt(role, context) {
   const today = todayOf(context);
@@ -621,7 +622,7 @@ const EXPERTS = {
   ask_agronomist: { label: '农事决策', tools: AGRI_TOOLS, role: 'agronomist' }
 };
 
-async function runExpert(cfg, spec, request, context, openid, drafts, budget, reasons, toolTrace) {
+async function runExpert(cfg, spec, request, context, openid, drafts, budget, reasons, toolTrace, progress) {
   const messages = [
     { role: 'system', content: expertPrompt(spec.role, context) },
     { role: 'user', content: String(request || '').slice(0, 800) }
@@ -640,6 +641,7 @@ async function runExpert(cfg, spec, request, context, openid, drafts, budget, re
     for (const tc of calls) {
       const fn = tc.function || {};
       toolTrace.push(spec.label + ':' + (fn.name || ''));
+      await progress();
       let args = {};
       try { args = JSON.parse(fn.arguments || '{}'); } catch (e) { args = {}; }
       let res;
@@ -674,6 +676,13 @@ exports.main = async (event) => {
   const toolTrace = [];
   const reasons = [];
   const budget = { n: MODEL_BUDGET };
+  // 干活实况：每次工具调用把 toolTrace 快照写到 advisorProgress（_id=openid），
+  // 客户端思考期间经 advisorChat{action:'progress'} 每 2s 轮询渲染实时步骤。尽力而为，失败不阻塞。
+  const reqId = String(event.reqId || '');
+  const progress = async () => {
+    if (!reqId) return;
+    try { await db.collection('advisorProgress').doc(openid).set({ data: { reqId, trace: toolTrace.slice(-30), updatedAt: Date.now() } }); } catch (e) {}
+  };
   try {
     for (let i = 0; i < MODEL_BUDGET && budget.n > 0; i++) {
       budget.n -= 1;
@@ -690,13 +699,14 @@ exports.main = async (event) => {
       for (const tc of calls) {
         const fn = tc.function || {};
         toolTrace.push(fn.name || '');
+        await progress();
         let args = {};
         try { args = JSON.parse(fn.arguments || '{}'); } catch (e) { args = {}; }
         const spec = EXPERTS[fn.name];
         let res;
         if (!spec) res = { error: '总管只能调用三个子代理' };
         else {
-          try { res = await runExpert(cfg, spec, args.request, event.context || {}, openid, drafts, budget, reasons, toolTrace); }
+          try { res = await runExpert(cfg, spec, args.request, event.context || {}, openid, drafts, budget, reasons, toolTrace, progress); }
           catch (e) { res = { error: String(e.message || e).slice(0, 200) }; }
         }
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(res).slice(0, 4000) });

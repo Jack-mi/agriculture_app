@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>谷雨记 · 参谋AI体验三方案 · H5 设计稿</title>
+<style>
+/* ===== 谷雨记设计系统（与 miniprogram/app.wxss 1:1 对齐，1px = 2rpx） ===== */
+:root{
+  --green:#2E5B34; --green-d:#1F4024; --green-l:#E4ECDD;
+  --wheat:#C98B1E; --wheat-l:#F6E7C6;
+  --paper:#F5F0E4; --card:#FFFDF7; --ink:#1E241C; --sub:#5E6656; --line:#E3DCCB;
+  --rain:#2F6F9F; --heat:#C4532B; --danger:#B3372B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EDE7D9;color:var(--ink);line-height:1.5;
+  font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;font-size:14px}
+.wrap{max-width:1560px;margin:0 auto;padding:28px 22px 80px}
+h1{font-size:24px;margin:0 0 6px;font-weight:800}
+h1 small{font-size:13px;font-weight:400;color:var(--sub);margin-left:8px}
+.meta{color:var(--sub);font-size:13px;margin-bottom:22px}
+.meta a{color:var(--green)}
+h2.sec{font-size:17px;margin:46px 0 6px;padding-left:12px;border-left:6px solid var(--green);font-weight:800}
+h2.sec small{font-size:12.5px;font-weight:400;color:var(--sub);margin-left:10px}
+p.secnote{margin:0 0 18px;color:var(--sub);font-size:13px;max-width:900px}
+table{border-collapse:collapse;width:100%;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:14px}
+th,td{border-bottom:1px solid var(--line);padding:9px 13px;text-align:left;vertical-align:top}
+th{background:#EFE9DA;font-weight:700;font-size:12.5px;color:var(--sub);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+code{background:#EFE9DA;border-radius:4px;padding:1px 5px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(375px,1fr));gap:34px 24px;align-items:start}
+.frame{display:flex;flex-direction:column;gap:10px;break-inside:avoid}
+.cap{font-size:12.5px;color:var(--sub);line-height:1.6}
+.cap b{color:var(--ink)}
+
+/* 手机框 */
+.dev{width:375px;background:var(--paper);border-radius:20px;border:1px solid #CFC6B2;
+  box-shadow:0 10px 26px rgba(30,36,28,.14);overflow:hidden;display:flex;flex-direction:column}
+.sbar{display:flex;justify-content:space-between;padding:9px 20px 3px;font-size:11px;color:var(--sub)}
+.sbar b{font-weight:700}
+.nav{display:flex;align-items:center;background:var(--green);color:#fff;padding:11px 16px}
+.nav .grow{flex:1;text-align:center;font-size:17px;font-weight:700}
+.chatbody{padding:12px 14px 18px;display:flex;flex-direction:column;gap:10px;min-height:300px;flex:1}
+
+/* ===== 聊天气泡（对齐 pages/chat/chat.wxss） ===== */
+.msg{display:flex}
+.msg.me{justify-content:flex-end}
+.bub{max-width:270px;border-radius:12px;padding:9px 12px;font-size:15px;line-height:1.5}
+.bub.me{background:var(--green);color:#fff;border-bottom-right-radius:3px}
+.bub.ai{background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.bub.wide{max-width:100%;flex:1}
+.lv{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;flex-shrink:0}
+.lv.org{background:var(--wheat-l);color:#7A5210}
+.lv.blu{background:#DCE8F2;color:#235778}
+.lv.red{background:#F8DDD3;color:#A33A18}
+.act{background:#FBF8EF;border:1px solid var(--line);border-radius:9px;padding:9px 10px;margin-top:7px}
+.act .row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.act-t{font-weight:700;font-size:14.5px}
+.act-r{font-size:13.5px;margin-top:2px}
+.act-b{display:flex;gap:7px;margin-top:8px}
+.btn{flex:1;height:36px;line-height:36px;text-align:center;border-radius:8px;font-size:14px;border:1px solid var(--line);background:#fff}
+.btn.pri{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.ghost{color:var(--sub)}
+.reason{display:flex;align-items:center;justify-content:space-between;color:var(--sub);font-size:12px;margin-bottom:6px;cursor:pointer}
+.reason-act{color:var(--green);font-weight:700}
+
+/* ===== 方案一：提示集 & chips ===== */
+.prompts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.prompt{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+  border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14.5px;cursor:pointer}
+.prompt .arw{color:var(--green);font-weight:700}
+.prompt .tag{font-size:11px;color:var(--sub);margin-right:8px;border:1px solid var(--line);border-radius:4px;padding:0 5px;flex-shrink:0}
+.prompt .txt{flex:1}
+.chips{display:flex;gap:8px;padding:8px 14px 0;overflow:hidden}
+.chip{flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:16px;
+  padding:5px 12px;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.bar{background:var(--card);border-top:1px solid var(--line);padding:8px 14px 14px;display:flex;gap:8px;align-items:center}
+.ib{width:40px;height:40px;border-radius:20px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;color:var(--sub)}
+.tin{flex:1;height:40px;background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:14px;color:#B9B2A0;display:flex;align-items:center}
+.send{width:60px;height:40px;line-height:40px;text-align:center;font-size:14px;background:var(--green);color:#fff;border-radius:8px;font-weight:700}
+.headctx{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:9px;padding:8px 10px;margin:10px 14px 0;font-size:14px}
+.headctx .t{font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== 方案二：思维链步骤 ===== */
+.steps{margin:6px 0 8px;border-left:2px solid var(--green-l);padding-left:10px;display:flex;flex-direction:column;gap:6px}
+.step{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink)}
+.step .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.step .dot.sub{background:#B9C7AE}
+.step .n{color:var(--sub);font-size:12px}
+.rawthink{display:block;font-size:12px;line-height:1.5;color:var(--sub);background:#F7F4EC;border-radius:6px;padding:8px 10px;margin-top:6px}
+.dev .foldhid{display:none}
+.dev.open .foldhid{display:block}
+.dev.open .foldarrow{transform:rotate(90deg)}
+.foldarrow{display:inline-block;transition:transform .15s}
+
+/* ===== 方案三：话术对照 & checklist ===== */
+.persona{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;max-width:900px}
+.persona .who{font-size:16px;font-weight:800;margin-bottom:8px}
+.persona ul{margin:8px 0 0;padding-left:20px}
+.persona li{margin:4px 0;font-size:13.5px}
+.ck{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:14px}
+.cki{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;display:flex;gap:9px}
+.cki .no{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ban{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ban .bad{background:#F8DDD3;color:#A33A18;border-radius:6px;padding:3px 10px;font-size:12.5px;text-decoration:line-through}
+.ban .good{background:var(--green-l);color:var(--green-d);border-radius:6px;padding:3px 10px;font-size:12.5px;font-weight:700}
+.sumrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:14px}
+.sumc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.sumc h3{margin:0 0 6px;font-size:15px}
+.sumc .cost{display:inline-block;background:var(--wheat-l);color:#7A5210;font-size:12px;font-weight:700;border-radius:5px;padding:2px 8px;margin-bottom:8px}
+.sumc p{margin:4px 0;font-size:13px;color:var(--sub)}
+.sumc p b{color:var(--ink)}
+.footer{margin-top:50px;color:var(--sub);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>谷雨记 · 参谋 AI 体验三方案<small>H5 可视化设计稿 · 2026-10-07</small></h1>
+<div class="meta">
+来源：Ant Design X 调研（RICH 范式照搬，组件库本身为 React 不可直接接入） ·
+对应文字稿：<code>docs/design/参谋AI体验三方案.md</code> ·
+关键前提：<b>chipsFor 已写未接线</b>、<b>toolTrace 云函数已返回但客户端丢弃</b> → 方案一、二零云函数改动。
+点手机里的「展开/收起」可交互演示。
+</div>
+
+<div class="sumrow">
+  <div class="sumc">
+    <span class="cost">0.5 天 · 纯前端</span>
+    <h3>方案一 · 空会话提示集</h3>
+    <p>农户打开不知道能问啥 → 开场 4 条可点提示（点击直接发送）+ 输入栏上方常驻快捷条（接线现有 <code>chipsFor</code>）。</p>
+    <p><b>对应 Ant X：</b>Prompts / Suggestion / 意图预期引导</p>
+  </div>
+  <div class="sumc">
+    <span class="cost">0.5 天 · 纯前端</span>
+    <h3>方案二 · 思维链步骤化</h3>
+    <p>农户只看到"想了 N 秒" → 把 <code>toolTrace</code> 翻译成人话步骤："叫来记账参谋 → 翻了账本"。非流式不做假进度，只展示真实发生过的事。</p>
+    <p><b>对应 Ant X：</b>ThoughtChain / Think</p>
+  </div>
+  <div class="sumc">
+    <span class="cost">0.5 小时 · 需部署云函数</span>
+    <h3>方案三 · 角色与话术规范</h3>
+    <p>参谋 persona 定义 + orchPrompt「说话规矩」增补 + 10 条评审 checklist，以后所有对话文案改动照此过审。</p>
+    <p><b>对应 Ant X：</b>Role / Conversation 设计规范</p>
+  </div>
+</div>
+
+<!-- ================= 方案一 ================= -->
+<h2 class="sec">方案一 · 空会话提示集<small>收益最大、零风险、纯前端，先做</small></h2>
+<p class="secnote">两层结构：A. 开场提示集（仅空会话出现一次，点击直接发送）；B. 常驻快捷条（复用现有 chipsFor，发问后收起）。</p>
+
+<div class="grid">
+
+<div class="frame">
+  <div class="dev">
+    <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+    <div class="nav"><span class="grow">跟参谋说</span></div>
+    <div class="chatbody">
+      <div class="msg"><div class="bub ai">想记点啥、问点啥，直接说。比如「后天提醒我去河边地打药」。</div></div>
+      <div class="msg wide"><div class="bub ai wide">
+        <div style="font-size:12px;color:var(--sub);margin-bottom:6px">不知道问啥？点一个试试 ↓</div>
+        <div class="prompts">
+          <div class="prompt"><span class="txt">接下来地里该干啥</span><span class="arw">›</span></div>
+          <div class="prompt"><span class="txt">今天干了活，帮我记一笔</span><span class="arw">›</span></div>
+          <div class="prompt"><span class="txt">这季到现在花了多少钱</span><span class="arw">›</span></div>
+          <div class="prompt"><span class="txt">提醒我后天去河边地打药</span><span class="arw">›</span></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="bar"><div class="ib">📷</div><div class="tin">说点什么…</div><div class="send">发送</div><div class="ib">🎤</div></div>
+  </div>
+  <div class="cap"><b>A · 空会话开场（无上下文）</b>：欢迎语下接 4 条大按钮，第一条必须是"收益型"问题，让农户先尝到问答的甜头。点一下<b>直接发送</b>，不填输入框。</div>
+</div>
+
+<div class="frame">
+  <div class="dev">
+    <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+    <div class="nav"><span class="grow">跟参谋说</span></div>
+    <div class="headctx"><span class="lv org">任务</span><span class="t">河边地 · 打药防治蚜虫</span><span style="color:var(--sub);font-size:12px">明天到期</span></div>
+    <div class="chatbody">
+      <div class="msg"><div class="bub ai">这条任务有啥要改的？直接说地里的实际情况。</div></div>
+      <div class="msg wide"><div class="bub ai wide">
+        <div class="prompts">
+          <div class="prompt"><span class="txt">这条任务往后推两天</span><span class="arw">›</span></div>
+          <div class="prompt"><span class="txt">已经干完了</span><span class="arw">›</span></div>
+          <div class="prompt"><span class="txt">这条不做了，以后也别推</span><span class="arw">›</span></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="bar"><div class="ib">📷</div><div class="tin">说点什么…</div><div class="send">发送</div><div class="ib">🎤</div></div>
+  </div>
+  <div class="cap"><b>A · 带任务上下文进入</b>：提示集换成任务版三条，全部对齐现有 draft 动作（task.update / task.complete / task.dismiss），模型 100% 能接住。</div>
+</div>
+
+<div class="frame">
+  <div class="dev">
+    <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+    <div class="nav"><span class="grow">跟参谋说</span></div>
+    <div class="chatbody">
+      <div class="msg"><div class="bub ai">想记点啥、问点啥，直接说。</div></div>
+    </div>
+    <div class="chips">
+      <div class="chip">提醒我…</div>
+      <div class="chip">今天干了啥活</div>
+      <div class="chip">你记住了啥</div>
+    </div>
+    <div class="bar"><div class="ib">📷</div><div class="tin">说点什么…</div><div class="send">发送</div><div class="ib">🎤</div></div>
+  </div>
+  <div class="cap"><b>B · 常驻快捷条</b>：输入栏上方一行 chips，文案就是现有 <code>chipsFor(ctx)</code> 的三条（上图是无上下文版）。用户发出任意一条消息后收起，不再出现，避免抢注意力。</div>
+</div>
+
+</div>
+
+<table>
+  <tr><th>规则</th><th>说明</th></tr>
+  <tr><td>出现时机</td><td>仅 <code>setHello()</code> 路径（无本地/云端历史）；历史会话拉回（chatlog.pull 成功）时不显示</td></tr>
+  <tr><td>消失时机</td><td>点击任一提示即发送并移除提示集；persist 后重进不再出现（用户消息已存在）</td></tr>
+  <tr><td>与语音关系</td><td>无冲突，点提示等价于说了一句话</td></tr>
+  <tr><td>改动文件</td><td><code>pages/chat/chat.js</code>（setHello 挂 prompts + tapPrompt/tapChip）· <code>chat.wxml</code> · <code>chat.wxss</code> · 云函数零改动</td></tr>
+</table>
+
+<!-- ================= 方案二 ================= -->
+<h2 class="sec">方案二 · 思维链步骤化<small>toolTrace 已在回包里，客户端接住即可</small></h2>
+<p class="secnote">云函数非流式（stream:false），等待过程拿不到中间步骤——不做假进度，等待态维持"思考中…N 秒"；回复到达后把真实 toolTrace 翻译成人话步骤展示。点下面手机里的「参谋干了这些」可折叠演示。</p>
+
+<div class="grid">
+
+<div class="frame">
+  <div class="dev open" onclick="this.classList.toggle('open')">
+    <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+    <div class="nav"><span class="grow">跟参谋说</span></div>
+    <div class="chatbody">
+      <div class="msg me"><div class="bub me">这季到现在花了多少钱</div></div>
+      <div class="msg wide"><div class="bub ai wide">
+        <div class="reason"><span><span class="foldarrow">▸</span> 参谋干了这些</span><span class="reason-act">收起</span></div>
+        <div class="foldhid">
+          <div class="steps">
+            <div class="step"><span class="dot"></span>叫来记账参谋</div>
+            <div class="step"><span class="dot sub"></span>翻了账本 <span class="n">（2 次）</span></div>
+            <div class="step"><span class="dot sub"></span>对了预算</div>
+            <div class="step"><span class="dot sub"></span>拟好了 1 张确认卡</div>
+          </div>
+          <div class="reason" style="margin-top:6px"><span>看原始思考</span><span class="reason-act">展开</span></div>
+        </div>
+        这季到现在一共花了 <b>4,260 元</b>，大头是农资投入 2,800 元。预算 6,000 元，用了 71%，后面追肥和机收还够。
+      </div></div>
+    </div>
+    <div class="bar"><div class="ib">📷</div><div class="tin">说点什么…</div><div class="send">发送</div><div class="ib">🎤</div></div>
+  </div>
+  <div class="cap"><b>展开态</b>：步骤列表替代干巴巴的"已思考"。总管步骤（叫来XX参谋）用深点，子代理动作用浅点；连续相同步骤合并为「翻了 3 次账本」；draft_* 折叠成一条（卡片本身会展示）。原始 reasoning 收到二级入口，排查问题时可看。</div>
+</div>
+
+<div class="frame">
+  <div class="dev">
+    <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+    <div class="nav"><span class="grow">跟参谋说</span></div>
+    <div class="chatbody">
+      <div class="msg me"><div class="bub me">后天能打药吗</div></div>
+      <div class="msg wide"><div class="bub ai wide">
+        <div class="reason"><span><span class="foldarrow">▸</span> 参谋干了这些</span><span class="reason-act">展开</span></div>
+        后天（10月9日）白天没雨、风速 2 级，<b>可以打</b>。上午 10 点前打完比较稳妥。给你拟好了任务，确认就记上。
+        <div class="act">
+          <div class="row"><span class="lv org">新任务</span><span class="act-t">河边地 · 打药</span></div>
+          <div class="act-r">日期 10月9日 · 来源：参谋建议</div>
+          <div class="act-b"><div class="btn ghost">不对</div><div class="btn pri">加成任务</div></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="bar"><div class="ib">📷</div><div class="tin">说点什么…</div><div class="send">发送</div><div class="ib">🎤</div></div>
+  </div>
+  <div class="cap"><b>默认折叠态</b>：不占版面，只有一行"参谋干了这些 ▸ 展开"。展开后是「叫来农事参谋 → 看了天气 → 核对了打药安全」。步骤区与确认卡共存互不干扰。</div>
+</div>
+
+<div class="frame">
+  <div class="dev">
+    <div class="sbar"><b>9:41</b><span>谷雨记</span></div>
+    <div class="nav"><span class="grow">跟参谋说</span></div>
+    <div class="chatbody">
+      <div class="msg me"><div class="bub me">你好</div></div>
+      <div class="msg"><div class="bub ai">你好，想问点啥、记点啥，直接说。</div></div>
+      <div class="msg me"><div class="bub me">你看这叶子是咋了</div></div>
+      <div class="msg"><div class="bub ai" style="color:var(--sub)">思考中…（已等 12 秒）</div></div>
+    </div>
+    <div class="bar"><div class="ib">📷</div><div class="tin">说点什么…</div><div class="send">发送</div><div class="ib">🎤</div></div>
+  </div>
+  <div class="cap"><b>两个边界</b>：① 闲聊直接答（空 trace）→ 不出现"参谋干了这些"，避免"啥也没干"的尴尬；② 等待态维持现有"思考中…N 秒"不动——非流式拿不到中间步骤，不做假进度滚动。</div>
+</div>
+
+</div>
+
+<table>
+  <tr><th>toolTrace 条目</th><th>展示文案</th><th>toolTrace 条目</th><th>展示文案</th></tr>
+  <tr><td><code>ask_bookkeeper / logger / agronomist</code></td><td>叫来记账/记事/农事参谋</td><td><code>*:query_weather / weather_forecast</code></td><td>看了天气</td></tr>
+  <tr><td><code>*:query_costs / query_summary</code></td><td>翻了账本</td><td><code>*:kb_search</code></td><td>查了农技资料</td></tr>
+  <tr><td><code>*:query_debts</code></td><td>查了欠款</td><td><code>*:pesticide_check</code></td><td>核对了打药安全</td></tr>
+  <tr><td><code>*:query_accounts</code></td><td>看了账户余额</td><td><code>*:memory_search</code></td><td>翻了记住的事</td></tr>
+  <tr><td><code>*:query_stock / query_budget</code></td><td>查了库存 / 对了预算</td><td><code>*:query_logs / query_tasks</code></td><td>翻了农事记录 / 看了待办</td></tr>
+  <tr><td><code>*:query_plots / query_seasons</code></td><td>看了地块和种植季</td><td><code>*:draft_*</code></td><td>拟好了 N 张确认卡（合并一条）</td></tr>
+  <tr><td><code>*:query_recurring / templates</code></td><td>查了周期账/常用账</td><td><i>映射表之外的新工具</i></td><td>兜底：「查了一下资料」，不裸奔英文</td></tr>
+</table>
+<p class="secnote" style="margin-top:10px">改动文件：<code>utils/chat.js</code>（askAgent 接 toolTrace + parseTrace 纯函数约 60 行，附 node 自检）· <code>pages/chat/chat.js</code> · <code>chat.wxml/wxss</code> · 云函数零改动。</p>
+
+<!-- ================= 方案三 ================= -->
+<h2 class="sec">方案三 · 角色与话术规范<small>persona + prompt 增补 + 10 条评审 checklist</small></h2>
+
+<div class="persona">
+  <div class="who">参谋是谁：村里懂技术、管过账的老把式</div>
+  <ul>
+    <li>说人话，农户怎么说就跟着怎么说（"打药""上肥"，不说"植保作业""追肥操作"）。</li>
+    <li>先给结论再给依据；不确定就说不确定，不编。</li>
+    <li>不端着、不客气话连篇；一句能说清不说两句。</li>
+    <li>数字带单位，日期说"明天/后天（10月8日）"这种农户口径。</li>
+  </ul>
+  <div class="ban">
+    <span class="bad">智能体</span><span class="bad">子代理</span><span class="bad">模型</span><span class="bad">上下文</span><span class="bad">落库</span><span class="bad">草稿</span><span class="bad">token</span><span class="bad">prompt</span>
+    <span class="good">→ 参谋</span><span class="good">→ 先给你拟好，你点头才记上</span>
+  </div>
+</div>
+
+<table>
+  <tr><th>场景</th><th>改前（现状/反面）</th><th>改后（规范口径）</th></tr>
+  <tr><td>解释干活过程</td><td>"我调用了记账子代理查询了你的成本数据"</td><td>"我翻了你的账本"</td></tr>
+  <tr><td>确认卡说明</td><td>"已生成草稿，待确认后落库"</td><td>"先给你拟好了，你点头才记上"</td></tr>
+  <tr><td>失败话术</td><td>"upstream 500 / 请求超时"</td><td>"参谋暂时连不上，稍后再试"</td></tr>
+  <tr><td>拿不准</td><td>（编一个看似合理的答案）</td><td>"这个我拿不准，你去地里看一眼苗情再定"</td></tr>
+  <tr><td>钱的表达</td><td>"支出4260"</td><td>"一共花了 4,260 元"（金额+单位+方向齐全）</td></tr>
+</table>
+
+<p class="secnote" style="margin-top:16px"><b>评审 checklist</b>：新对话文案 / 提示词 / 卡片模板合入前逐条过——</p>
+<div class="ck">
+  <div class="cki"><span class="no">1</span>全文搜不到"智能体、子代理、模型、上下文、落库、草稿、token、prompt"</div>
+  <div class="cki"><span class="no">2</span>失败话术是"参谋暂时连不上"这一族，不暴露技术原因</div>
+  <div class="cki"><span class="no">3</span>涉及钱：金额、单位、方向（进/出）三者齐全</div>
+  <div class="cki"><span class="no">4</span>涉及日期：相对日+绝对日至少其一，不跨时区歧义</div>
+  <div class="cki"><span class="no">5</span>确认卡标题不看详情就知道要确认什么</div>
+  <div class="cki"><span class="no">6</span>删除/作废类说清"不能恢复"或"回收站 30 天"</div>
+  <div class="cki"><span class="no">7</span>同一轮回复人称一致（永远"你"，不混"您"）</div>
+  <div class="cki"><span class="no">8</span>建议类输出给了依据来源（天气/资料/账本），不空口下结论</div>
+  <div class="cki"><span class="no">9</span>单条回复读一遍不超 20 秒（约 120 字内，超了拆条）</div>
+  <div class="cki"><span class="no">10</span>新提示文案在真机上过一遍语音输入场景</div>
+</div>
+<p class="secnote" style="margin-top:10px">落地：<code>cloudfunctions/advisorAgent/index.js</code> 的 orchPrompt 追加「说话规矩」五条（文字稿里有可直接抄的 patch），改完重新部署云函数；expertPrompt 不动（子代理输出是中间层）。</p>
+
+<!-- ================= 实施顺序 ================= -->
+<h2 class="sec">实施顺序<small>合计约 1.5 人日，彼此无依赖</small></h2>
+<div class="sumrow">
+  <div class="sumc"><h3>① 方案一 + 方案二 同批</h3><p>都是 chat 页改动，一次模拟器验证、一个版本带上。方案一验收 4 条 + 方案二验收 4 条见文字稿。</p></div>
+  <div class="sumc"><h3>② 方案三 单独提交</h3><p>涉及云函数重新部署，部署后按验收标准抽查三个典型问题 + 断网失败话术。</p></div>
+  <div class="sumc"><h3>③ 不做的</h3><p>不引入 TDesign Chat 组件（现有手写实现 300 行已稳定，换库负收益）；不做实时步骤滚动（非流式，假进度）。</p></div>
+</div>
+
+<div class="footer">谷雨记 · 参谋 AI 体验三方案 · 设计系统与 miniprogram/app.wxss 1:1 对齐 · 2026-10-07</div>
+
+</div>
+</body>
+</html>

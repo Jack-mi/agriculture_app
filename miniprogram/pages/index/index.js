@@ -10,9 +10,10 @@ const U = require('../../utils/util.js');
 const C = require('../../utils/const.js');
 
 Page({
-  data: { todayText: '', week: '', hasPlots: false, growing: 0, online: true, wxLine: '', month: '0', v: null, showLater: false, recent: [], tpls: [], loading: false,
+  // showAI：参谋入口前端总开关（true=正常展示跟参谋说卡片；曾按 2026-10-08 要求临时隐藏）
+  data: { showAI: true, todayText: '', week: '', hasPlots: false, growing: 0, online: true, wxLine: '', month: '0', v: null, showLater: false, tpls: [], loading: false,
     nick: '', lm: null,
-    money: {}, debt: {}, stock: {}, dueCount: 0 },
+    money: {}, stock: {}, dueCount: 0, showWeek: false, weekShow: [], weekRest: 0 },
 
   onShow() {
     this.render();
@@ -44,33 +45,12 @@ Page({
       if (fc && fc.tmin !== null) wxLine = (p.address || p.name || '') + ' · ' + Math.round(fc.tmin) + '–' + Math.round(fc.tmax) + '℃' + (fc.p >= 1 ? ' · 今天有雨 ' + fc.p + 'mm' : '') + (!rain7 && advisor.forecastOf(s0.plotId).length ? ' · 未来 7 天无雨' : '');
       else if (w) wxLine = (p.name || '') + ' · 均温 ' + w.t + '℃ · 降雨 ' + w.p + 'mm';
     }
-    // 最近记的（日志 + 账目混排，最多 3 条）
-    const d = store.db();
-    const plotOf = sid => { const s = store.seasons.get(sid); return s ? (store.plots.get(s.plotId) || {}).name : ''; };
-    const recent = d.logs.filter(l => !l.deletedAt).map(l => ({ id: l.id, kind: 'log', date: l.date, at: l.createdAt, title: (l.ops || []).join(' · ') || '记事', sub: plotOf(l.seasonId) + (l.text ? ' · ' + l.text.slice(0, 14) : ''), amt: '', inc: false }))
-      .concat(d.costs.filter(c => !c.deletedAt).map(c => ({
-        id: c.id, kind: 'cost', date: c.date, at: c.createdAt,
-        title: C.catOf(c.cat).name + ' · ' + (c.sub || ''),
-        sub: store.costs.allocOf(c).map(a => plotOf(a.seasonId)).join('、'),
-        amt: (store.isIncome(c) ? '＋' : '−') + '¥' + U.money(store.allocTotal(c)),
-        inc: store.isIncome(c)
-      })))
-      .sort((a, b) => (a.date === b.date ? b.at - a.at : (b.date > a.date ? 1 : -1))).slice(0, 3)
-      .map(x => Object.assign(x, { dateText: (+x.date.slice(5, 7)) + '/' + (+x.date.slice(8)) }));
     const tpls = store.tags.templates().slice(0, 6).map(x => ({ id: x.id, name: x.name, icon: C.iconOf(x.sub, x.cat), color: C.catOf(x.cat).color, desc: stats.tplDesc(x) }));
     // 本月收支与净收
     const ms = stats.monthSpend(t.slice(0, 7));
     const money = {
       income: ms.incomeText, expense: ms.totalText, net: ms.netText, netPos: ms.net >= 0,
       hasIncome: ms.income > 0, hasAny: ms.income > 0 || ms.total > 0
-    };
-    // 待收待付
-    const ds = stats.debtSummary();
-    const debt = {
-      has: ds.hasAny,
-      recv: ds.receivable.totalText, recvCount: ds.receivable.count, recvOverdue: ds.receivable.overdueCount,
-      pay: ds.payable.totalText, payCount: ds.payable.count,
-      overdue: ds.receivable.overdueCount + ds.payable.overdueCount
     };
     // 库存预警（只提醒最低的一项）
     const ss = stats.stockSummary();
@@ -96,7 +76,8 @@ Page({
       todayText: U.cnDate(t), week: U.weekday(t), hasPlots: store.plots.all().length > 0, growing: growing.length,
       online: getApp().globalData.online, wxLine, month: ms.totalText,
       nick, lm,
-      v, recent, tpls, money, debt, stock, dueCount, briefs, budget,
+      v, tpls, money, stock, dueCount, briefs, budget,
+      weekShow: v.week.slice(0, this.data.showWeek ? 99 : 3), weekRest: Math.max(0, v.week.length - 3),
       nextText: v.nextTask ? v.nextTask.plot + ' ' + v.nextTask.title : '',
       nextDue: v.nextTask ? v.nextTask.due : ''
     });
@@ -104,13 +85,13 @@ Page({
   },
 
   toggleLater() { this.setData({ showLater: !this.data.showLater }); },
+  toggleWeek() {
+    const open = !this.data.showWeek;
+    this.setData({ showWeek: open, weekShow: open ? this.data.v.week : this.data.v.week.slice(0, 3) });
+  },
   goTask(e) { wx.navigateTo({ url: '/pages/task/task?id=' + encodeURIComponent(e.currentTarget.dataset.id) }); },
   goAlert(e) { wx.navigateTo({ url: '/pages/alert/alert?key=' + encodeURIComponent(e.currentTarget.dataset.key) }); },
   goSeason(e) { wx.navigateTo({ url: '/pages/season/season?id=' + e.currentTarget.dataset.id + '&tab=advisor' }); },
-  goRecent(e) {
-    const { id, kind } = e.currentTarget.dataset;
-    wx.navigateTo({ url: kind === 'log' ? '/pages/log-edit/log-edit?id=' + id : '/pages/cost-detail/cost-detail?id=' + id });
-  },
   pickSeason(cb) {
     const g = store.seasons.growing();
     if (!g.length) return U.toast('先开一季');
@@ -126,8 +107,6 @@ Page({
     wx.navigateTo({ url: '/pages/cost-edit/cost-edit?seasonId=' + g[0].id + '&tpl=' + e.currentTarget.dataset.id });
   },
   goTpl() { wx.navigateTo({ url: '/pages/tags/tags?tab=tpl' }); },
-  goLedger() { wx.switchTab({ url: '/pages/ledger/ledger' }); },
-  goDebt() { wx.navigateTo({ url: '/pages/debt/debt' }); },
   goStock() { wx.navigateTo({ url: '/pages/stock/stock' }); },
   goReport() { wx.navigateTo({ url: '/pages/report/report' }); },
   goBudget() { wx.navigateTo({ url: '/pages/budget/budget' }); },
