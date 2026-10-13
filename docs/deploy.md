@@ -118,6 +118,7 @@
 >   - ⚠️ 踩坑：`app.json` 的 `requiredPrivateInfos` 里 `getLocation` 与 `getFuzzyLocation` **互斥**，同时声明上传直接编译失败；声明 `getLocation` 即覆盖模糊定位调用（最终只留 `chooseLocation` + `getLocation`）
 >   - 体验版二维码：10-12 旧码已过期，新码待从 mp 版本管理下载（wxa/get_qrcode API 对当前 token 返回 40014，未走通）
 > - **2026-10-13 平台侧**：`wx.getLocation` 审核通过；「深度合成 > AI问答」类目审核通过（类目=综合工具(主营)/记账/日历/备忘录/天气/AI问答，「商业服务」已删）
+> - **2026-10-13 首跑前加固**：微信 `time` 类型字段文档口径为「15:01 / 2019年10月1日 15:01」，原 ISO「2026-10-14 06:30:00」有 47003 风险 → time29/time30 改中文格式（weatherDaily 已重部署+timeout 120s）。探针实测：注入 weather/task 额度 + 明天到期测试任务 → Invoke → 两类额度均 43101 清零、errs 为空（无 47003 格式错误；43101 与数据校验的先后未知，最终确认仍待首个真实送达）。测试任务/额度已清理。alert 路径因未来 10 天无极端天气未触发，属正常。
 > - **2026-10-13 subInc 入账链路云端实测通过**：模拟器运行时直接 `callFunction login {subInc:{weather:2,alert:1,task:7,bogus:9}}` → 返回 `{weather:2,alert:1,task:5}`（白名单过滤 bogus、单次 clamp ≤5 均生效）；测试额度已清零。⚠️ 教训：login 第一次部署后实测是旧代码（subInc 静默无效、返回全 0），重新部署后正常——**部署云函数后必须实测一次再信**。「我的 → 消息提醒」入口渲染实测 `docs/design/verify/mine-submsg-entry.jpg`（额度文案准确显示 0 条）。
 > - **2026-10-13 订阅消息收口验证**：体验码已下载 `docs/trial-qr-0.10.0.png`（mp 版本管理 → 体验版 → 点击「扫描访问体验版」弹窗内取图，**该二维码 10月20日前有效**；`wxa/get_qrcode` API 对 stable_token 和 legacy token 均返回 40014，确认走不通，只能后台取）。模拟器实测：首页「开启每日提醒」横幅正常渲染（`docs/design/verify/index-submsg-banner.jpg`），点击弹起订阅面板（`docs/design/verify/submsg-panel.jpg`）。⚠️ 两个待真机确认：① 模拟器面板只显示「天气提醒」一条（请求里带了三条 tmplIds，真机应显示三条勾选列表）；② 模拟器的原生订阅弹窗 automator 点不到（选择器/坐标触摸都够不着原生层），「允许」后的 subInc 入账链路未在模拟器闭环。
 > - **2026-10-13：体验版 `0.10.0` 已上传**（订阅消息全链路 + 参谋入口恢复显示；新体验码待从 mp 版本管理下载）

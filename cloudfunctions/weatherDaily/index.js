@@ -60,6 +60,8 @@ async function wxAccessToken(cfg) {
 
 function cut(s, n) { s = String(s === null || s === undefined ? '' : s); return s.length > n ? s.slice(0, n) : s; }
 function md(d) { return (+d.slice(5, 7)) + '月' + (+d.slice(8)) + '日'; }
+// time 类型字段：微信文档口径是「15:01」或「2019年10月1日 15:01」，ISO 横杠格式可能 47003
+function cnDate(d) { return (+d.slice(0, 4)) + '年' + (+d.slice(5, 7)) + '月' + (+d.slice(8, 10)) + '日'; }
 
 // 灾害预警规则：与客户端 utils/advisor.js alertsOf 保持一致（那边首页展示，这边推送）
 function evalAlerts(days, today) {
@@ -150,8 +152,8 @@ function buildAlert(today, plot, a) {
 function buildTask(today, t) {
   return {
     thing28: { value: cut((t.ops && t.ops.length ? t.ops.join('、') : '农事作业'), 20) },
-    time29: { value: t.dueStart },
-    time30: { value: today + ' 06:30:00' },
+    time29: { value: cnDate(t.dueStart) },
+    time30: { value: cnDate(today) + ' 06:30' },
     thing31: { value: cut(t.title || '农事任务', 20) }
   };
 }
