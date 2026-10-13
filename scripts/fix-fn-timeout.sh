@@ -58,7 +58,7 @@ def tc3(action, params):
     return json.load(urllib.request.urlopen(req))
 
 for fn, timeout in [('advisorAgent', 60), ('advisorChat', 30),
-                    ('weatherBackfill', 20), ('weatherDaily', 60), ('weatherForecast', 10)]:
+                    ('weatherBackfill', 20), ('weatherDaily', 120), ('weatherForecast', 10)]:
     r = tc3('UpdateFunctionConfiguration',
             {'FunctionName': fn, 'Namespace': env_id, 'Timeout': timeout})
     err = r.get('Response', {}).get('Error')

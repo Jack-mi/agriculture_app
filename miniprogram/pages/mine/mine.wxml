@@ -27,6 +27,15 @@
       </view>
       <text class="muted">›</text>
     </view>
+
+    <view class="item" bindtap="askSubs">
+      <view class="it-ic"><image class="it-img" src="/assets/icons/clock_green.svg" /></view>
+      <view class="flex1">
+        <view class="it">消息提醒</view>
+        <view class="muted" style="font-size:26rpx">{{subState}}</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
   </view>
 
   <view class="card list">

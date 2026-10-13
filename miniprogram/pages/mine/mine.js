@@ -3,6 +3,7 @@
 const store = require('../../utils/store.js');
 const U = require('../../utils/util.js');
 const sync = require('../../utils/sync.js');
+const submsg = require('../../utils/submsg.js');
 
 // 上次同步距今多久（给人看的粗粒度，够用就行）
 function ago(ts) {
@@ -14,7 +15,7 @@ function ago(ts) {
 }
 
 Page({
-  data: { sync: { state: '', ok: false }, profile: { nickName: '', avatarUrl: '' }, login: { state: '', ok: false } },
+  data: { sync: { state: '', ok: false }, profile: { nickName: '', avatarUrl: '' }, login: { state: '', ok: false }, subState: '' },
 
   onShow() {
     const gd = (getApp() || {}).globalData || {};
@@ -35,8 +36,10 @@ Page({
     const login = !gd.cloudEnv ? { state: '未连接云端', ok: false }
       : openid ? { state: '微信已登录', ok: true }
       : { state: '未登录，点我重新登录', ok: false };
+    const sb = submsg.credits();
+    const subState = '剩 ' + (sb.weather || 0) + ' 条天气 · ' + (sb.alert || 0) + ' 条预警 · ' + (sb.task || 0) + ' 条任务提醒';
     this.setData({
-      sync: { state, ok }, login, profile: sync.profile()
+      sync: { state, ok }, login, profile: sync.profile(), subState
     });
     // 首次进「我的」且还没设过头像昵称：一次性引导（各点一下就用微信的）
     const p = this.data.profile;
@@ -104,6 +107,15 @@ Page({
 
   // 记账设置：压成一行，点进去才是 类型管理 / 记账键盘 / 回收站（用户要求）
   goLedgerSettings() { wx.navigateTo({ url: '/pages/ledger-settings/ledger-settings' }); },
+
+  // 消息提醒：一次性订阅，点一次补一类一条额度（天气/灾害预警/任务）
+  askSubs() {
+    submsg.ask(null, U.today()).then(r => {
+      if (r.accepted.length) U.toast('已开启，到点会推微信通知');
+      else U.toast('没开也没关系，首页随时能再开');
+      this.onShow();
+    });
+  },
 
   about() {
     wx.showModal({

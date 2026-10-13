@@ -91,6 +91,15 @@
       </view>
       <text class="muted">›</text>
     </view>
+    <!-- 订阅消息开启横幅：额度低于水位时出现，点一下补上三类提醒（天气/灾害预警/任务） -->
+    <view wx:if="{{subAsk}}" class="mbar" bindtap="askSubs" hover-class="btn-hover">
+      <text class="mb-ic" style="background:var(--green-l);color:var(--green)">铃</text>
+      <view class="flex1">
+        <view class="mb-t">开启每日提醒</view>
+        <view class="mb-s">早上推天气、灾害预警和到期任务，直接到微信</view>
+      </view>
+      <text class="muted">›</text>
+    </view>
     <view wx:if="{{stock.warn}}" class="mbar" bindtap="goStock" hover-class="btn-hover">
       <text class="mb-ic" style="background:#F8E1D6;color:#C4532B">库</text>
       <view class="flex1"><view class="mb-t">{{stock.text}}</view><view class="mb-s">点开去入库</view></view>

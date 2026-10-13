@@ -16,6 +16,7 @@ const OPENID_KEY = 'guyuji_openid';
 const TAGS_DOCID_KEY = 'guyuji_tags_docid';
 const DEAD_KEY = 'guyuji_deadletter';
 const PROFILE_KEY = 'guyuji_profile';
+const SUBS_KEY = 'guyuji_subs';
 // 单条连续失败上限：超过就从 outbox 挪进死信，否则一条永久性错误（权限/数据问题）
 // 会永远卡在队首，后面所有变更都同步不上去
 const MAX_FAILS = 5;
@@ -45,9 +46,32 @@ function login() {
       const openid = res.openid;
       if (openid) wx.setStorageSync(OPENID_KEY, openid);
       if (res.user) wx.setStorageSync(PROFILE_KEY, { nickName: res.user.nickName || '', avatarUrl: res.user.avatarUrl || '' });
+      if (res.user && res.user.subs) wx.setStorageSync(SUBS_KEY, res.user.subs);
       return openid || null;
     })
     .catch(() => null); // 弱网失败不阻塞本地使用，下次启动重试
+}
+
+// ---------- 订阅消息额度（users.subs 的本地副本；云端是权威） ----------
+function subs() {
+  try { return wx.getStorageSync(SUBS_KEY) || {}; } catch (e) { return {}; }
+}
+// 用户点「允许」后 +1 额度：本地先更新（横幅立刻消失），云端异步累加，
+// 云端回包带最新 subs 覆盖本地（多设备以云端为准）
+function subInc(kind, n) {
+  const cur = subs();
+  cur[kind] = (cur[kind] || 0) + (n || 1);
+  wx.setStorageSync(SUBS_KEY, cur);
+  if (!enabled) return Promise.resolve(cur);
+  const data = { subInc: {} };
+  data.subInc[kind] = n || 1;
+  return wx.cloud.callFunction({ name: 'login', data })
+    .then(r => {
+      const u = (r.result || {}).user;
+      if (u && u.subs) wx.setStorageSync(SUBS_KEY, u.subs);
+      return subs();
+    })
+    .catch(() => cur);
 }
 
 // ---------- 账号资料：头像昵称 ----------
@@ -316,4 +340,4 @@ function status() {
   };
 }
 
-module.exports = { init, login, flush, pull, status, retryDead, reconcile, profile, updateProfile };
+module.exports = { init, login, flush, pull, status, retryDead, reconcile, profile, updateProfile, subs, subInc };

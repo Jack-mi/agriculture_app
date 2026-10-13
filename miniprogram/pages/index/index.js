@@ -5,6 +5,7 @@ const stats = require('../../utils/stats.js');
 const weather = require('../../utils/weather.js');
 const advisor = require('../../utils/advisor.js');
 const sync = require('../../utils/sync.js');
+const submsg = require('../../utils/submsg.js');
 const LM = require('../../utils/lunar.js');
 const U = require('../../utils/util.js');
 const C = require('../../utils/const.js');
@@ -77,6 +78,7 @@ Page({
       online: getApp().globalData.online, wxLine, month: ms.totalText,
       nick, lm,
       v, tpls, money, stock, dueCount, briefs, budget,
+      subAsk: submsg.shouldShowBanner(store.plots.all().length > 0, t),
       weekShow: v.week.slice(0, this.data.showWeek ? 99 : 3), weekRest: Math.max(0, v.week.length - 3),
       nextText: v.nextTask ? v.nextTask.plot + ' ' + v.nextTask.title : '',
       nextDue: v.nextTask ? v.nextTask.due : ''
@@ -85,6 +87,13 @@ Page({
   },
 
   toggleLater() { this.setData({ showLater: !this.data.showLater }); },
+  // 开启订阅消息横幅：天气/灾害预警/任务提醒，一次面板补三类（用户点击触发，符合微信要求）
+  askSubs() {
+    submsg.ask(null, U.today()).then(r => {
+      if (r.accepted.length) U.toast('已开启，到点会推微信通知');
+      this.render();
+    });
+  },
   toggleWeek() {
     const open = !this.data.showWeek;
     this.setData({ showWeek: open, weekShow: open ? this.data.v.week : this.data.v.week.slice(0, 3) });
